@@ -10,7 +10,7 @@ Kaynak: `plan.md` §8. Katman yerleşimi: [[mimari]].
 ## CQRS + Mediator
 - **Command:** durum değiştirir, domain'den geçer ([[domain-modeli]]).
 - **Query:** `AsNoTracking` projeksiyonla doğrudan DTO.
-- Pipeline: doğrulama → loglama → (command) transaction. Endpoint iş kuralı içermez ([[api-uc-noktalari]]).
+- Pipeline: loglama (dış) → doğrulama (iç) → handler. Transaction behavior yok: handler tek `SaveChangesAsync` ile atomik yazar. Tüm mesajlar `Result`/`Result<T>` döner; doğrulama hatası handler'a girmeden `Result` olarak döner. Endpoint iş kuralı içermez ([[api-uc-noktalari]]).
 
 ## State Pattern
 `AppointmentState` taban; `Pending/Approved/Rejected/Cancelled/Completed` türevleri. Geçersiz geçiş `DomainException`. DB'de yalnız `status` string. Geçiş tablosu: [[randevu-kurallari]].

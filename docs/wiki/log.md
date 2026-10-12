@@ -2,6 +2,8 @@
 
 Yeni kayıtlar en üste eklenir. Biçim: `## [YYYY-AA-GG] [İŞLEM_TİPİ] | Kısa Açıklama`. Harita: [[index]].
 
+## [2026-10-12] CODE | Faz 1 tamamlandı: Entity/Result/pipeline, User+Patient TPT, ilk migration, cookie auth + CSRF + CORS + rate limit + kilitleme, politikalar; 64 test yeşil (container) — [[faz-plani]], [[kimlik-ve-yetki]]
+## [2026-10-12] ENV | SAC yeni Hospital.Api.dll'i engelledi; `scripts/test-docker.ps1` ile container'da derleme/test — [[docker-ortam]], [[kararlar]] K-23
 ## [2026-10-12] DECISION | FluentAssertions yerine AwesomeAssertions (ücretsiz fork) — [[kararlar]] K-21
 ## [2026-10-12] ENV | .NET 9 SDK (9.0.318) winget ile kuruldu, `global.json` ile sabitlendi; build + testler SDK 9 ile yeşil — [[kararlar]] K-18
 ## [2026-10-12] DECISION | Testcontainers bırakıldı (Smart App Control engeli); entegrasyon testleri compose PostgreSQL'inde geçici DB kullanır — [[kararlar]] K-20, [[test-stratejisi]]

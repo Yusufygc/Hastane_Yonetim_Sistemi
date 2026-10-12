@@ -34,6 +34,8 @@ Feature listesi: Auth, Appointments, Doctors (Profile, Availability, TimeOff, Se
 - Bir feature başka bir feature'ın **handler'ına** bağlanmaz; gerekirse onun soyutlamasını kullanır.
 - Otomatik kayıt: handler'lar (Mediator), endpoint'ler (`IEndpoint` taraması), EF konfigürasyonları (`IEntityTypeConfiguration` taraması). Böylece `Program.cs` ve `AppDbContext` yeni feature için değişmez ([[git-is-akisi]] çakışma azaltma).
 - Tek `AppDbContext`, tek PostgreSQL veritabanı, gerçek FK'ler ([[veritabani]]).
+- Infrastructure servis kaydı: `Infrastructure/Features/**` altındaki somut sınıflar, uyguladıkları `Hospital.Application.*` arayüzleriyle taranıp otomatik kaydolur (ör. `UserRepository` → `IUserRepository`); `AddInfrastructure()` yeni feature için değişmez. Bağlantı dizesi çalışma anında çözülür (testler geçersiz kılabilsin).
+- `ICurrentUser` uygulaması Api katmanındadır (`HttpContext` claim'leri).
 
 ## Mimari testler (NetArchTest)
 Domain hiçbir projeye bağımlı değil; Application → Infrastructure/Api'ye bağımlı değil; Infrastructure → Api'ye bağımlı değil; feature'lar birbirinin handler/command tiplerine bağlanmaz; her endpoint açık politika veya `AllowAnonymous` taşır. Bkz. [[test-stratejisi]], [[kimlik-ve-yetki]].

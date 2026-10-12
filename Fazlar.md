@@ -27,7 +27,7 @@ Her faz sonunda: derlenen kod, geçen testler, `main` üzerinde çalışan uygul
 
 ## FAZ 1 — Çekirdek ve Kimlik (Auth)
 
-- `Domain/Common`: `Entity`, `AggregateRoot`, `DomainEvent`, `DomainException`. `Application/Common`: `Result<T>`, Mediator pipeline behavior'ları (doğrulama, loglama, transaction).
+- `Domain/Common`: `Entity`, `AggregateRoot`, `DomainEvent`, `DomainException`. `Application/Common`: `Result<T>`, Mediator pipeline behavior'ları (loglama, doğrulama; transaction behavior yok — handler tek SaveChanges ile atomik yazar).
 - Global exception handling (`ProblemDetails`).
 - `User` soyut sınıfı + EF **TPT** (paylaşılan PK) eşlemesi; `USER_ACCOUNT` ve ilk migration (`btree_gist` dahil). Guid v7 kimlikler.
 - **Cookie kimlik doğrulama:** kayıt (yalnız hasta), giriş, çıkış, `me`, `OnValidatePrincipal` ile `security_stamp` doğrulaması, 401/403 davranışı.

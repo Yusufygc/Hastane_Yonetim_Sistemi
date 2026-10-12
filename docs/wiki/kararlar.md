@@ -25,4 +25,10 @@ Mimari kararlar, gerekçeleri ve reddedilen alternatifler. Yeni karar en alta ek
 | K-19 | Asistan kullanıcı istemedikçe commit/push yapmaz | Genel çalışma kuralı ([[git-is-akisi]]). |
 | K-20 | Testcontainers **kullanılmıyor**; entegrasyon testleri compose PostgreSQL'inde geçici veritabanı açar | Windows Smart App Control imzasız `Testcontainers.PostgreSql.dll` yüklemesini engelledi (0x800711C7). Güvenlik ayarı devre dışı bırakılmadı. Yerine `PostgresFixture` (Npgsql ile `CREATE/DROP DATABASE`); CI'da PostgreSQL service container. Bkz. [[test-stratejisi]]. |
 | K-21 | Assertion kütüphanesi **AwesomeAssertions** (Apache, FluentAssertions 7 fork'u) | Kullanıcı kararı: FluentAssertions 8.x ticari lisanslı. Aynı `Should()` API'si. (FluentValidation ayrı bir kütüphane: istek doğrulama, ücretsiz, kullanımda.) |
+| K-23 | Derleme/test güvenilir yolu: `scripts/test-docker.ps1` (Linux SDK container) | SAC, yerel derlenmiş `Hospital.Api.dll`'i engelledi; ayar kapatılmadı ([[docker-ortam]]). |
+| K-24 | Transaction pipeline behavior yok; pipeline = loglama → doğrulama; tüm mesajlar `Result` döner | Handler tek `SaveChanges` ile zaten atomik; fazladan katman gereksiz ([[tasarim-kaliplari]]). |
+| K-25 | Giriş hataları tek tip (`auth.invalid_credentials`); kilit/pasif/bilinmeyen aynı yanıt | Hesap varlığı sızdırılmaz ([[kimlik-ve-yetki]]). |
+| K-26 | CSRF belirteci tüm `/api` yazma isteklerinde zorunlu (login/register dahil); kimlik değişince yenilenir | Cookie auth + login CSRF koruması. |
+| K-27 | Faz 1'de yalnız `Patient` türü; Doctor/Staff/Admin Faz 2-3 | FK'leri (bölüm, organizasyon) Faz 2 tablolarına bağlı. |
+| K-28 | EF migration'ları `Persistence/Migrations`; `dotnet-ef` yerel araç (`.config/dotnet-tools.json`); dev/test'te `Database:MigrateOnStartup=true` | Tek komutla çalışan geliştirme ortamı. |
 | K-22 | Paket sürümleri Central Package Management ile `Directory.Packages.props`'ta | Sürüm kayması ve proje başına tekrar önlenir. |

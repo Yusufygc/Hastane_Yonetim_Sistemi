@@ -36,4 +36,6 @@ Kaynak: `plan.md` §10. Rol URL'de taşınmaz; kaynak odaklı rotalar + `me` kal
 | GET/POST | `/api/hospitals/{id}/departments` | Admin + kapsam |
 | GET/POST/PUT | `/api/services`, `/api/services/{id}` | Admin + kapsam |
 
+**Gerçekleşen (Faz 1):** `GET /api/auth/csrf`, `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, `/health`. Diğerleri planlanmıştır.
+
 Endpoint'ler Minimal API; her feature'ın Api klasöründe `IEndpoint` uygulayan sınıflarda ([[mimari]]).

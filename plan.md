@@ -60,7 +60,7 @@ src/
     Appointments/                # Appointment, States/, Events/, DoctorAvailability, DoctorTimeOff, DoctorService
 
   Hospital.Application/
-    Common/                      # Result, Behaviors/ (validation, logging, transaction), Abstractions/ (IUnitOfWork, ICurrentUser, IEmailSender)
+    Common/                      # Result, Behaviors/ (logging, validation), Abstractions/ (IUnitOfWork, ICurrentUser, IEmailSender)
     Features/
       Auth/
         Login/                   # LoginCommand, LoginHandler, LoginValidator
@@ -473,7 +473,7 @@ Kurallar:
 
 - **Command:** Durum değiştirir; domain modelinden geçer, kuralları uygular.
 - **Query:** Doğrudan `AsNoTracking` projeksiyon ile DTO döner; domain modeli yüklenmez.
-- **Pipeline behaviors:** Doğrulama (FluentValidation) → loglama → (command için) transaction.
+- **Pipeline behaviors:** Loglama (dış) → doğrulama (FluentValidation, iç) → handler. Ayrı bir transaction behavior yoktur: handler tek `SaveChangesAsync` çağrısıyla atomik yazar (Unit of Work = `DbContext`). Tüm Command/Query'ler `Result`/`Result<T>` döner; doğrulama hatası handler'a girmeden `Result` olarak döner.
 - Endpoint yalnızca isteği Command/Query'ye çevirip Mediator'a verir; iş kuralı içermez.
 
 ### 8.3 State Pattern
