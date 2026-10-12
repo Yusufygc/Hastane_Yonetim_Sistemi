@@ -16,6 +16,15 @@ Kaynak: `plan.md` §9. Endpoint'ler: [[api-uc-noktalari]]. Testler: [[test-strat
 - **CORS:** ayrı origin için `AllowCredentials` + açık origin listesi, joker yok. Üretimde tek origin (reverse proxy) önerilir.
 - Sırlar `user-secrets`/ortam değişkeni; Data Protection anahtarları çoklu örnekte paylaşılan depoda.
 
+## Uygulama notları (Faz 1)
+- Cookie adı `hospital.auth`, antiforgery cookie `hospital.csrf`, başlık `X-XSRF-TOKEN`. `GET /api/auth/csrf` belirteç verir; **kimlik değişince (giriş/çıkış) belirteç yeniden alınmalı** (belirteç kimliğe bağlı). `/api` altındaki POST/PUT/PATCH/DELETE hepsi (login/register dahil) belirteç ister; eksikse 400 `csrf.invalid`.
+- Giriş hataları tek tip: yanlış parola, bilinmeyen e-posta, pasif ve kilitli hesap aynı `401 auth.invalid_credentials` döner (hesap varlığı sızmaz). Bilinmeyen e-postada da parola özeti hesaplanır (zamanlama eşitleme).
+- Kilit: 5 hatalı denemede 15 dk (`Auth:MaxFailedLoginAttempts`, `Auth:LockoutMinutes`).
+- Hız sınırı: `auth` politikası IP başına dakikada 10 (`RateLimiting:Auth:*`) → 429. Ters vekil arkasında `ForwardedHeaders` gerekir (Faz 6).
+- Oturum doğrulama: `OnValidatePrincipal` → `IAccountSessionReader` (her istekte `is_active` + `security_stamp` sorgusu). Parola özeti: ASP.NET Identity PBKDF2.
+- Kayıt: `register` yalnız `Patient` açar. TC numarası şimdilik düz saklanır (şifreleme/hash Faz 6 KVKK maddesi).
+- Rol politikaları testi için yalnız test projesinde kayıtlı sahte uçlar kullanılır (`/api/test/*`); gerçek Doctor/Admin hesapları Faz 3'te.
+
 ## Yetkilendirme (4 savunma katmanı)
 Politikalar: `Policies.Patient`, `Doctor`, `Admin`, `SuperAdmin`, `Authenticated`.
 1. **Fallback policy = giriş zorunlu**; anonim uçlar açıkça `AllowAnonymous` (`login`, `register`, `catalog/*`).
