@@ -1,6 +1,6 @@
 using Npgsql;
 
-namespace Hospital.IntegrationTests;
+namespace Hospital.IntegrationTests.Infrastructure;
 
 /// <summary>
 /// Gerçek PostgreSQL üzerinde (docker compose) her test sınıfı için geçici bir veritabanı açar ve siler.

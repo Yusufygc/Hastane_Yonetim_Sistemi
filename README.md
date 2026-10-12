@@ -23,6 +23,10 @@ dotnet run --project src/Hospital.Api
 ```bash
 dotnet test Hospital.sln
 ```
+Windows Smart App Control yerel derlenen DLL'leri bazen engelleyebilir (`0x800711C7`). Bu durumda testleri Linux container'da çalıştırın:
+```powershell
+./scripts/test-docker.ps1
+```
 Entegrasyon testleri, `docker compose up -d` ile çalışan PostgreSQL üzerinde geçici bir veritabanı açıp siler.
 
 ## Çözüm yapısı
