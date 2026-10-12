@@ -1,4 +1,4 @@
-using Hospital.Application;
+using Hospital.Application.Extensions;
 using Hospital.Application.Interfaces;
 using Hospital.Persistence.Context;
 using Hospital.Persistence.UnitOfWorks;
@@ -6,9 +6,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Hospital.Persistence;
+namespace Hospital.Persistence.Extensions;
 
-public static class ServiceRegistration
+/// <summary>Persistence katmanının DI kaydı. Program.cs'te <c>builder.Services.AddPersistence()</c> ile çağrılır.</summary>
+public static class PersistenceExt
 {
     private const string FeaturesNamespace = "Hospital.Persistence.Features";
 

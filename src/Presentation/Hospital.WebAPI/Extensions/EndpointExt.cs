@@ -1,9 +1,10 @@
 using System.Reflection;
+using Hospital.WebAPI.Common;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Hospital.WebAPI.Common;
+namespace Hospital.WebAPI.Extensions;
 
-public static class EndpointExtensions
+public static class EndpointExt
 {
     public static IServiceCollection AddEndpoints(this IServiceCollection services, Assembly assembly)
     {

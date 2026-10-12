@@ -48,7 +48,8 @@ Feature listesi: Auth, Appointments, Doctors (Profile, Availability, TimeOff, Se
 ## Kurallar
 - Soyutlama Application'da (feature klasörü), somut sınıf Persistence/Infrastructure'da (aynı feature adı).
 - Bir feature başka bir feature'ın **handler'ına** bağlanmaz; gerekirse onun soyutlamasını kullanır.
-- Otomatik kayıt: handler'lar (Mediator), endpoint'ler (`IEndpoint` taraması), EF konfigürasyonları (`IEntityTypeConfiguration` taraması), Persistence/Infrastructure somutları (`Features/**` taranıp uyguladıkları `Hospital.Application.*` arayüzleriyle). Böylece `Program.cs`, `AppDbContext`, `ServiceRegistration` yeni feature için değişmez ([[git-is-akisi]] çakışma azaltma). Tarama yardımcısı: `Application/ServiceRegistration.AddFeatureImplementations`.
+- Otomatik kayıt: handler'lar (Mediator), endpoint'ler (`IEndpoint` taraması), EF konfigürasyonları (`IEntityTypeConfiguration` taraması), Persistence/Infrastructure somutları (`Features/**` taranıp uyguladıkları `Hospital.Application.*` arayüzleriyle). Böylece `Program.cs`, `AppDbContext`, `Extensions/*Ext` yeni feature için değişmez ([[git-is-akisi]] çakışma azaltma). Tarama yardımcısı: `Application/Extensions/FeatureRegistrationExt.AddFeatureImplementations`.
+- **DI kuralı:** her katman `Extensions/<Katman>Ext.cs` içinde `Add<Katman>` ile kaydolur; `Program.cs` yalnızca bunları çağırır → [[di-kurallari]].
 - Tek `AppDbContext`, tek PostgreSQL veritabanı, gerçek FK'ler ([[veritabani]]). Bağlantı dizesi çalışma anında çözülür (testler geçersiz kılabilsin).
 - `ICurrentUser` uygulaması WebAPI'dedir (`HttpContext` claim'leri). `IUnitOfWork` uygulaması `Persistence/UnitOfWorks`'tedir (DbContext üzerinden).
 

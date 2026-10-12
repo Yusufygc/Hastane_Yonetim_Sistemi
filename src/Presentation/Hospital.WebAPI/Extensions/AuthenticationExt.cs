@@ -8,9 +8,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace Hospital.WebAPI.Common;
+namespace Hospital.WebAPI.Extensions;
 
-public static class AuthenticationExtensions
+public static class AuthenticationExt
 {
     public const string CookieName = "hospital.auth";
     public const string CsrfCookieName = "hospital.csrf";
