@@ -1,0 +1,12 @@
+# Wiki Kayıt Defteri
+
+Yeni kayıtlar en üste eklenir. Biçim: `## [YYYY-AA-GG] [İŞLEM_TİPİ] | Kısa Açıklama`. Harita: [[index]].
+
+## [2026-10-12] DECISION | Testcontainers bırakıldı (Smart App Control engeli); entegrasyon testleri compose PostgreSQL'inde geçici DB kullanır — [[kararlar]] K-20, [[test-stratejisi]]
+## [2026-10-12] CODE | Faz 0 tamamlandı: 4 proje + 3 test projesi, CPM, docker-compose, CI, `IEndpoint` taraması, mimari ve endpoint-yetki testleri, `/health` — bkz. [[faz-plani]]
+## [2026-10-12] ENV | Ortam çözüldü: .NET 9 runtime ve Docker Desktop hazır (SDK 10 ile `net9.0` derleniyor) — [[docker-ortam]]
+## [2026-10-12] ENV (eski) | Ortam taraması: yalnızca .NET 10 SDK kurulu (hedef .NET 9), Docker daemon kapalı — bkz. [[docker-ortam]], [[kararlar]]
+## [2026-10-12] SETUP | LLM Wiki kuruldu: `CLAUDE.md` anayasası, [[index]], bu dosya ve konu sayfaları oluşturuldu
+## [2026-10-12] INGEST | `plan.md` ve `Fazlar.md` v3.0 içeriği wiki sayfalarına sentezlendi ([[mimari]], [[veritabani]], [[randevu-kurallari]], [[kimlik-ve-yetki]], [[api-uc-noktalari]], [[faz-plani]] vb.)
+## [2026-10-12] DECISION | Mimari v3.0: Clean Architecture + feature klasörleri, cookie auth, Guid v7, tek DbContext, doktor-hizmet yönetici onayı — bkz. [[kararlar]]
+## [2026-10-12] INGEST | `ProjeOdevi_Son.docx` ödev tanımı okundu — bkz. [[odev-gereksinimleri]]

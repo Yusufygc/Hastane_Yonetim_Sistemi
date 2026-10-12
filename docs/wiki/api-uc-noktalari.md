@@ -1,0 +1,39 @@
+# API Uç Noktaları
+
+Kaynak: `plan.md` §10. Rol URL'de taşınmaz; kaynak odaklı rotalar + `me` kalıbı. Politikalar: [[kimlik-ve-yetki]]. Kurallar: [[randevu-kurallari]].
+
+| Metot | Yol | Politika |
+|---|---|---|
+| POST | `/api/auth/register` | anonim (yalnız hasta) |
+| POST | `/api/auth/login` | anonim |
+| POST | `/api/auth/logout` | giriş |
+| GET | `/api/auth/me`, `/api/auth/csrf` | giriş |
+| GET | `/api/catalog/hospitals`, `/hospitals/{id}/departments`, `/hospitals/{id}/services` | anonim |
+| GET | `/api/catalog/doctors?hospitalId=&serviceId=` | anonim |
+| GET | `/api/catalog/doctors/{id}/slots?serviceId=&date=` | anonim |
+| GET/PUT | `/api/patients/me` | Patient |
+| GET | `/api/patients/me/appointments` | Patient |
+| GET/PUT | `/api/doctors/me` | Doctor |
+| GET | `/api/doctors/me/appointments`, `/schedule` | Doctor |
+| GET/POST | `/api/doctors/me/availability`; PUT/DELETE `/{id}` | Doctor |
+| GET/POST | `/api/doctors/me/time-off`; DELETE `/{id}` | Doctor |
+| GET/POST | `/api/doctors/me/services` (talep); DELETE `/{serviceId}` | Doctor |
+| POST | `/api/appointments` | Patient |
+| GET | `/api/appointments/{id}` | giriş + sahiplik |
+| POST | `/api/appointments/{id}/approve` · `/reject` · `/complete` | Doctor + sahiplik |
+| POST | `/api/appointments/{id}/cancel` | Patient/Doctor/Admin + sahiplik |
+| GET | `/api/appointments?hospitalId=&status=` | Admin + kapsam |
+| GET/POST | `/api/doctors`, `/api/staff`, `/api/admins` | Admin + kapsam (admin oluşturma: SuperAdmin) |
+| GET/PUT | `/api/doctors/{id}` | Admin + kapsam |
+| PUT | `/api/doctors/{id}/services` (doğrudan atama) | Admin + kapsam |
+| GET | `/api/doctor-service-requests?status=pending` | Admin + kapsam |
+| POST | `/api/doctors/{doctorId}/services/{serviceId}/approve` · `/reject` | Admin + kapsam |
+| DELETE | `/api/doctors/{doctorId}/services/{serviceId}` | Admin + kapsam |
+| POST | `/api/users/{id}/deactivate` | Admin + kapsam |
+| GET/PUT | `/api/organization` | SuperAdmin |
+| GET/POST | `/api/hospitals` (POST: SuperAdmin) | Admin |
+| GET/PUT | `/api/hospitals/{id}`; PUT `/working-hours`; POST `/deactivate` | Admin + kapsam |
+| GET/POST | `/api/hospitals/{id}/departments` | Admin + kapsam |
+| GET/POST/PUT | `/api/services`, `/api/services/{id}` | Admin + kapsam |
+
+Endpoint'ler Minimal API; her feature'ın Api klasöründe `IEndpoint` uygulayan sınıflarda ([[mimari]]).
