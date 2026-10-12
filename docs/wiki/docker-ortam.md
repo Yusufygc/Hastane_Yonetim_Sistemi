@@ -13,5 +13,6 @@ Bağlantı dizesi ve SMTP ayarları `appsettings.Development.json` + `user-secre
 - **.NET:** SDK 9.0.318 ve 10.0.401 yan yana (`C:\Program Files\dotnet`); `global.json` bu repoda SDK 9'u seçer. Yeni terminalde PATH yenilenmemişse `dotnet` bulunamayabilir ([[kararlar]] K-18).
 - **Docker:** Docker Desktop çalışıyor. `docker compose up -d` → `hospital-postgres` (5432) ve `hospital-mailpit` (SMTP 1025, UI 8025).
 - **Windows Smart App Control: AÇIK (zorlayıcı).** İmzasız NuGet DLL'lerini engelleyebilir; Testcontainers bu yüzden kullanılmıyor ([[kararlar]] K-20). Yeni paket eklerken "Uygulama Denetimi ilkesi bu dosyayı engelledi (0x800711C7)" hatası görülürse ilgili paketi bırakıp alternatif seçin; güvenlik ayarını kapatmayın.
+- **SAC tuzağı:** Neredeyse boş (≈4 KB) kendi derlenmiş assembly (ör. içi boş `Hospital.Domain.dll`) test çıktısında aynı 0x800711C7 hatasıyla engellendi; içine gerçek tipler eklenip hash değişince geçti. Kendi DLL'iniz engellenirse önce kodu değiştirip yeniden derleyin, ayarı kapatmayın.
 - Dev bağlantı dizesi `appsettings.Development.json` içinde (yalnız yerel geliştirme değeri); üretimde ortam değişkeni/`user-secrets`.
 - Entegrasyon testi yönetici bağlantısı: `TEST_POSTGRES_ADMIN` ortam değişkeni (varsayılan localhost:5432).
