@@ -9,8 +9,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Hospital.Api\Hospital.Api.csproj" />
-    <ProjectReference Include="..\..\src\Hospital.Infrastructure\Hospital.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Presentation\Hospital.WebAPI\Hospital.WebAPI.csproj" />
+    <ProjectReference Include="..\..\src\Infrastructure\Hospital.Persistence\Hospital.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>

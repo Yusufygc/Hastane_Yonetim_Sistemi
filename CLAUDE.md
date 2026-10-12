@@ -30,7 +30,7 @@ Sen bu projenin baş geliştiricisi ve aynı zamanda `docs/wiki/` klasöründeki
 
 Ayrıntılar wiki'de ([[mimari]], [[kimlik-ve-yetki]], [[test-stratejisi]]). Özet:
 
-- Hedef: **.NET 9**, Clean Architecture (Domain / Application / Infrastructure / Api), **feature klasörlü** (her katmanda `Features/<Ad>/`).
+- Hedef: **.NET 9**, **Onion Architecture** (Core: Domain, Application · Infrastructure: Infrastructure, Persistence · Presentation: WebAPI), **feature klasörlü** (her katmanda `Features/<Ad>/`). Bağımlılıklar yalnız içeriye; Infrastructure ve Persistence birbirini bilmez.
 - Command/Query/Handler/Validator kendi feature klasöründe; handler'lar tek yerde toplanmaz.
 - Minimal API, Mediator (martinothamar), FluentValidation, EF Core 9 + Npgsql, PostgreSQL (Docker), Guid v7, `Result<T>`, cookie authentication.
 - Her endpoint açık yetki politikası veya `AllowAnonymous` taşır; kaynak sahipliği handler'da kontrol edilir.

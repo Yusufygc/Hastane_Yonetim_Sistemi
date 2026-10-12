@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Hospital.Application.Common;
+using Hospital.Application.Wrappers;
 
 namespace Hospital.UnitTests.Application;
 

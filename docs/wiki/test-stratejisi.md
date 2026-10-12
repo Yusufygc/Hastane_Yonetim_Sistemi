@@ -16,7 +16,7 @@ Birebir aynı aralık; kısmi kesişim (baş/son/içinde/kapsayan); bitişik ara
 ## Çalıştırma
 - Hızlı döngü: `dotnet test Hospital.sln` (Windows'ta Smart App Control kendi DLL'inizi bazen engeller — bkz. [[docker-ortam]]).
 - Güvenilir yol: `./scripts/test-docker.ps1` — derleme + testler Linux .NET 9 SDK container'ında; PostgreSQL için `host.docker.internal:5432`.
-- Faz 1 sonu: 37 birim, 4 mimari, 23 entegrasyon testi (kayıt, giriş, kilitleme, CSRF, oturum iptali, rol 403, hız sınırı, TPT).
+- Faz 1 sonu: 37 birim, 7 mimari, 23 entegrasyon testi (kayıt, giriş, kilitleme, CSRF, oturum iptali, rol 403, hız sınırı, TPT).
 
 ## Ortam
 Entegrasyon testleri `docker compose up -d` ile çalışan PostgreSQL gerektirir ([[docker-ortam]]). Testcontainers **kullanılmıyor**: Smart App Control imzasız DLL'i engelliyor ([[kararlar]] K-20).

@@ -1,8 +1,8 @@
 using AwesomeAssertions;
-using Hospital.Application.Common.Abstractions;
+using Hospital.Application.Interfaces;
 using Hospital.Application.Features.Auth;
 using Hospital.Application.Features.Auth.Commands.Login;
-using Hospital.Domain.Users;
+using Hospital.Domain.Entities.Users;
 
 namespace Hospital.UnitTests.Application;
 

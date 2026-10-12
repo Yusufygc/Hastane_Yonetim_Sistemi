@@ -1,5 +1,5 @@
-using Hospital.Api.Common;
-using Hospital.Application.Common.Security;
+using Hospital.WebAPI.Common;
+using Hospital.Application.Security;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 

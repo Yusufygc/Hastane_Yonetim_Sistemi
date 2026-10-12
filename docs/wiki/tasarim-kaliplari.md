@@ -3,7 +3,7 @@
 Kaynak: `plan.md` §8. Katman yerleşimi: [[mimari]].
 
 ## Repository + Unit of Work (yazma tarafı)
-- Repository **aggregate root başına**; soyutlama Application feature klasöründe, somut Infrastructure'da. Generic `IRepository<T>` kullanılmaz.
+- Repository **aggregate root başına**; soyutlama Application feature klasöründe, somut Persistence'ta. Generic `IRepository<T>` kullanılmaz.
 - **Unit of Work = `DbContext`**: handler tek `SaveChangesAsync` ile atomik yazar (örn. `USER_ACCOUNT` + `PATIENT`).
 - Okuma tarafı repository kullanmaz.
 

@@ -17,7 +17,7 @@ Her faz sonunda: derlenen kod, geçen testler, `main` üzerinde çalışan uygul
 
 - `.gitignore` (.NET), `.editorconfig`, `Directory.Build.props` (nullable, warnings-as-errors), Central Package Management.
 - `docker-compose.yml`: PostgreSQL 16 + Mailpit.
-- Çözüm iskeleti: `Hospital.Domain`, `Hospital.Application`, `Hospital.Infrastructure`, `Hospital.Api` ve test projeleri; her katmanda boş `Features/` klasörü.
+- Çözüm iskeleti: Onion yapısında `src/Core` (`Hospital.Domain`, `Hospital.Application`), `src/Infrastructure` (`Hospital.Infrastructure`, `Hospital.Persistence`), `src/Presentation` (`Hospital.WebAPI`) ve test projeleri; her katmanda boş `Features/` klasörü.
 - Otomatik kayıt altyapısı: handler (Mediator), `IEndpoint` taraması, EF konfigürasyon taraması.
 - **Mimari testler (NetArchTest)** baştan yürürlükte: katman bağımlılıkları, feature'lar arası bağımlılık yasağı.
 - **Endpoint-yetki tarama testi** iskeleti: her uç açık politika veya `AllowAnonymous` taşımalı.

@@ -19,7 +19,7 @@ $adminConnection = 'Host=host.docker.internal;Port=5432;Database=postgres;Userna
 $inner = @"
 set -e
 mkdir -p /work
-tar -C /src --exclude=bin --exclude=obj --exclude=.git -cf - . | tar -C /work -xf -
+tar -C /src --exclude=bin --exclude=obj --exclude=.git --exclude=.vs -cf - . | tar -C /work -xf -
 cd /work
 dotnet test Hospital.sln $extra
 "@

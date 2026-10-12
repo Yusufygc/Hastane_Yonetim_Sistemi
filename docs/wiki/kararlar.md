@@ -5,7 +5,7 @@ Mimari kararlar, gerekçeleri ve reddedilen alternatifler. Yeni karar en alta ek
 | # | Karar | Gerekçe / Reddedilen |
 |---|---|---|
 | K-01 | PostgreSQL 16, Docker ile | Exclusion constraint + `tstzrange` ile DB seviyesinde çakışma koruması ([[randevu-kurallari]]). SQL Server'da yok. |
-| K-02 | Clean Architecture, 4 proje + her katmanda `Features/` klasörleri | Kullanıcı isteği: handler'lar tek yerde değil, feature bazlı. **Reddedildi:** modül başına csproj + modül başına DbContext (15+ proje, modüller arası FK kaybı). Plan.md v2'deki "modüler monolit" terimi bırakıldı. |
+| K-02 | ~~Clean Architecture, 4 proje~~ (K-29 ile Onion 5 proje oldu) + her katmanda `Features/` klasörleri | Kullanıcı isteği: handler'lar tek yerde değil, feature bazlı. **Reddedildi:** modül başına csproj + modül başına DbContext (15+ proje, modüller arası FK kaybı). Plan.md v2'deki "modüler monolit" terimi bırakıldı. |
 | K-03 | `Mediator` (martinothamar) | MediatR v13+ ticari lisanslı. |
 | K-04 | Cookie authentication | Kullanıcı kararı. **Reddedildi:** JWT + refresh token. Sonuç: CSRF/CORS önlemleri, `security_stamp` ([[kimlik-ve-yetki]]). |
 | K-05 | `Guid` v7 kimlikler | `/appointments/57` tahmini ve IDOR'u kolaylaştırır; v7 sıralı, indeks dostu. |
@@ -30,5 +30,6 @@ Mimari kararlar, gerekçeleri ve reddedilen alternatifler. Yeni karar en alta ek
 | K-25 | Giriş hataları tek tip (`auth.invalid_credentials`); kilit/pasif/bilinmeyen aynı yanıt | Hesap varlığı sızdırılmaz ([[kimlik-ve-yetki]]). |
 | K-26 | CSRF belirteci tüm `/api` yazma isteklerinde zorunlu (login/register dahil); kimlik değişince yenilenir | Cookie auth + login CSRF koruması. |
 | K-27 | Faz 1'de yalnız `Patient` türü; Doctor/Staff/Admin Faz 2-3 | FK'leri (bölüm, organizasyon) Faz 2 tablolarına bağlı. |
-| K-28 | EF migration'ları `Persistence/Migrations`; `dotnet-ef` yerel araç (`.config/dotnet-tools.json`); dev/test'te `Database:MigrateOnStartup=true` | Tek komutla çalışan geliştirme ortamı. |
+| K-28 | EF migration'ları `Persistence/Migrations`; `dotnet-ef` yerel araç (`.config/dotnet-tools.json`; komut: `dotnet ef migrations add <Ad> --project src/Infrastructure/Hospital.Persistence --startup-project src/Infrastructure/Hospital.Persistence --output-dir Migrations`); dev/test'te `Database:MigrateOnStartup=true` | Tek komutla çalışan geliştirme ortamı. |
+| K-29 | **Onion mimari**, 5 proje: Core (Domain, Application), Infrastructure (Infrastructure, Persistence), Presentation (WebAPI); fiziksel `src/Core`, `src/Infrastructure`, `src/Presentation` | Kullanıcı kararı (referans görsel). EF/veri erişimi ayrı `Persistence` projesine alındı; Application EF'i bilmez. İç klasörler (Interfaces, Wrappers, Exceptions, Dto, Parameters; Domain'de Common/Entities) görseldeki adlara uyar. `Hospital.Api` → `Hospital.WebAPI`. K-02'deki 4 proje düzeninin yerini alır ([[mimari]]). |
 | K-22 | Paket sürümleri Central Package Management ile `Directory.Packages.props`'ta | Sürüm kayması ve proje başına tekrar önlenir. |
