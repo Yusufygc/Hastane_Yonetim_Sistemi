@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    # Entegrasyon testleri gerçek PostgreSQL kullanır (geçici veritabanı açar/siler).
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hospital
+          POSTGRES_PASSWORD: hospital_dev
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hospital"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore Hospital.sln
+
+      - name: Build
+        run: dotnet build Hospital.sln --no-restore -c Release
+
+      - name: Test
+        run: dotnet test Hospital.sln --no-build -c Release

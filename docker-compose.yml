@@ -1,0 +1,29 @@
+name: hospital
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hospital-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hospital}
+      POSTGRES_USER: ${POSTGRES_USER:-hospital}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hospital_dev}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - hospital-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hospital} -d ${POSTGRES_DB:-hospital}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: hospital-mailpit
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web arayüzü: http://localhost:8025
+
+volumes:
+  hospital-pgdata:
