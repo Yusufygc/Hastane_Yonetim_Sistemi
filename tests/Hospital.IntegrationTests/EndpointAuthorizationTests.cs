@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Hospital.IntegrationTests.Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,15 +10,17 @@ namespace Hospital.IntegrationTests;
 /// Her endpoint ya AllowAnonymous olmalı ya da açık bir yetki politikası taşımalı.
 /// Fallback policy tek başına "doktor ucuna hasta girer" hatasını yakalamaz; bu test yakalar.
 /// </summary>
-public class EndpointAuthorizationTests(HospitalApiFactory factory) : IClassFixture<HospitalApiFactory>
+public class EndpointAuthorizationTests(ApiFixture fixture) : IClassFixture<ApiFixture>
 {
     [Fact]
     public void Her_endpoint_acik_politika_veya_AllowAnonymous_tasimali()
     {
-        var dataSource = factory.Services.GetRequiredService<EndpointDataSource>();
+        var dataSource = fixture.Factory.Services.GetRequiredService<EndpointDataSource>();
 
-        var offenders = dataSource.Endpoints
-            .OfType<RouteEndpoint>()
+        var endpoints = dataSource.Endpoints.OfType<RouteEndpoint>().ToList();
+        endpoints.Should().NotBeEmpty();
+
+        var offenders = endpoints
             .Where(endpoint => !IsExplicitlySecured(endpoint))
             .Select(endpoint => $"{endpoint.RoutePattern.RawText} ({endpoint.DisplayName})")
             .ToList();

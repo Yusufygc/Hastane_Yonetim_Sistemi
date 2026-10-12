@@ -1,28 +1,16 @@
 using System.Net;
 using AwesomeAssertions;
+using Hospital.IntegrationTests.Infrastructure;
 
 namespace Hospital.IntegrationTests;
 
-public class HealthEndpointTests(PostgresFixture postgres) : IClassFixture<PostgresFixture>
+public class HealthEndpointTests(ApiFixture fixture) : IClassFixture<ApiFixture>
 {
     [Fact]
     public async Task Health_veritabani_ayaktayken_200_doner()
     {
-        // Program.cs yapılandırmayı erken okuduğu için ortam değişkeni en güvenilir yoldur.
-        Environment.SetEnvironmentVariable("ConnectionStrings__Default", postgres.ConnectionString);
+        var response = await fixture.CreateClient().GetAsync("/health");
 
-        try
-        {
-            await using var factory = new HospitalApiFactory();
-            using var client = factory.CreateClient();
-
-            var response = await client.GetAsync("/health");
-
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("ConnectionStrings__Default", null);
-        }
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }
