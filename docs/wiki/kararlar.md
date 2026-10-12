@@ -21,7 +21,7 @@ Mimari kararlar, gerekçeleri ve reddedilen alternatifler. Yeni karar en alta ek
 | K-15 | Katalog anonim; randevu için giriş şart | Kullanıcı kararı. |
 | K-16 | `ORGANIZATION` her zaman var; tek şube = 1 org + 1 hastane | Çok şube altyapısı, tek şube zorunluluğu değil. |
 | K-17 | Rolsüz URL, `me` kalıbı; rol cookie'den | Kullanıcı kararı ([[api-uc-noktalari]]). |
-| K-18 | Hedef .NET 9; geliştirme makinesinde SDK 10.0.401 + runtime 9.0.20 | **Çözüldü:** SDK 10 `net9.0` hedefini derler, runtime 9 çalıştırır. `global.json` kullanılmıyor (CI SDK 9.0.x ile de derler). EF/ASP.NET paketleri 9.x'e sabit (10.x net9 ile uyumsuz). Bkz. [[docker-ortam]]. |
+| K-18 | Hedef .NET 9; `global.json` SDK 9.0.318'e sabitler (`rollForward: latestFeature`) | **Çözüldü (2026-10-12):** .NET 9 SDK kuruldu; SDK 10 yan yana duruyor ama bu repoda 9 kullanılır. EF/ASP.NET paketleri 9.x'e sabit (10.x net9 ile uyumsuz). Bkz. [[docker-ortam]]. |
 | K-19 | Asistan kullanıcı istemedikçe commit/push yapmaz | Genel çalışma kuralı ([[git-is-akisi]]). |
 | K-20 | Testcontainers **kullanılmıyor**; entegrasyon testleri compose PostgreSQL'inde geçici veritabanı açar | Windows Smart App Control imzasız `Testcontainers.PostgreSql.dll` yüklemesini engelledi (0x800711C7). Güvenlik ayarı devre dışı bırakılmadı. Yerine `PostgresFixture` (Npgsql ile `CREATE/DROP DATABASE`); CI'da PostgreSQL service container. Bkz. [[test-stratejisi]]. |
 | K-21 | FluentAssertions 7.2.2'ye sabit | 8.x ticari lisanslı; 7.x Apache. |

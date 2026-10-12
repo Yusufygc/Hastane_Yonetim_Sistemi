@@ -7,7 +7,7 @@
 - Bilgi tabanı (wiki): [docs/wiki/index.md](docs/wiki/index.md)
 
 ## Gereksinimler
-- .NET 9 runtime (SDK 9 veya daha yeni bir SDK ile derlenebilir)
+- .NET 9 SDK (`global.json` 9.0.x'e sabitler)
 - Docker Desktop (PostgreSQL ve Mailpit için; entegrasyon testleri `docker compose up -d` ile ayağa kalkan PostgreSQL'i kullanır)
 
 ## Çalıştırma
