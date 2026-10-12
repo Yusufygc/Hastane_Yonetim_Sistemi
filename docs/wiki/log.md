@@ -2,6 +2,7 @@
 
 Yeni kayıtlar en üste eklenir. Biçim: `## [YYYY-AA-GG] [İŞLEM_TİPİ] | Kısa Açıklama`. Harita: [[index]].
 
+## [2026-10-12] DECISION | FluentAssertions yerine AwesomeAssertions (ücretsiz fork) — [[kararlar]] K-21
 ## [2026-10-12] ENV | .NET 9 SDK (9.0.318) winget ile kuruldu, `global.json` ile sabitlendi; build + testler SDK 9 ile yeşil — [[kararlar]] K-18
 ## [2026-10-12] DECISION | Testcontainers bırakıldı (Smart App Control engeli); entegrasyon testleri compose PostgreSQL'inde geçici DB kullanır — [[kararlar]] K-20, [[test-stratejisi]]
 ## [2026-10-12] CODE | Faz 0 tamamlandı: 4 proje + 3 test projesi, CPM, docker-compose, CI, `IEndpoint` taraması, mimari ve endpoint-yetki testleri, `/health` — bkz. [[faz-plani]]

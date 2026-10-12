@@ -147,7 +147,7 @@ Tek PostgreSQL veritabanı, tek `AppDbContext`. Tablolar mantıksal gruplar içi
 | Arka plan işleri | `BackgroundService` | Outbox işleyici |
 | Loglama | Serilog | Yapısal log, correlation id |
 | API dokümanı | Yerleşik `Microsoft.AspNetCore.OpenApi` + Scalar | Swashbuckle kullanılmayacak |
-| Test | xUnit, FluentAssertions 7.x (Apache lisanslı), NetArchTest, Npgsql (gerçek PostgreSQL ile geçici test veritabanı) | |
+| Test | xUnit, AwesomeAssertions (Apache lisanslı), NetArchTest, Npgsql (gerçek PostgreSQL ile geçici test veritabanı) | |
 
 ## 5. Domain Modeli ve OOP
 
@@ -599,7 +599,7 @@ Tüm endpoint'ler Minimal API olarak her feature'ın Api klasöründe `IEndpoint
 
 | Katman | Araç | Kapsam |
 |---|---|---|
-| Unit | xUnit, FluentAssertions | State geçişleri (geçerli/geçersiz), slot üretimi (pencere × çalışma saati × izin kesişimi, sınır durumları), snapshot, iptal süre kuralı, doktor-hizmet onay kuralları |
+| Unit | xUnit, AwesomeAssertions | State geçişleri (geçerli/geçersiz), slot üretimi (pencere × çalışma saati × izin kesişimi, sınır durumları), snapshot, iptal süre kuralı, doktor-hizmet onay kuralları |
 | Entegrasyon | **Gerçek PostgreSQL** (docker compose / CI service container; her test sınıfı için geçici veritabanı) | Exclusion constraint'in gerçekten çalıştığı doğrulanır; EF eşlemeleri; outbox |
 | Eşzamanlılık | Gerçek PostgreSQL | N paralel istek aynı slota → **tam 1 başarılı, N-1 `409`** |
 | Mimari | NetArchTest | Katman ve feature bağımlılık kuralları (bkz. 3.3) |

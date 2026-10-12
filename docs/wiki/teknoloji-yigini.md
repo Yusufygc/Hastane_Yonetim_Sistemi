@@ -17,4 +17,4 @@ Kaynak: `plan.md` §4. Gerekçeler: [[kararlar]]. Yapı: [[mimari]].
 | Arka plan | `BackgroundService` | Outbox işleyici |
 | Loglama | Serilog | Correlation id |
 | API dokümanı | `Microsoft.AspNetCore.OpenApi` + Scalar | Swashbuckle yok |
-| Test | xUnit, FluentAssertions 7.x, NetArchTest, Npgsql (gerçek PostgreSQL geçici test DB) | [[test-stratejisi]] |
+| Test | xUnit, AwesomeAssertions, NetArchTest, Npgsql (gerçek PostgreSQL geçici test DB) | [[test-stratejisi]] |

@@ -4,7 +4,7 @@ Kaynak: `plan.md` §11. Faz bağlantısı: [[faz-plani]].
 
 | Katman | Araç | Kapsam |
 |---|---|---|
-| Unit | xUnit, FluentAssertions | State geçişleri, slot üretimi (pencere × çalışma saati × izin), snapshot, iptal süresi, doktor-hizmet onayı ([[randevu-kurallari]]) |
+| Unit | xUnit, AwesomeAssertions | State geçişleri, slot üretimi (pencere × çalışma saati × izin), snapshot, iptal süresi, doktor-hizmet onayı ([[randevu-kurallari]]) |
 | Entegrasyon | Gerçek PostgreSQL (compose / CI service; geçici DB) | Exclusion constraint, EF eşlemeleri, outbox |
 | Eşzamanlılık | Gerçek PostgreSQL | N paralel istek aynı slota → **tam 1 başarılı, N-1 `409`** |
 | Mimari | NetArchTest | Katman/feature kuralları ([[mimari]]) |
