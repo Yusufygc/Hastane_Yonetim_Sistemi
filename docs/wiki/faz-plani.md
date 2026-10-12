@@ -5,12 +5,12 @@ Kaynak: `Fazlar.md` v3.0. Her faz uçtan uca çalışan dilim teslim eder. Mimar
 Durum işaretleri: `[ ]` başlamadı · `[~]` sürüyor · `[x]` tamam.
 
 ## [x] Faz 0 — Depo ve Ortam (2026-10-12 tamamlandı)
-`.gitignore`, `.editorconfig`, `Directory.Build.props`, Central Package Management (`Directory.Packages.props`) · `docker-compose.yml` (PostgreSQL + Mailpit) · 4 proje + test projeleri, boş `Features/` klasörleri · otomatik kayıt altyapısı (Mediator, `IEndpoint`, EF konfigürasyon taraması) · mimari testler (NetArchTest) · endpoint-yetki tarama testi iskeleti · README · CI.
+`.gitignore`, `.editorconfig`, `Directory.Build.props`, Central Package Management (`Directory.Packages.props`) · `docker-compose.yml` (PostgreSQL + Mailpit) · Onion yapısında 5 proje (Domain, Application · Infrastructure, Persistence · WebAPI) + test projeleri, boş `Features/` klasörleri · otomatik kayıt altyapısı (Mediator, `IEndpoint`, EF konfigürasyon taraması) · mimari testler (NetArchTest) · endpoint-yetki tarama testi iskeleti · README · CI.
 **Çıkış (sağlandı):** `docker compose up -d` + `dotnet run` ile `/health` → `Healthy`; 4 mimari test + endpoint-yetki testi + health entegrasyon testi yeşil. Ortam notları: [[docker-ortam]], [[kararlar]] (K-18, K-20).
 
 ## [x] Faz 1 — Çekirdek ve Kimlik (Auth) (2026-10-12 tamamlandı; yalnız Patient türü)
 `Common` tipleri (`Entity`, `AggregateRoot`, `Result<T>`, `DomainException`), pipeline behavior'lar, `ProblemDetails` · `User` + TPT, `USER_ACCOUNT`, ilk migration (`btree_gist`) · cookie auth (kayıt/giriş/çıkış/me, stamp doğrulama) · CSRF, CORS, rate limiting, kilitleme · `ICurrentUser`, `Policies.*`, fallback policy.
-**Çıkış (sağlandı):** Hasta kayıt olup giriş yapar; hasta doktor/yönetici uçlarında 403 alır. 37 birim + 4 mimari + 23 entegrasyon testi yeşil (container'da, bkz. [[docker-ortam]]). Doctor/Staff/Admin türleri Faz 2-3'te (FK'leri Faz 2 tablolarına bağlı). Bkz. [[kimlik-ve-yetki]].
+**Çıkış (sağlandı):** Hasta kayıt olup giriş yapar; hasta doktor/yönetici uçlarında 403 alır. 37 birim + 7 mimari + 23 entegrasyon testi yeşil (container'da, bkz. [[docker-ortam]]). Doctor/Staff/Admin türleri Faz 2-3'te (FK'leri Faz 2 tablolarına bağlı). Bkz. [[kimlik-ve-yetki]].
 
 ### [ ] Faz 1B — Risk Spike'ı
 Çıplak `appointment` + exclusion constraint · EF'te `23P01` → `409` · gerçek PostgreSQL üzerinde N paralel istek → tam 1 başarı. Bkz. [[randevu-kurallari]].

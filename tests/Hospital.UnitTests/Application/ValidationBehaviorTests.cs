@@ -1,7 +1,7 @@
 using AwesomeAssertions;
 using FluentValidation;
-using Hospital.Application.Common;
-using Hospital.Application.Common.Behaviors;
+using Hospital.Application.Wrappers;
+using Hospital.Application.Behaviors;
 using Mediator;
 
 namespace Hospital.UnitTests.Application;

@@ -9,10 +9,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Hospital.Domain\Hospital.Domain.csproj" />
-    <ProjectReference Include="..\..\src\Hospital.Application\Hospital.Application.csproj" />
-    <ProjectReference Include="..\..\src\Hospital.Infrastructure\Hospital.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\src\Hospital.Api\Hospital.Api.csproj" />
+    <ProjectReference Include="..\..\src\Core\Hospital.Domain\Hospital.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Core\Hospital.Application\Hospital.Application.csproj" />
+    <ProjectReference Include="..\..\src\Infrastructure\Hospital.Infrastructure\Hospital.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Infrastructure\Hospital.Persistence\Hospital.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\Presentation\Hospital.WebAPI\Hospital.WebAPI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

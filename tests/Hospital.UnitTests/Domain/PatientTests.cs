@@ -1,6 +1,6 @@
 using AwesomeAssertions;
 using Hospital.Domain.Common;
-using Hospital.Domain.Users;
+using Hospital.Domain.Entities.Users;
 
 namespace Hospital.UnitTests.Domain;
 

@@ -6,7 +6,7 @@
 
 Çok şubeli hastane/klinik yapılarını da, tek şubeli bir kurumu da destekleyen bir **Randevu Yönetim Sistemi**. Sistem; cookie tabanlı kimlik doğrulama, rol bazlı yetkilendirme, kurum/çalışan/hizmet yönetimi, doktor uygunluk takvimi, çakışma kontrollü randevu ve doktor onay mekanizması içerir. Randevu olaylarında hastaya (ve doktora) e-posta gönderilir.
 
-- **Backend:** .NET 9, Clean Architecture + feature klasörlü monolit, Minimal API
+- **Backend:** .NET 9, Onion (Clean) Architecture + feature klasörlü monolit, Minimal API
 - **Veritabanı:** PostgreSQL 16 (Docker)
 - **Arayüz:** Backend tamamlandıktan sonra, Three.js ile scroll tabanlı animasyonlu akış (bkz. Fazlar.md, son faz)
 - **Ödev kapsamı:** Seçenek A (Hastane/Klinik Randevu Sistemi), en fazla 2 kişi, GitHub'da en az 10 commit (farklı günlerde)
@@ -30,105 +30,136 @@
 
 ## 3. Mimari
 
-### 3.1 Katmanlar
+### 3.1 Katmanlar (Onion Architecture)
 
-**Clean Architecture**, dört ayrı proje. Bağımlılık yönü içeriye doğrudur:
+**Onion (soğan) mimarisi**, beş proje. Bağımlılıklar yalnızca **içeriye** doğrudur; iç katman dış katmanı bilmez:
 
 ```
-Hospital.Api (Presentation) ─┐
-                             ├─► Hospital.Application ─► Hospital.Domain
-Hospital.Infrastructure ─────┘
+                 ┌──────────────────────────────┐
+                 │  Presentation  (WebAPI)       │
+                 │  ┌────────────────────────┐   │
+   Persistence ─►│  │  Application            │◄─ Infrastructure
+   (EF, veri)    │  │  ┌──────────────────┐   │   (e-posta, parola özeti,
+                 │  │  │     Domain       │   │    dış servisler)
+                 │  │  └──────────────────┘   │
+                 │  └────────────────────────┘   │
+                 └──────────────────────────────┘
 ```
 
-| Katman | Sorumluluk |
-|---|---|
-| `Hospital.Domain` | Entity'ler, state sınıfları, domain event'ler, domain kuralları. Hiçbir şeye bağımlı değildir. |
-| `Hospital.Application` | Use-case'ler (Command/Query/Handler/Validator), DTO'lar, **soyutlamalar** (repository, e-posta gönderici, `ICurrentUser`). |
-| `Hospital.Infrastructure` | Soyutlamaların **somut** implementasyonları: EF Core, repository'ler, MailKit, outbox işleyici, kimlik servisleri. |
-| `Hospital.Api` | Minimal API endpoint'leri, middleware, kimlik doğrulama yapılandırması, composition root. |
+Proje bağımlılıkları:
 
-### 3.2 Feature bazlı klasörleme
+```
+Hospital.WebAPI ──► Hospital.Application ──► Hospital.Domain
+        │                    ▲  ▲
+        ├──► Hospital.Infrastructure ──┘  │
+        └──► Hospital.Persistence ────────┘
+```
 
-Handler'lar tek bir yerde toplanmaz. Her katmanın içinde **aynı feature adlarını yansıtan** `Features/` klasörü bulunur. Bir feature'ın command'ı, query'si, handler'ı ve validator'ı kendi klasöründedir.
+- `WebAPI` (composition root) Application, Infrastructure ve Persistence'ı bağlar.
+- `Infrastructure` ve `Persistence` yalnızca `Application`'a (Domain geçişli olarak) bağımlıdır; **birbirini bilmez**.
+- `Application` yalnızca `Domain`'e bağımlıdır; EF Core, Npgsql, ASP.NET Core tiplerini **bilmez**.
+- `Domain` hiçbir şeye bağımlı değildir.
+
+| Katman | Proje | Sorumluluk |
+|---|---|---|
+| Core | `Hospital.Domain` | Entity'ler (`Entities/`), state sınıfları, domain event'ler, domain kuralları (`Common/`). |
+| Core | `Hospital.Application` | Use-case'ler (Command/Query/Handler/Validator, `Features/`), **arayüzler** (`Interfaces/`: `IUnitOfWork`, `ICurrentUser`, `IPasswordHasher`; repository arayüzleri feature klasöründe), `Wrappers/` (`Result`), `Exceptions/`, `Behaviors/`, `Security/` (politika adları), `Dto/`, `Parameters/`. |
+| Infrastructure | `Hospital.Infrastructure` | Veri tabanı dışı dış servisler: parola özeti, e-posta (MailKit), outbox işleyici. |
+| Infrastructure | `Hospital.Persistence` | Veri erişimi: `Context/` (`AppDbContext`), `Migrations/`, `UnitOfWorks/`, feature başına repository + EF konfigürasyonu + okuma servisleri. |
+| Presentation | `Hospital.WebAPI` | Minimal API endpoint'leri, middleware, kimlik doğrulama yapılandırması. |
+
+### 3.2 Klasör hiyerarşisi ve feature bazlı düzen
+
+Fiziksel hiyerarşi Onion halkalarını yansıtır (`Core` / `Infrastructure` / `Presentation`). Her katmanın içinde **feature bazlı** klasörleme uygulanır: handler'lar tek bir yerde toplanmaz; bir feature'ın command'ı, query'si, handler'ı ve validator'ı kendi klasöründedir.
 
 ```
 src/
-  Hospital.Domain/
-    Common/                      # Entity, AggregateRoot, DomainEvent, DomainException
-    Users/                       # User (abstract), Patient, Doctor, Staff, Admin
-    Facility/                    # Organization, Hospital, HospitalWorkingHours, Department, Service
-    Appointments/                # Appointment, States/, Events/, DoctorAvailability, DoctorTimeOff, DoctorService
+  Core/
+    Hospital.Domain/
+      Common/                    # Entity, AggregateRoot, DomainEvent, DomainException
+      Entities/
+        Users/                   # User (abstract), Patient, Doctor, Staff, Admin
+        Facility/                # Organization, Hospital, HospitalWorkingHours, Department, Service
+        Appointments/            # Appointment, States/, Events/, DoctorAvailability, DoctorTimeOff, DoctorService
 
-  Hospital.Application/
-    Common/                      # Result, Behaviors/ (logging, validation), Abstractions/ (IUnitOfWork, ICurrentUser, IEmailSender)
-    Features/
-      Auth/
-        Login/                   # LoginCommand, LoginHandler, LoginValidator
-        Register/
-        Logout/
-      Appointments/
-        Commands/
-          CreateAppointment/     # CreateAppointmentCommand, CreateAppointmentHandler, CreateAppointmentValidator
-          ApproveAppointment/
-          RejectAppointment/
-          CancelAppointment/
-          CompleteAppointment/
-        Queries/
-          GetAvailableSlots/     # Query, Handler, SlotDto
-          GetAppointmentById/
-          GetPatientAppointments/
-          GetDoctorAppointments/
-          GetDoctorSchedule/
-        IAppointmentRepository.cs
-      Doctors/                   # Profile, Availability/, TimeOff/, Services/ (talep, onay, atama)
-      Patients/
-      Staff/
-      Admins/
-      Organizations/
-      Hospitals/                 # Hospital + WorkingHours
-      Departments/
-      Services/
-      Catalog/                   # Anonim okuma sorguları
-      Notifications/
+    Hospital.Application/
+      Interfaces/                # IUnitOfWork, ICurrentUser, IPasswordHasher, IEmailSender ...
+      Wrappers/                  # Result, Result<T>, Error
+      Exceptions/                # DataConflictException ...
+      Behaviors/                 # LoggingBehavior, ValidationBehavior
+      Security/                  # Policies (politika adları)
+      Dto/                       # feature'lar arası paylaşılan DTO'lar
+      Parameters/                # sayfalama/filtre gibi ortak istek parametreleri
+      ServiceRegistration.cs
+      Features/
+        Auth/
+          Commands/Login/              # LoginCommand, LoginHandler, LoginValidator
+          Commands/RegisterPatient/
+          IUserRepository.cs
+        Appointments/
+          Commands/
+            CreateAppointment/     # CreateAppointmentCommand, CreateAppointmentHandler, CreateAppointmentValidator
+            ApproveAppointment/
+            RejectAppointment/
+            CancelAppointment/
+            CompleteAppointment/
+          Queries/
+            GetAvailableSlots/     # Query, Handler, SlotDto
+            GetAppointmentById/
+            GetPatientAppointments/
+            GetDoctorAppointments/
+            GetDoctorSchedule/
+          IAppointmentRepository.cs
+        Doctors/                 # Profile, Availability/, TimeOff/, Services/ (talep, onay, atama)
+        Patients/  Staff/  Admins/  Organizations/  Hospitals/  Departments/  Services/
+        Catalog/                 # Anonim okuma sorguları
+        Notifications/
 
-  Hospital.Infrastructure/
-    Persistence/                 # AppDbContext, UnitOfWork, Migrations/
-    Features/                    # Application'daki soyutlamaların somut karşılıkları
-      Appointments/              # AppointmentRepository, AppointmentConfiguration (EF), exclusion constraint SQL
-      Doctors/
-      Auth/                      # Cookie bilet doğrulama, parola hash'leme
-      Notifications/             # EmailOutboxProcessor, MailKitEmailSender
-      ...
-    DependencyInjection.cs
+  Infrastructure/
+    Hospital.Infrastructure/
+      Features/                  # Veri tabanı dışı somutlar
+        Auth/                    # IdentityPasswordHasher
+        Notifications/           # EmailOutboxProcessor, MailKitEmailSender
+      ServiceRegistration.cs
+    Hospital.Persistence/
+      Context/                   # AppDbContext, AppDbContextFactory (design-time)
+      Migrations/
+      UnitOfWorks/               # UnitOfWork
+      Features/                  # Application'daki soyutlamaların somut karşılıkları
+        Auth/                    # UserRepository, UserConfiguration, PatientConfiguration, AccountSessionReader
+        Appointments/            # AppointmentRepository, AppointmentConfiguration (EF), exclusion constraint SQL
+        Doctors/ ...
+      ServiceRegistration.cs
 
-  Hospital.Api/
-    Features/
-      Appointments/              # AppointmentEndpoints.cs, request/response modelleri
-      Doctors/
-      Auth/
-      ...
-    Program.cs                   # ince: katmanları ve endpoint'leri toplar
+  Presentation/
+    Hospital.WebAPI/
+      Common/                    # IEndpoint taraması, CurrentUser, CSRF, hata işleyici, auth yapılandırması
+      Features/
+        Auth/                    # AuthEndpoints.cs
+        Appointments/            # AppointmentEndpoints.cs, request/response modelleri
+        ...
+      Program.cs                 # ince: katmanları ve endpoint'leri toplar
 tests/
 ```
 
 Kurallar:
 - Bir feature'a ait her şey katman başına tek klasörde bulunur; yeni bir feature eklemek mevcut dosyaları neredeyse hiç değiştirmez.
-- Soyutlama (`IAppointmentRepository`) Application'ın feature klasöründe, somut sınıf (`AppointmentRepository`) Infrastructure'ın aynı adlı feature klasöründedir.
+- Soyutlama (`IAppointmentRepository`) Application'ın feature klasöründe, somut sınıf (`AppointmentRepository`) Persistence'ın aynı adlı feature klasöründedir.
 - Bir feature başka bir feature'ın **handler'ına** doğrudan bağlanmaz. Gerekirse o feature'ın soyutlamasını (ör. `IDoctorAvailabilityReader`) kullanır.
-- Handler'lar assembly taramasıyla (Mediator source generator) bulunur; endpoint'ler `IEndpoint` arayüzü üzerinden taranarak kaydedilir; EF konfigürasyonları (`IEntityTypeConfiguration`) assembly taramasıyla uygulanır. Böylece `Program.cs` ve `DbContext` yeni feature için değişmez, ekip içi çakışma azalır.
+- Handler'lar Mediator source generator ile; endpoint'ler `IEndpoint` taramasıyla; EF konfigürasyonları `IEntityTypeConfiguration` taramasıyla; Persistence/Infrastructure somutları `Features/**` taranarak (uyguladıkları `Hospital.Application.*` arayüzleriyle) otomatik kaydedilir. Böylece `Program.cs`, `AppDbContext` ve `ServiceRegistration` dosyaları yeni feature için değişmez, ekip içi çakışma azalır.
 
 ### 3.3 Mimari testler (NetArchTest)
 
 Otomatik doğrulanan kurallar:
-- `Domain` hiçbir projeye bağımlı değildir.
-- `Application`, `Infrastructure` ve `Api`'ye bağımlı değildir.
-- `Infrastructure`, `Api`'ye bağımlı değildir.
+- `Domain` hiçbir katmana bağımlı değildir; EF Core, Npgsql, ASP.NET Core, Mediator, FluentValidation'ı da bilmez.
+- `Application`, `Infrastructure`, `Persistence` ve `WebAPI`'ye bağımlı değildir; EF Core, Npgsql, ASP.NET Core'u bilmez (persistence ignorance).
+- `Infrastructure` → `Persistence`/`WebAPI`'ye, `Persistence` → `Infrastructure`/`WebAPI`'ye bağımlı değildir.
 - Feature'lar birbirinin handler/command tiplerine bağlanmaz.
 - Her Minimal API endpoint'i açık bir yetki politikası veya `AllowAnonymous` taşır (bkz. 9.4).
 
 ### 3.4 Veri erişimi
 
-Tek PostgreSQL veritabanı, tek `AppDbContext`. Tablolar mantıksal gruplar için şemalara ayrılabilir, ancak zorunlu değildir. Tüm ilişkiler gerçek **yabancı anahtar (FK)** ile korunur. Her entity için ayrı `IEntityTypeConfiguration` sınıfı ilgili Infrastructure feature klasöründe yer alır.
+Tek PostgreSQL veritabanı, tek `AppDbContext` (`Hospital.Persistence/Context`). Tablolar mantıksal gruplar için şemalara ayrılabilir, ancak zorunlu değildir. Tüm ilişkiler gerçek **yabancı anahtar (FK)** ile korunur. Her entity için ayrı `IEntityTypeConfiguration` sınıfı ilgili Persistence feature klasöründe yer alır.
 
 ## 4. Teknoloji Yığını
 
@@ -465,7 +496,7 @@ Kurallar:
 
 ### 8.1 Repository ve Unit of Work (yazma tarafı)
 
-- Repository, **aggregate root başına** tanımlanır; soyutlaması Application'ın ilgili feature klasöründe (`IAppointmentRepository`), somutu Infrastructure'ın aynı adlı feature klasöründedir. Genel (generic) `IRepository<T>` yerine ihtiyaç duyulan sorgu metotları açıkça adlandırılır.
+- Repository, **aggregate root başına** tanımlanır; soyutlaması Application'ın ilgili feature klasöründe (`IAppointmentRepository`), somutu Persistence'ın aynı adlı feature klasöründedir. Genel (generic) `IRepository<T>` yerine ihtiyaç duyulan sorgu metotları açıkça adlandırılır.
 - **Unit of Work = `DbContext`**. Command handler'ı tek `SaveChangesAsync` çağrısıyla tüm değişiklikleri (ör. `USER_ACCOUNT` + `PATIENT`) tek transaction'da atomik yazar; hata anında rollback.
 - Okuma tarafında repository kullanılmaz (bkz. 8.2).
 

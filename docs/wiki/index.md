@@ -8,7 +8,7 @@ Hastane/Klinik Randevu Sistemi bilgi tabanı. Kurallar için kök dizindeki `CLA
 - [[git-is-akisi]] — Branch, commit ve ekip çalışma kuralları.
 
 ## Mimari
-- [[mimari]] — Clean Architecture katmanları, feature klasörleme, mimari testler.
+- [[mimari]] — Onion mimari (5 proje), klasör hiyerarşisi, feature klasörleme, mimari testler.
 - [[teknoloji-yigini]] — Kullanılan kütüphaneler ve gerekçeleri.
 - [[tasarim-kaliplari]] — Repository/UoW, CQRS, State, Domain Events + Outbox.
 - [[kararlar]] — Mimari karar kaydı (neden bu seçim, neyi reddettik).

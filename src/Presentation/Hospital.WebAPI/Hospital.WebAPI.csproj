@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- Composition root: tüm katmanları bağlayan tek proje. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\Hospital.Application\Hospital.Application.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Hospital.Infrastructure\Hospital.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Hospital.Persistence\Hospital.Persistence.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+    <PackageReference Include="Scalar.AspNetCore" />
+  </ItemGroup>
+
+</Project>

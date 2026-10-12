@@ -1,6 +1,6 @@
 # Hastane / Klinik Randevu Sistemi
 
-Çok şubeli (veya tek şubeli) hastane/klinik randevu yönetim sistemi. .NET 9, Clean Architecture + feature klasörleri, PostgreSQL.
+Çok şubeli (veya tek şubeli) hastane/klinik randevu yönetim sistemi. .NET 9, Onion Architecture + feature klasörleri, PostgreSQL.
 
 - Mimari ve kurallar: [plan.md](plan.md)
 - Faz planı: [Fazlar.md](Fazlar.md)
@@ -13,7 +13,7 @@
 ## Çalıştırma
 ```bash
 docker compose up -d
-dotnet run --project src/Hospital.Api
+dotnet run --project src/Presentation/Hospital.WebAPI
 ```
 - Sağlık ucu: http://localhost:5284/health
 - API dokümanı (Development): http://localhost:5284/scalar/v1
@@ -32,10 +32,14 @@ Entegrasyon testleri, `docker compose up -d` ile çalışan PostgreSQL üzerinde
 ## Çözüm yapısı
 ```
 src/
-  Hospital.Domain          # entity'ler, domain kuralları
-  Hospital.Application     # use-case'ler (Features/<Ad>/...), soyutlamalar
-  Hospital.Infrastructure  # EF Core, repository somutları, e-posta, kimlik servisleri
-  Hospital.Api             # Minimal API endpoint'leri, composition root
+  Core/
+    Hospital.Domain          # entity'ler (Entities/), domain kuralları
+    Hospital.Application     # use-case'ler (Features/<Ad>/...), arayüzler, Result
+  Infrastructure/
+    Hospital.Infrastructure  # dış servisler: parola özeti, e-posta
+    Hospital.Persistence     # EF Core, AppDbContext, migration'lar, repository somutları
+  Presentation/
+    Hospital.WebAPI          # Minimal API endpoint'leri, composition root
 tests/
   Hospital.UnitTests  Hospital.ArchitectureTests  Hospital.IntegrationTests
 ```

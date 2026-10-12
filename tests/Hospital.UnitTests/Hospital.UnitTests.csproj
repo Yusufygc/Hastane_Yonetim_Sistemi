@@ -9,8 +9,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Hospital.Domain\Hospital.Domain.csproj" />
-    <ProjectReference Include="..\..\src\Hospital.Application\Hospital.Application.csproj" />
+    <ProjectReference Include="..\..\src\Core\Hospital.Domain\Hospital.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Core\Hospital.Application\Hospital.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
