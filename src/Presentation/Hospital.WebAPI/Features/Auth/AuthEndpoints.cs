@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Hospital.WebAPI.Common;
+using Hospital.WebAPI.Extensions;
 using Hospital.Application.Interfaces;
 using Hospital.Application.Security;
 using Hospital.Application.Features.Auth.Commands.Login;
@@ -32,7 +33,7 @@ internal sealed class AuthEndpoints : IEndpoint
         group.MapGet("/csrf", (HttpContext context, IAntiforgery antiforgery) =>
             {
                 var tokens = antiforgery.GetAndStoreTokens(context);
-                return Results.Ok(new { headerName = AuthenticationExtensions.CsrfHeaderName, token = tokens.RequestToken });
+                return Results.Ok(new { headerName = AuthenticationExt.CsrfHeaderName, token = tokens.RequestToken });
             })
             .AllowAnonymous();
 
@@ -52,7 +53,7 @@ internal sealed class AuthEndpoints : IEndpoint
                 return result.Match(id => Results.Json(new { userId = id }, statusCode: StatusCodes.Status201Created));
             })
             .AllowAnonymous()
-            .RequireRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy);
+            .RequireRateLimiting(AuthenticationExt.AuthRateLimitPolicy);
 
         group.MapPost("/login", async (LoginRequest request, HttpContext context, ISender sender, CancellationToken ct) =>
             {
@@ -64,12 +65,12 @@ internal sealed class AuthEndpoints : IEndpoint
 
                 await context.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
-                    AuthenticationExtensions.CreatePrincipal(result.Value));
+                    AuthenticationExt.CreatePrincipal(result.Value));
 
                 return Results.Ok(new { result.Value.Id, result.Value.Email, result.Value.Role });
             })
             .AllowAnonymous()
-            .RequireRateLimiting(AuthenticationExtensions.AuthRateLimitPolicy);
+            .RequireRateLimiting(AuthenticationExt.AuthRateLimitPolicy);
 
         group.MapPost("/logout", async (HttpContext context) =>
             {

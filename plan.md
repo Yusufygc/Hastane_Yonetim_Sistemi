@@ -90,7 +90,7 @@ src/
       Security/                  # Policies (politika adları)
       Dto/                       # feature'lar arası paylaşılan DTO'lar
       Parameters/                # sayfalama/filtre gibi ortak istek parametreleri
-      ServiceRegistration.cs
+      Extensions/                # ApplicationExt (AddApplication), FeatureRegistrationExt
       Features/
         Auth/
           Commands/Login/              # LoginCommand, LoginHandler, LoginValidator
@@ -120,7 +120,7 @@ src/
       Features/                  # Veri tabanı dışı somutlar
         Auth/                    # IdentityPasswordHasher
         Notifications/           # EmailOutboxProcessor, MailKitEmailSender
-      ServiceRegistration.cs
+      Extensions/                # InfrastructureExt (AddInfrastructure)
     Hospital.Persistence/
       Context/                   # AppDbContext, AppDbContextFactory (design-time)
       Migrations/
@@ -129,11 +129,12 @@ src/
         Auth/                    # UserRepository, UserConfiguration, PatientConfiguration, AccountSessionReader
         Appointments/            # AppointmentRepository, AppointmentConfiguration (EF), exclusion constraint SQL
         Doctors/ ...
-      ServiceRegistration.cs
+      Extensions/                # PersistenceExt (AddPersistence)
 
   Presentation/
     Hospital.WebAPI/
-      Common/                    # IEndpoint taraması, CurrentUser, CSRF, hata işleyici, auth yapılandırması
+      Common/                    # IEndpoint, CurrentUser, CSRF middleware, hata işleyici, Result→HTTP eşleme
+      Extensions/                # WebApiExt (AddWebApi/UseWebApi), AuthenticationExt, EndpointExt, DatabaseMigrationExt
       Features/
         Auth/                    # AuthEndpoints.cs
         Appointments/            # AppointmentEndpoints.cs, request/response modelleri
@@ -146,7 +147,24 @@ Kurallar:
 - Bir feature'a ait her şey katman başına tek klasörde bulunur; yeni bir feature eklemek mevcut dosyaları neredeyse hiç değiştirmez.
 - Soyutlama (`IAppointmentRepository`) Application'ın feature klasöründe, somut sınıf (`AppointmentRepository`) Persistence'ın aynı adlı feature klasöründedir.
 - Bir feature başka bir feature'ın **handler'ına** doğrudan bağlanmaz. Gerekirse o feature'ın soyutlamasını (ör. `IDoctorAvailabilityReader`) kullanır.
-- Handler'lar Mediator source generator ile; endpoint'ler `IEndpoint` taramasıyla; EF konfigürasyonları `IEntityTypeConfiguration` taramasıyla; Persistence/Infrastructure somutları `Features/**` taranarak (uyguladıkları `Hospital.Application.*` arayüzleriyle) otomatik kaydedilir. Böylece `Program.cs`, `AppDbContext` ve `ServiceRegistration` dosyaları yeni feature için değişmez, ekip içi çakışma azalır.
+- Handler'lar Mediator source generator ile; endpoint'ler `IEndpoint` taramasıyla; EF konfigürasyonları `IEntityTypeConfiguration` taramasıyla; Persistence/Infrastructure somutları `Features/**` taranarak (uyguladıkları `Hospital.Application.*` arayüzleriyle) otomatik kaydedilir. Böylece `Program.cs`, `AppDbContext` ve `Extensions/*Ext` dosyaları yeni feature için değişmez, ekip içi çakışma azalır.
+
+### 3.2.1 Dependency Injection kuralı (zorunlu)
+
+Her katman kendi servislerini **kendi `Extensions/` klasöründe**, `IServiceCollection` genişletme metoduyla kaydeder; `Program.cs` yalnızca bu metotları çağırır:
+
+- Dosya/sınıf adı **`Ext`** ile biter: `ApplicationExt`, `InfrastructureExt`, `PersistenceExt`, `WebApiExt`.
+- Metot adı **`Add<Katman>`**: `AddApplication()`, `AddInfrastructure()`, `AddPersistence()`, `AddWebApi(configuration, environment)`; `IServiceCollection` döner.
+- WebAPI ayrıca istek hattını `UseWebApi()` ile kurar.
+
+```csharp
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure();
+builder.Services.AddPersistence();
+builder.Services.AddWebApi(builder.Configuration, builder.Environment);
+```
+
+Ayrıntılar ve katman→metot eşlemesi için wiki: `docs/wiki/di-kurallari.md`. Kural `DependencyInjectionConventionTests` ile otomatik doğrulanır.
 
 ### 3.3 Mimari testler (NetArchTest)
 
@@ -156,6 +174,7 @@ Otomatik doğrulanan kurallar:
 - `Infrastructure` → `Persistence`/`WebAPI`'ye, `Persistence` → `Infrastructure`/`WebAPI`'ye bağımlı değildir.
 - Feature'lar birbirinin handler/command tiplerine bağlanmaz.
 - Her Minimal API endpoint'i açık bir yetki politikası veya `AllowAnonymous` taşır (bkz. 9.4).
+- DI kuralı: `IServiceCollection` genişletmeleri `*.Extensions` namespace'inde, adı `Ext` ile biten statik sınıflarda; her katman kendi `Add...` metodunu sunar (bkz. 3.2.1).
 
 ### 3.4 Veri erişimi
 

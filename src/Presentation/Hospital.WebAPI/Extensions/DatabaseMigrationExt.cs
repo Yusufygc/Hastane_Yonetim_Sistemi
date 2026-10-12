@@ -1,9 +1,9 @@
 using Hospital.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 
-namespace Hospital.WebAPI.Common;
+namespace Hospital.WebAPI.Extensions;
 
-public static class DatabaseMigrationExtensions
+public static class DatabaseMigrationExt
 {
     /// <summary>`Database:MigrateOnStartup` açıksa bekleyen migration'ları uygular (geliştirme/test için).</summary>
     public static async Task MigrateDatabaseIfConfiguredAsync(this WebApplication app)
