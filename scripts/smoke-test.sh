@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# Çalışan API'yi uçtan uca dener: CSRF → kayıt → giriş → me → katalog → yetki denemeleri → yönetici girişi.
+#
+# Kullanım (API çalışırken; Git Bash / WSL / Linux):
+#   ./scripts/smoke-test.sh                          # https://localhost:7032 (geliştirme sertifikası için -k)
+#   BASE=http://localhost:5284 ./scripts/smoke-test.sh
+#
+# Her çalıştırma benzersiz e-posta ve geçerli bir T.C. kimlik numarası üretir (geliştirme veritabanına bir test hastası ekler).
+# Süper yönetici bilgileri geliştirme ayar dosyasından (Seed:SuperAdmin) okunur; değer verilmezse yönetici adımları atlanır.
+set -u
+
+BASE="${BASE:-https://localhost:7032}"
+SETTINGS="$(dirname "$0")/../src/Presentation/Hospital.WebAPI/appsettings.Development.json"
+JAR="$(mktemp)"
+trap 'rm -f "$JAR" "$JAR.admin"' EXIT
+
+PASS=0
+FAIL=0
+LAST_BODY=""
+LAST_STATUS=""
+
+check() { # check <açıklama> <beklenen_kod>
+  if [ "$LAST_STATUS" = "$2" ]; then
+    echo "  [OK]   $1 -> $LAST_STATUS"
+    PASS=$((PASS + 1))
+  else
+    echo "  [FAIL] $1 -> $LAST_STATUS (beklenen $2) :: $LAST_BODY"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+# call <jar> <METHOD> <yol> [json-gövde] [csrf=1|0]
+call() {
+  local jar="$1" method="$2" path="$3" body="${4:-}" csrf="${5:-0}"
+  local args=(-sk -m 20 -b "$jar" -c "$jar" -X "$method" -w $'\n%{http_code}')
+
+  if [ "$csrf" = "1" ]; then
+    # Kimlik değiştiğinde (giriş/çıkış) belirteç de değişir: her yazma isteğinden önce yenisini al.
+    local token
+    token="$(curl -sk -m 20 -b "$jar" -c "$jar" "$BASE/api/auth/csrf" | sed -E 's/.*"token":"([^"]+)".*/\1/')"
+    args+=(-H "X-XSRF-TOKEN: $token")
+  fi
+
+  local out
+  if [ -n "$body" ]; then
+    # Gövde komut satırı argümanı yerine stdin ile gönderilir: Windows'ta argümanlar ANSI kod sayfasına çevrilir
+    # ve Türkçe karakterler (ş, ı, ğ...) geçersiz UTF-8 olarak 400 döndürür. Pipe baytları olduğu gibi taşır.
+    out="$(printf '%s' "$body" | curl "${args[@]}" -H 'Content-Type: application/json' --data-binary @- "$BASE$path")"
+  else
+    out="$(curl "${args[@]}" "$BASE$path")"
+  fi
+  LAST_STATUS="${out##*$'\n'}"
+  LAST_BODY="${out%$'\n'*}"
+}
+
+# Geçerli (sağlama basamaklı) rastgele T.C. kimlik numarası üretir.
+new_identity_number() {
+  local n=$((100000000 + (RANDOM * RANDOM) % 800000000))
+  local d=() i
+  for ((i = 0; i < 9; i++)); do d+=("${n:i:1}"); done
+  local odd=$((d[0] + d[2] + d[4] + d[6] + d[8]))
+  local even=$((d[1] + d[3] + d[5] + d[7]))
+  local tenth=$(((((odd * 7 - even) % 10) + 10) % 10))
+  local sum=$((odd + even + tenth))
+  echo "${n}${tenth}$((sum % 10))"
+}
+
+json_value() { # json_value <anahtar> (LAST_BODY içinden ilk eşleşen metin/değer)
+  echo "$LAST_BODY" | sed -nE "s/.*\"$1\":\"?([^\",}]*)\"?.*/\1/p" | head -n1
+}
+
+EMAIL="smoke.$(date +%s)@example.test"
+PASSWORD="Smoke1234x"
+TC="$(new_identity_number)"
+
+echo "Hedef: $BASE"
+echo
+echo "1) Sağlık ve herkese açık katalog"
+call "$JAR" GET /health
+check "GET /health" 200
+call "$JAR" GET /api/catalog/hospitals
+check "GET /api/catalog/hospitals (anonim)" 200
+HOSPITAL_ID="$(echo "$LAST_BODY" | sed -nE 's/.*"id":"([^"]+)".*/\1/p' | head -n1)"
+[ -n "$HOSPITAL_ID" ] && {
+  call "$JAR" GET "/api/catalog/hospitals/$HOSPITAL_ID/services"
+  check "GET /api/catalog/hospitals/{id}/services (anonim)" 200
+}
+
+echo
+echo "2) CSRF koruması (belirteçsiz yazma isteği reddedilmeli)"
+call "$JAR" POST /api/auth/register '{"email":"x@example.test"}' 0
+check "POST /api/auth/register belirteçsiz" 400
+
+echo
+echo "3) Hasta kaydı ve giriş  ($EMAIL)"
+BODY=$(printf '{"email":"%s","password":"%s","firstName":"Ayşe","lastName":"Yılmaz","identityNumber":"%s","birthDate":"1990-05-17","phone":null}' "$EMAIL" "$PASSWORD" "$TC")
+call "$JAR" POST /api/auth/register "$BODY" 1
+check "POST /api/auth/register" 201
+call "$JAR" POST /api/auth/register "$BODY" 1
+check "Aynı e-posta ile ikinci kayıt" 409
+call "$JAR" POST /api/auth/login "{\"email\":\"$EMAIL\",\"password\":\"yanlis-Parola1\"}" 1
+check "Yanlış parola ile giriş" 401
+call "$JAR" POST /api/auth/login "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}" 1
+check "POST /api/auth/login" 200
+call "$JAR" GET /api/auth/me
+check "GET /api/auth/me (giriş yapmış hasta)" 200
+echo "         rol: $(json_value role)"
+
+echo
+echo "4) Yetki: hasta yönetim uçlarına giremez"
+call "$JAR" GET /api/hospitals
+check "Hasta -> GET /api/hospitals" 403
+call "$JAR" GET /api/organization
+check "Hasta -> GET /api/organization" 403
+call "$JAR" POST /api/auth/logout "" 1
+check "POST /api/auth/logout" 204
+call "$JAR" GET /api/auth/me
+check "Çıkıştan sonra GET /api/auth/me" 401
+
+echo
+echo "5) Yönetici (seed ile gelen süper yönetici)"
+ADMIN_EMAIL="${ADMIN_EMAIL:-$(sed -nE 's/.*"Email": *"([^"]+)".*/\1/p' "$SETTINGS" 2>/dev/null | head -n1)}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-$(sed -nE 's/.*"Password": *"([^"]+)".*/\1/p' "$SETTINGS" 2>/dev/null | head -n1)}"
+if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
+  call "$JAR.admin" POST /api/auth/login "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\"}" 1
+  check "Süper yönetici girişi" 200
+  echo "         rol: $(json_value role)"
+  call "$JAR.admin" GET /api/hospitals
+  check "GET /api/hospitals (yönetici)" 200
+  call "$JAR.admin" GET /api/organization
+  check "GET /api/organization (süper yönetici)" 200
+  call "$JAR.admin" GET "/api/services?hospitalId=$HOSPITAL_ID"
+  check "GET /api/services?hospitalId= (yönetici)" 200
+else
+  echo "  (atlandı: ADMIN_EMAIL/ADMIN_PASSWORD verilmedi ve ayar dosyasında Seed:SuperAdmin bulunamadı)"
+fi
+
+echo
+echo "Sonuç: $PASS başarılı, $FAIL başarısız"
+[ "$FAIL" -eq 0 ]

@@ -41,4 +41,6 @@ Kaynak: `plan.md` §10. Rol URL'de taşınmaz; kaynak odaklı rotalar + `me` kal
 
 Yanıt kodları (Faz 2): kapsam dışı şube/bölüm/hizmet → **404**; rol yetersiz → 403; aynı isim → 409; doğrulama (saat dilimi, süre, ücret, para birimi, çalışma saati) → 400 alan bazlı; aktif hizmeti olan bölümü pasifleştirme → 409. Oluşturma 201 `{ id }`, güncelleme/pasifleştirme 204. Çalışma saati: `Day` 0=Pazar…6=Cumartesi; `PUT working-hours` listeyle **eşitler** (listede olmayan gün kapanır; boş liste = hepsi kapalı); okumada Pazartesi başlı sıra.
 
+Çalıştırılabilir örnekler ve smoke test: [[api-ornekleri]].
+
 Endpoint'ler Minimal API; her feature'ın Api klasöründe `IEndpoint` uygulayan sınıflarda ([[mimari]]).

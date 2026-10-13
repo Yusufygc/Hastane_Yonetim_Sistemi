@@ -2,6 +2,7 @@
 
 Yeni kayıtlar en üste eklenir. Biçim: `## [YYYY-AA-GG] [İŞLEM_TİPİ] | Kısa Açıklama`. Harita: [[index]].
 
+## [2026-10-13] TEST | Çalışan API smoke testi: `scripts/smoke-test.sh` 17/17 başarılı (CSRF, kayıt, giriş, yetki, katalog, süper yönetici); Türkçe karakterli gövde Windows'ta argümanla 400 verir → stdin/dosya — [[api-ornekleri]]
 ## [2026-10-13] CODE | Faz 2 tamamlandı: Organization/HospitalBranch/WorkingHours/Department/Service/Admin, migration `FacilityAndAdmin`, seeder, 14 yeni endpoint + anonim katalog, kapsam (AdminScope); 81 birim + 9 mimari + 91 entegrasyon test yeşil — [[faz-plani]], [[kimlik-ve-yetki]], [[kararlar]] K-32…K-37
 ## [2026-10-13] CODE | Faz 1B tamamlandı: `Appointment` (spike), exclusion constraint'ler, `DataConflictException`→409, 20 paralel istek testi; 41 birim + 9 mimari + 41 entegrasyon test yeşil — [[faz-plani]], [[randevu-kurallari]], [[kararlar]] K-31
 ## [2026-10-12] DECISION | DI kuralı kaydedildi ve koda uygulandı: `Extensions/<Katman>Ext.cs` + `Add<Katman>`; Program.cs inceltildi; DI kural testleri eklendi — [[di-kurallari]], [[kararlar]] K-30

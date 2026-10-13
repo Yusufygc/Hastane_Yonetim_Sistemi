@@ -22,6 +22,7 @@ Hastane/Klinik Randevu Sistemi bilgi tabanı. Kurallar için kök dizindeki `CLA
 ## API ve Güvenlik
 - [[kimlik-ve-yetki]] — Cookie auth, CSRF/CORS, politikalar, kaynak sahipliği.
 - [[api-uc-noktalari]] — Endpoint listesi ve yetki politikaları.
+- [[api-ornekleri]] — curl ile kayıt/giriş akışı (CSRF adımı), tuzaklar ve `scripts/smoke-test.sh`.
 
 ## Kalite ve Ortam
 - [[test-stratejisi]] — Test katmanları ve zorunlu senaryolar.
