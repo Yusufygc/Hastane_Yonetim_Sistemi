@@ -66,8 +66,8 @@ public class AuthFlowTests(ApiFixture fixture) : IClassFixture<ApiFixture>
 
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var errors = body.RootElement.GetProperty("errors");
-        errors.TryGetProperty("Password", out _).Should().BeTrue();
-        errors.TryGetProperty("IdentityNumber", out _).Should().BeTrue();
+        errors.TryGetProperty("password", out _).Should().BeTrue();
+        errors.TryGetProperty("identityNumber", out _).Should().BeTrue();
     }
 
     [Fact]

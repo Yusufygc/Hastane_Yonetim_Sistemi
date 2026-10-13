@@ -34,6 +34,7 @@ Ayrıntılar wiki'de ([[mimari]], [[kimlik-ve-yetki]], [[test-stratejisi]]). Öz
 - Command/Query/Handler/Validator kendi feature klasöründe; handler'lar tek yerde toplanmaz.
 - Minimal API, Mediator (martinothamar), FluentValidation, EF Core 9 + Npgsql, PostgreSQL (Docker), Guid v7, `Result<T>`, **JWT Bearer** kimlik doğrulama (kısa ömürlü erişim token'ı + döndürülen refresh token; cookie/CSRF yok).
 - **DI kuralı:** her katman servislerini kendi `Extensions/` klasöründe `<Katman>Ext` sınıfında, `IServiceCollection` extension'ı `Add<Katman>` ile kaydeder (`AddApplication`, `AddInfrastructure`, `AddPersistence`, `AddWebApi`); `Program.cs` yalnızca bunları çağırır. Ayrıntı: [[di-kurallari]].
+- **Hata sözleşmesi:** tüm hatalar ProblemDetails (+ `code`, `traceId`, alan bazlı `errors`, Türkçe mesaj); beklenen hatalar `Result`/`Error` ile, doğrulama FluentValidation ile, istisnalar `GlobalExceptionHandler` ile yönetilir. Ayrıntı: [[hata-yonetimi]].
 - Her endpoint açık yetki politikası veya `AllowAnonymous` taşır; kaynak sahipliği handler'da kontrol edilir.
 - Çakışma kontrolü hem uygulamada hem veritabanında (exclusion constraint).
 - Commit: Conventional Commits, feature branch + PR. Kullanıcı istemedikçe commit/push yapma.

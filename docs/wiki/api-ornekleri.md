@@ -67,6 +67,15 @@ Herkese açık katalog giriş gerektirmez: `GET /api/catalog/hospitals`, `/hospi
 6. Her yetkili uçta açıklamada **Yetki: `<Politika>`** notu görünür; kilit simgesi/Authorize gereksinimi o ucun Bearer istediğini gösterir.
 7. Bakılacak yanıt kodları: `201` oluşturma · `204` güncelleme/pasifleştirme · `400` doğrulama (`errors`) · `401` token yok/süresi dolmuş · `403` rol yetersiz · `404` yok **veya kapsam dışı** · `409` çakışma/aynı isim · `429` hız sınırı.
 
+## Hata aldığımda nereye bakmalıyım?
+Her hata yanıtı JSON'dur ve nedenini söyler (ayrıntı: [[hata-yonetimi]]):
+- `code` → hatanın türü (`request.invalid_body`, `validation.failed`, `auth.unauthorized`, `*.name_taken` …).
+- `errors` → **hangi alanın** neden hatalı olduğu (alan adları JSON'daki gibi camelCase).
+- `detail` → okunabilir açıklama (ör. token süresi dolmuş → `/api/auth/refresh`).
+- `traceId` → 500 gibi sunucu hatalarında loglarla eşleştirmek için.
+
+Sık hatalar: `birthDate` **`yyyy-MM-dd`** olmalı (`1999-11-11`, `11.11.1999` değil) · `phone` **metin** olmalı (`"5444444444"`, tırnaklı) · `identityNumber` geçerli 11 haneli T.C. · parola ≥ 8 karakter, harf+rakam · `Content-Type: application/json`.
+
 ## Notlar / tuzaklar
 - **Türkçe karakter (ş, ı, ğ…) ve Windows:** `--data '{...}'` ile komut satırı argümanı olarak gönderilen gövde Windows'ta ANSI kod sayfasına çevrilir; sunucu geçersiz UTF-8'i `400 Geçersiz istek` ile reddeder. Çözüm: gövdeyi UTF-8 dosyadan (`--data @hasta.json`) veya stdin'den (`--data-binary @-`) gönderin, ya da Scalar UI kullanın.
 - **Hız sınırı:** `register`/`login`/`refresh` IP başına dakikada 10 istek; aşılırsa `429` gelir, bir dakika bekleyin.

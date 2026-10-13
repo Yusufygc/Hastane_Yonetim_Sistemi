@@ -38,8 +38,9 @@ public sealed class ValidationBehavior<TMessage, TResponse>(IEnumerable<IValidat
             return await next(message, cancellationToken);
         }
 
+        // Anahtarlar JSON'daki alan adlarıyla aynı (camelCase) döner: "BirthDate" → "birthDate", "Hours[0].CloseTime" → "hours[0].closeTime".
         var details = failures
-            .GroupBy(f => f.PropertyName)
+            .GroupBy(f => FieldNaming.ToCamelCasePath(f.PropertyName))
             .ToDictionary(g => g.Key, g => g.Select(f => f.ErrorMessage).Distinct().ToArray());
 
         return TResponse.Failure(Error.Validation("validation.failed", "Bir veya daha fazla alan geçersiz.", details));

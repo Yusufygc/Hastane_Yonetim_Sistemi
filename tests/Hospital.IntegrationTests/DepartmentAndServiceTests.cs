@@ -121,12 +121,12 @@ public class DepartmentAndServiceTests(ApiFixture fixture) : IClassFixture<ApiFi
     }
 
     [Theory]
-    [InlineData(0, 100, "TRY", "DurationMinutes")]      // süre sıfır
-    [InlineData(481, 100, "TRY", "DurationMinutes")]    // süre üst sınırın üstünde
-    [InlineData(20, -1, "TRY", "Price")]                // negatif ücret
-    [InlineData(20, 10.123, "TRY", "Price")]            // 2'den fazla ondalık
-    [InlineData(20, 100, "TR", "Currency")]             // para birimi 3 harf değil
-    [InlineData(20, 100, "T1Y", "Currency")]            // harf değil
+    [InlineData(0, 100, "TRY", "durationMinutes")]      // süre sıfır
+    [InlineData(481, 100, "TRY", "durationMinutes")]    // süre üst sınırın üstünde
+    [InlineData(20, -1, "TRY", "price")]                // negatif ücret
+    [InlineData(20, 10.123, "TRY", "price")]            // 2'den fazla ondalık
+    [InlineData(20, 100, "TR", "currency")]             // para birimi 3 harf değil
+    [InlineData(20, 100, "T1Y", "currency")]            // harf değil
     public async Task Gecersiz_hizmet_alan_bazli_400_doner(int duration, decimal price, string currency, string expectedField)
     {
         var superAdmin = await AdminSessions.SuperAdminAsync(fixture);

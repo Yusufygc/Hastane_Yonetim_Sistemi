@@ -657,6 +657,22 @@ Rol URL'de taşınmaz; kaynak odaklı rotalar ve `me` kalıbı kullanılır. Yet
 
 Tüm endpoint'ler Minimal API olarak her feature'ın Api klasöründe `IEndpoint` uygulayan sınıflarda tanımlanır ve taranarak kaydedilir.
 
+### 10.1 Hata yanıt sözleşmesi
+
+Tüm hata yanıtları **RFC 9457 ProblemDetails**: `title` (Türkçe), `status`, `code` (makine kodu), `traceId`, gerektiğinde `detail` ve alan bazlı `errors` (anahtarlar JSON'daki camelCase alan adları). Hata türleri:
+
+| HTTP | `code` örnekleri | Kaynak |
+|---|---|---|
+| 400 | `request.invalid_body`, `request.invalid_json`, `request.body_required`, `request.invalid_parameter` | Gövde/parametre okunamadı (alan bazlı Türkçe açıklama) |
+| 400 | `validation.failed` | FluentValidation; tüm alan hataları birlikte |
+| 401 / 403 | `auth.unauthorized`, `auth.invalid_credentials`, `auth.forbidden` | `detail` nedeni söyler (token yok/süresi dolmuş/imza geçersiz) |
+| 404 / 405 / 415 | `*.not_found`, `request.method_not_allowed`, `request.unsupported_media_type` | Yok/kapsam dışı, metot, içerik türü |
+| 409 / 422 | `*.name_taken`, `data.conflict`, `domain.rule_violation` | Çakışma, iş kuralı |
+| 429 | `rate_limit.exceeded` | `Retry-After` başlığı |
+| 500 | `server.error` | Genel mesaj + `traceId`; ayrıntı yalnız log'da (Development'ta ek alan) |
+
+Ayrıntı ve bileşenler: `docs/wiki/hata-yonetimi.md`.
+
 ## 11. Test Stratejisi
 
 | Katman | Araç | Kapsam |

@@ -49,6 +49,7 @@ public sealed class HospitalApiFactory(
             {
                 services.AddTransient<IEndpoint, RoleProbeEndpoints>();
                 services.AddTransient<IEndpoint, AppointmentProbeEndpoints>();
+                services.AddTransient<IEndpoint, ErrorProbeEndpoints>();
             });
         }
     }

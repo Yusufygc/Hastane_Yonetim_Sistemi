@@ -22,6 +22,7 @@ Hastane/Klinik Randevu Sistemi bilgi tabanı. Kurallar için kök dizindeki `CLA
 ## API ve Güvenlik
 - [[kimlik-ve-yetki]] — JWT Bearer + refresh token (rotation), CORS, politikalar, kaynak sahipliği, kapsam.
 - [[api-uc-noktalari]] — Endpoint listesi ve yetki politikaları.
+- [[hata-yonetimi]] — Hata yanıt biçimi (ProblemDetails + `code` + `errors`), hata kodları tablosu, doğrulama ve istisna bileşenleri.
 - [[api-ornekleri]] — curl ve Scalar ile kayıt/giriş/Bearer akışı, tuzaklar ve `scripts/smoke-test.sh`.
 
 ## Kalite ve Ortam

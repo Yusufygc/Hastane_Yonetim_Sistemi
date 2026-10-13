@@ -48,7 +48,13 @@ public static class WebApiExt
         services.AddFrontendCors(configuration);
         services.AddAuthRateLimiting(configuration);
 
-        services.AddProblemDetails();
+        // Gövde/parametre bağlama hatalarında (geçersiz JSON, hatalı tarih vb.) istisna fırlatılsın: varsayılan yalnızca
+        // Development'ta açıktır; üretimde kapalı olsaydı bu hatalar ayrıntısız, gövdesiz 400 olarak dönerdi.
+        // GlobalExceptionHandler bu istisnaları alan bazlı Türkçe hatalara çevirir.
+        services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = true);
+
+        // Tüm hata yanıtları (gövdesiz 401/403/404/429 dahil) tek biçimde: Türkçe başlık, code, traceId.
+        services.AddProblemDetails(options => options.CustomizeProblemDetails = ProblemDetailsCustomizer.Apply);
         services.AddExceptionHandler<GlobalExceptionHandler>();
 
         services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
@@ -61,7 +67,9 @@ public static class WebApiExt
     public static WebApplication UseWebApi(this WebApplication app)
     {
         app.UseExceptionHandler();
+        app.UseStatusCodePages(); // gövdesiz hata durumlarını ProblemDetails gövdesine çevirir
         app.UseCors(AuthenticationExt.CorsPolicyName);
+        app.UseMiddleware<JsonContentTypeMiddleware>(); // yanlış Content-Type → açık 415 (401'e dönüşmesin)
         app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();

@@ -66,7 +66,7 @@ public class HospitalManagementTests(ApiFixture fixture) : IClassFixture<ApiFixt
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await ApiClient.ReadJsonAsync(response);
-        body.GetProperty("errors").TryGetProperty("TimeZoneId", out _).Should().BeTrue();
+        body.GetProperty("errors").TryGetProperty("timeZoneId", out _).Should().BeTrue();
     }
 
     [Fact]

@@ -32,7 +32,7 @@ public class ValidationBehaviorTests
 
         handlerCalled.Should().BeFalse();
         result.Error!.Type.Should().Be(ErrorType.Validation);
-        result.Error.Details.Should().ContainKey(nameof(SampleCommand.Name));
+        result.Error.Details.Should().ContainKey("name");
     }
 
     [Fact]

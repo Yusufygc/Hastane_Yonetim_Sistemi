@@ -109,6 +109,29 @@ public static class AuthenticationExt
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+            // 429 yanıtı da ProblemDetails gövdesi + Retry-After başlığı taşır.
+            options.OnRejected = async (context, cancellationToken) =>
+            {
+                var response = context.HttpContext.Response;
+                response.StatusCode = StatusCodes.Status429TooManyRequests;
+
+                string? retryAfterText = null;
+                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                {
+                    response.Headers.RetryAfter = ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    retryAfterText = $" {Math.Ceiling(retryAfter.TotalSeconds)} saniye sonra tekrar deneyin.";
+                }
+
+                var problem = new Microsoft.AspNetCore.Mvc.ProblemDetails
+                {
+                    Status = StatusCodes.Status429TooManyRequests,
+                    Detail = $"Giriş/kayıt/yenileme uçlarına çok fazla istek gönderildi.{retryAfterText}",
+                };
+
+                await context.HttpContext.RequestServices.GetRequiredService<IProblemDetailsService>().WriteAsync(
+                    new ProblemDetailsContext { HttpContext = context.HttpContext, ProblemDetails = problem });
+            };
+
             // Yapılandırma istek anında okunur (testler değerleri geçersiz kılabilsin diye).
             options.AddPolicy(AuthRateLimitPolicy, httpContext =>
             {
