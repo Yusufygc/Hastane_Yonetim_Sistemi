@@ -20,6 +20,12 @@ public sealed class HospitalApiFactory(
             ["ConnectionStrings:Default"] = connectionString,
             ["Database:MigrateOnStartup"] = "true",
 
+            // Varsayılan kurum/şube + örnek bölüm/hizmet + ilk süper yönetici (yalnız test değerleri).
+            ["Database:SeedOnStartup"] = "true",
+            ["Seed:SampleData"] = "true",
+            ["Seed:SuperAdmin:Email"] = TestAdmin.Email,
+            ["Seed:SuperAdmin:Password"] = TestAdmin.Password,
+
             // Testler aynı IP'den çok sayıda kayıt/giriş yapar; hız sınırı ayrı bir testte denenir.
             ["RateLimiting:Auth:PermitLimit"] = "1000",
         };

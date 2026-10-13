@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Hospital.IntegrationTests.Infrastructure;
 
@@ -14,9 +15,15 @@ public sealed class ApiClient(HttpClient http)
 
     public Task<HttpResponseMessage> GetAsync(string url) => http.GetAsync(url);
 
-    public async Task<HttpResponseMessage> PostAsync(string url, object? body = null, bool withCsrf = true)
+    public Task<HttpResponseMessage> PostAsync(string url, object? body = null, bool withCsrf = true) =>
+        SendAsync(HttpMethod.Post, url, body, withCsrf);
+
+    public Task<HttpResponseMessage> PutAsync(string url, object? body = null) =>
+        SendAsync(HttpMethod.Put, url, body, withCsrf: true);
+
+    public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string url, object? body = null, bool withCsrf = true)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        using var request = new HttpRequestMessage(method, url);
 
         if (body is not null)
         {
@@ -32,6 +39,12 @@ public sealed class ApiClient(HttpClient http)
         return await http.SendAsync(request);
     }
 
+    public async Task LoginAsync(string email, string password)
+    {
+        var response = await PostAsync("/api/auth/login", new { Email = email, Password = password });
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task<TestAccount> RegisterAndLoginAsync()
     {
         var account = TestAccount.New();
@@ -39,9 +52,14 @@ public sealed class ApiClient(HttpClient http)
         var register = await PostAsync("/api/auth/register", account.RegistrationBody());
         register.EnsureSuccessStatusCode();
 
-        var login = await PostAsync("/api/auth/login", account.LoginBody());
-        login.EnsureSuccessStatusCode();
+        await LoginAsync(account.Email, account.Password);
 
         return account;
+    }
+
+    public static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response)
+    {
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.Clone();
     }
 }
