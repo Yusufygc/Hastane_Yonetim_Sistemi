@@ -73,6 +73,202 @@ namespace Hospital.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Hospital.Domain.Entities.Facility.Department", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("HospitalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("hospital_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_department");
+
+                    b.HasIndex("HospitalId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_department_hospital_id_name");
+
+                    b.ToTable("department", (string)null);
+                });
+
+            modelBuilder.Entity("Hospital.Domain.Entities.Facility.HospitalBranch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("address");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("time_zone");
+
+                    b.HasKey("Id")
+                        .HasName("pk_hospital");
+
+                    b.HasIndex("OrganizationId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_hospital_organization_id_name");
+
+                    b.ToTable("hospital", (string)null);
+                });
+
+            modelBuilder.Entity("Hospital.Domain.Entities.Facility.HospitalWorkingHours", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<TimeOnly>("CloseTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("close_time");
+
+                    b.Property<short>("Day")
+                        .HasColumnType("smallint")
+                        .HasColumnName("day_of_week");
+
+                    b.Property<Guid>("HospitalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("hospital_id");
+
+                    b.Property<TimeOnly>("OpenTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("open_time");
+
+                    b.HasKey("Id")
+                        .HasName("pk_hospital_working_hours");
+
+                    b.HasIndex("HospitalId", "Day")
+                        .IsUnique()
+                        .HasDatabaseName("ix_hospital_working_hours_hospital_id_day_of_week");
+
+                    b.ToTable("hospital_working_hours", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_hospital_working_hours_day", "day_of_week BETWEEN 0 AND 6");
+
+                            t.HasCheckConstraint("ck_hospital_working_hours_range", "close_time > open_time");
+                        });
+                });
+
+            modelBuilder.Entity("Hospital.Domain.Entities.Facility.Organization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_organization");
+
+                    b.ToTable("organization", (string)null);
+                });
+
+            modelBuilder.Entity("Hospital.Domain.Entities.Facility.Service", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency")
+                        .IsFixedLength();
+
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_minutes");
+
+                    b.Property<Guid>("HospitalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("hospital_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("price");
+
+                    b.HasKey("Id")
+                        .HasName("pk_service");
+
+                    b.HasIndex("DepartmentId")
+                        .HasDatabaseName("ix_service_department_id");
+
+                    b.HasIndex("HospitalId", "IsActive")
+                        .HasDatabaseName("ix_service_hospital_id_is_active");
+
+                    b.HasIndex("HospitalId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_service_hospital_id_name");
+
+                    b.ToTable("service", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_service_duration", "duration_minutes > 0 AND duration_minutes <= 480");
+
+                            t.HasCheckConstraint("ck_service_price", "price >= 0");
+                        });
+                });
+
             modelBuilder.Entity("Hospital.Domain.Entities.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -137,6 +333,52 @@ namespace Hospital.Persistence.Migrations
                     b.UseTptMappingStrategy();
                 });
 
+            modelBuilder.Entity("Hospital.Domain.Entities.Users.Admin", b =>
+                {
+                    b.HasBaseType("Hospital.Domain.Entities.Users.User");
+
+                    b.Property<string>("AccessLevel")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("access_level");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<Guid?>("HospitalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("hospital_id");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.HasIndex("HospitalId")
+                        .HasDatabaseName("ix_admin_hospital_id");
+
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("ix_admin_organization_id");
+
+                    b.ToTable("admin", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_user_account_role", "role IN ('ADMIN', 'DOCTOR', 'STAFF', 'PATIENT')");
+
+                            t.HasCheckConstraint("ck_admin_access_level", "access_level IN ('SUPER_ADMIN', 'BRANCH_MANAGER')");
+
+                            t.HasCheckConstraint("ck_admin_scope", "(access_level = 'SUPER_ADMIN') = (hospital_id IS NULL)");
+                        });
+                });
+
             modelBuilder.Entity("Hospital.Domain.Entities.Users.Patient", b =>
                 {
                     b.HasBaseType("Hospital.Domain.Entities.Users.User");
@@ -194,6 +436,75 @@ namespace Hospital.Persistence.Migrations
                         .HasConstraintName("fk_appointment_patients_patient_id");
                 });
 
+            modelBuilder.Entity("Hospital.Domain.Entities.Facility.Department", b =>
+                {
+                    b.HasOne("Hospital.Domain.Entities.Facility.HospitalBranch", null)
+                        .WithMany()
+                        .HasForeignKey("HospitalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_department_hospitals_hospital_id");
+                });
+
+            modelBuilder.Entity("Hospital.Domain.Entities.Facility.HospitalBranch", b =>
+                {
+                    b.HasOne("Hospital.Domain.Entities.Facility.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_hospital_organizations_organization_id");
+                });
+
+            modelBuilder.Entity("Hospital.Domain.Entities.Facility.HospitalWorkingHours", b =>
+                {
+                    b.HasOne("Hospital.Domain.Entities.Facility.HospitalBranch", null)
+                        .WithMany("WorkingHours")
+                        .HasForeignKey("HospitalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_hospital_working_hours_hospital_hospital_id");
+                });
+
+            modelBuilder.Entity("Hospital.Domain.Entities.Facility.Service", b =>
+                {
+                    b.HasOne("Hospital.Domain.Entities.Facility.Department", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_service_department_department_id");
+
+                    b.HasOne("Hospital.Domain.Entities.Facility.HospitalBranch", null)
+                        .WithMany()
+                        .HasForeignKey("HospitalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_service_hospital_hospital_id");
+                });
+
+            modelBuilder.Entity("Hospital.Domain.Entities.Users.Admin", b =>
+                {
+                    b.HasOne("Hospital.Domain.Entities.Facility.HospitalBranch", null)
+                        .WithMany()
+                        .HasForeignKey("HospitalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_admin_hospitals_hospital_id");
+
+                    b.HasOne("Hospital.Domain.Entities.Users.User", null)
+                        .WithOne()
+                        .HasForeignKey("Hospital.Domain.Entities.Users.Admin", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_user_account_id");
+
+                    b.HasOne("Hospital.Domain.Entities.Facility.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_organizations_organization_id");
+                });
+
             modelBuilder.Entity("Hospital.Domain.Entities.Users.Patient", b =>
                 {
                     b.HasOne("Hospital.Domain.Entities.Users.User", null)
@@ -202,6 +513,11 @@ namespace Hospital.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_patient_user_account_id");
+                });
+
+            modelBuilder.Entity("Hospital.Domain.Entities.Facility.HospitalBranch", b =>
+                {
+                    b.Navigation("WorkingHours");
                 });
 #pragma warning restore 612, 618
         }

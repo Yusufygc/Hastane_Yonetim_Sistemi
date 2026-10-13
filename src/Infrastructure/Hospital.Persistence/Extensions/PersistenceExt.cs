@@ -1,6 +1,7 @@
 using Hospital.Application.Extensions;
 using Hospital.Application.Interfaces;
 using Hospital.Persistence.Context;
+using Hospital.Persistence.Seeding;
 using Hospital.Persistence.UnitOfWorks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +26,7 @@ public static class PersistenceExt
         });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IDatabaseSeeder, DatabaseSeeder>();
 
         // Repository, EF konfigürasyonu ve okuma servisleri Features/** altından otomatik kaydedilir.
         return services.AddFeatureImplementations(AssemblyReference.Assembly, FeaturesNamespace);
