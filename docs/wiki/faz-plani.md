@@ -15,9 +15,9 @@ Durum işaretleri: `[ ]` başlamadı · `[~]` sürüyor · `[x]` tamam.
 ### [x] Faz 1B — Risk Spike'ı (2026-10-13 tamamlandı, varsayım doğrulandı)
 Çıplak `appointment` tablosu + `ex_doctor_no_overlap` / `ex_patient_no_overlap` exclusion constraint'leri (migration `AppointmentOverlapConstraints`) · EF'te `23P01` → `DataConflictException` → `409` · gerçek PostgreSQL'de 20 paralel istek → **tam 1 başarı, 19 çakışma**. 18 yeni entegrasyon + 4 birim test. Sonuç ve ayrıntı: [[randevu-kurallari]] ("Faz 1B bulguları"), [[kararlar]] K-31.
 
-## [ ] Faz 2 — Kurum ve Tesis
-`ORGANIZATION`, `HOSPITAL`, `HOSPITAL_WORKING_HOURS`, `DEPARTMENT`, `SERVICE` · seed (1 org + 1 hastane) · yönetici CRUD + kapsam kontrolü · pasifleştirme · anonim Catalog sorguları.
-**Çıkış:** Yönetici kurum/hizmet tanımlar; anonim kullanıcı kataloğu görür.
+## [x] Faz 2 — Kurum ve Tesis (2026-10-13 tamamlandı)
+`ORGANIZATION`, `HOSPITAL` (sınıf `HospitalBranch`), `HOSPITAL_WORKING_HOURS`, `DEPARTMENT`, `SERVICE`, **`ADMIN` türü** (süper/şube yöneticisi, kapsam claim'leri) · seed (1 org + 1 şube + örnek bölüm/hizmet + ilk süper yönetici, yapılandırmadan) · yönetici CRUD + kapsam kontrolü (kapsam dışı → 404) · pasifleştirme · anonim Catalog sorguları.
+**Çıkış (sağlandı):** Yönetici şube, çalışma saati, bölüm ve süre/ücretli hizmet tanımlar; şube yöneticisi başka şubeye dokunamaz; anonim kullanıcı aktif kataloğu görür. 81 birim + 9 mimari + 91 entegrasyon test yeşil. Ayrıntı: [[kimlik-ve-yetki]], [[domain-modeli]], [[api-uc-noktalari]], [[kararlar]] K-32…K-37.
 
 ## [ ] Faz 3 — Çalışan ve Profiller
 `PATIENT`, `DOCTOR`, `STAFF`, `ADMIN` · yönetici ile hesap oluşturma · **doktor-hizmet talep/onay akışı** · `DOCTOR_AVAILABILITY`, `DOCTOR_TIME_OFF` · hasta profili, TC maskeleme · katalog doktor listesi.

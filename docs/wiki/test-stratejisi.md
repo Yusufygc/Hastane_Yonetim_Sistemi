@@ -16,7 +16,8 @@ Birebir aynı aralık; kısmi kesişim (baş/son/içinde/kapsayan); bitişik ara
 ## Çalıştırma
 - Hızlı döngü: `dotnet test Hospital.sln` (Windows'ta Smart App Control kendi DLL'inizi bazen engeller — bkz. [[docker-ortam]]).
 - Güvenilir yol: `./scripts/test-docker.ps1` — derleme + testler Linux .NET 9 SDK container'ında; PostgreSQL için `host.docker.internal:5432`.
-- Faz 1B sonu: 41 birim, 9 mimari (DI kuralı dahil, [[di-kurallari]]), 41 entegrasyon testi (kayıt, giriş, kilitleme, CSRF, oturum iptali, rol 403, hız sınırı, TPT; çakışma kısıtları ve 20 paralel istek — [[randevu-kurallari]]).
+- Faz 2 sonu: 81 birim, 9 mimari (DI kuralı dahil, [[di-kurallari]]), 91 entegrasyon testi (kayıt, giriş, kilitleme, CSRF, oturum iptali, rol 403, hız sınırı, TPT; çakışma kısıtları ve 20 paralel istek — [[randevu-kurallari]]; şube/bölüm/hizmet CRUD, çalışma saati eşitleme, **şube yöneticisi kapsam ihlalleri → 404**, anonim katalog, organizasyon).
+- Test yardımcıları: `AdminSessions` (seed'li süper yönetici girişi, DB'ye şube yöneticisi yazma), `TestAdmin` (yalnız test değerleri), `ApiClient.PutAsync/SendAsync/LoginAsync`.
 
 Test-only uçlar: `HospitalApiFactory(includeProbeEndpoints: true)` ile `/api/test/*` uçları (rol politikaları, randevu kısıt ihlali → 409) kaydedilir; gerçek uygulamada bulunmaz, endpoint-yetki taramasına girmez.
 

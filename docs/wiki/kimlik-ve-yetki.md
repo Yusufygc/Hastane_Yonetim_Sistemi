@@ -16,6 +16,13 @@ Kaynak: `plan.md` §9. Endpoint'ler: [[api-uc-noktalari]]. Testler: [[test-strat
 - **CORS:** ayrı origin için `AllowCredentials` + açık origin listesi, joker yok. Üretimde tek origin (reverse proxy) önerilir.
 - Sırlar `user-secrets`/ortam değişkeni; Data Protection anahtarları çoklu örnekte paylaşılan depoda.
 
+## Yönetici kapsamı (Faz 2)
+- Cookie claim'leri: `organization_id`, `access_level` (`SUPER_ADMIN`/`BRANCH_MANAGER`), şube yöneticisinde `hospital_id`. `AdminScope.From(ICurrentUser)` bunlardan kapsamı üretir; yönetici değilse veya claim eksik/tutarsızsa `null` → handler `Forbidden` döner.
+- **Her handler kapsamı uygular** (`HospitalErrors.CheckAccess`): kapsam dışı şube, bölüm veya hizmet → **404** (varlığı sızdırılmaz). Okuma sorguları (`IHospitalReader`, `IServiceReader`) kapsam filtresini SQL'de uygular; kapsam dışı kayıt hiç yüklenmez.
+- Yeni şube eklemek ve `/api/organization` yalnız `SuperAdmin` politikası (`ADMIN` + `access_level=SUPER_ADMIN`); şube yöneticisi 403 alır.
+- İlk süper yönetici: `Database:SeedOnStartup` açıkken `DatabaseSeeder`, `Seed:SuperAdmin:Email/Password` yapılandırmasından oluşturur (hiç yönetici yoksa). Geliştirme değerleri `appsettings.Development.json`'da; **üretimde ortam değişkeni/user-secrets ile verilmeli** (`Seed__SuperAdmin__Email`, `Seed__SuperAdmin__Password`), yoksa süper yönetici oluşmaz ve uyarı loglanır.
+- Doctor/Staff/Admin oluşturma uçları (yönetici tarafından hesap açma) Faz 3'tedir.
+
 ## Uygulama notları (Faz 1)
 - Cookie adı `hospital.auth`, antiforgery cookie `hospital.csrf`, başlık `X-XSRF-TOKEN`. `GET /api/auth/csrf` belirteç verir; **kimlik değişince (giriş/çıkış) belirteç yeniden alınmalı** (belirteç kimliğe bağlı). `/api` altındaki POST/PUT/PATCH/DELETE hepsi (login/register dahil) belirteç ister; eksikse 400 `csrf.invalid`.
 - Giriş hataları tek tip: yanlış parola, bilinmeyen e-posta, pasif ve kilitli hesap aynı `401 auth.invalid_credentials` döner (hesap varlığı sızmaz). Bilinmeyen e-postada da parola özeti hesaplanır (zamanlama eşitleme).

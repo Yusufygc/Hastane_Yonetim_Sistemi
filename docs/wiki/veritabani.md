@@ -3,8 +3,8 @@
 Kaynak: `plan.md` §6 (tam Mermaid ER orada). PostgreSQL 16, tek `AppDbContext`, tüm ID'ler `uuid` (Guid v7). Ortam: [[docker-ortam]].
 
 ## Tablolar
-- **Kurum:** `ORGANIZATION` → `HOSPITAL` (`time_zone` IANA) → `HOSPITAL_WORKING_HOURS` (gün bazlı; kayıt yoksa kapalı), `DEPARTMENT`, `SERVICE` (`duration_minutes`, `price numeric(12,2)`, `currency`).
-- **Kullanıcı (TPT):** `USER_ACCOUNT` (email UK, password_hash, role, is_active, `security_stamp`, `failed_login_count`, `lockout_end`) + `PATIENT`, `DOCTOR`, `STAFF`, `ADMIN` (PK = `USER_ACCOUNT.id`). Bkz. [[domain-modeli]].
+- **Kurum (Faz 2'de eklendi):** `ORGANIZATION` → `HOSPITAL` (`time_zone` IANA; domain sınıfı `HospitalBranch`) → `HOSPITAL_WORKING_HOURS` (gün bazlı; kayıt yoksa kapalı; `(hospital_id, day_of_week)` benzersiz; `close_time > open_time`), `DEPARTMENT` (**`is_active` eklendi**, `(hospital_id, name)` benzersiz), `SERVICE` (`duration_minutes` 1–480, `price numeric(12,2) >= 0`, `currency char(3)`, bölüm opsiyonel, `(hospital_id, name)` benzersiz). İsim benzersizliği uygulamada büyük/küçük harf duyarsız denetlenir, DB'de ek olarak benzersiz indeks vardır. FK'ler `ON DELETE RESTRICT`; `hospital_working_hours` şubeyle birlikte silinir (cascade).
+- **Kullanıcı (TPT):** `USER_ACCOUNT` (email UK, password_hash, role, is_active, `security_stamp`, `failed_login_count`, `lockout_end`) + `PATIENT`, `ADMIN` (Faz 2: `organization_id` FK, `hospital_id` FK nullable, `access_level`, `ck_admin_scope`: süper yönetici ⇔ şube boş), ileride `DOCTOR`, `STAFF` (PK = `USER_ACCOUNT.id`). Bkz. [[domain-modeli]].
 - **Doktor:** `DOCTOR_SERVICE` (PK doctor+service, `status` PENDING/APPROVED/REJECTED, requested_by, decided_by), `DOCTOR_AVAILABILITY` (gün, saat aralığı, geçerlilik), `DOCTOR_TIME_OFF`.
 - **Randevu (Faz 1B'de yalnız çekirdek sütunlar mevcut, bkz. [[randevu-kurallari]]):** `APPOINTMENT` (patient, doctor, service, hospital, `start_at/end_at` UTC, `status`, snapshot alanları, `decision_reason`, `row_version`=xmin).
 - **Bildirim:** `EMAIL_OUTBOX` (dedup_key UK, status, attempt_count). Bkz. [[tasarim-kaliplari]].

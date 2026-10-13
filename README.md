@@ -18,6 +18,7 @@ dotnet run --project src/Presentation/Hospital.WebAPI
 - Sağlık ucu: http://localhost:5284/health
 - API dokümanı (Development): http://localhost:5284/scalar/v1
 - Mailpit arayüzü: http://localhost:8025
+- Geliştirmede ilk açılışta varsayılan kurum/şube, örnek bölüm-hizmetler ve ilk süper yönetici otomatik oluşur; giriş bilgileri `appsettings.Development.json` içindeki `Seed:SuperAdmin` bölümündedir (üretimde `Seed__SuperAdmin__Email/Password` ortam değişkenleriyle verilir).
 
 ## Test
 ```bash

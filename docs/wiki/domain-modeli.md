@@ -18,5 +18,12 @@ EF Core **gerçek Table Per Type (TPT)**: `USER_ACCOUNT` taban tablo; alt tipler
 - Kurallar domain'de korunur, Application yalnız orkestrasyon yapar ([[mimari]]).
 - `AggregateRoot` domain event listesi tutar; olaylar `SaveChanges` sırasında dağıtılır.
 
-## Aggregate'ler (planlanan)
-`User` (+alt tipler), `Organization`/`Hospital` (+çalışma saatleri, bölüm), `Service`, `Doctor` (+uygunluk, izin, hizmet), `Appointment` (+state). Kurallar: [[randevu-kurallari]].
+## Aggregate'ler
+Gerçekleşen: `User` → `Patient`, `Admin` · `Organization` · **`HospitalBranch`** (+`HospitalWorkingHours` çocuk varlıkları) · `Department` · `Service` · `Appointment` (Faz 1B çekirdeği). Planlanan: `Doctor`, `Staff` (+uygunluk, izin, hizmet), `Appointment` State Pattern. Kurallar: [[randevu-kurallari]].
+
+## Kurum varlıkları (Faz 2)
+- **`HospitalBranch`** = ER'deki HOSPITAL (tablo `hospital`, API `/hospitals`). Sınıf adı kök namespace `Hospital` ile çakıştığı için bu ad kullanıldı ([[kararlar]] K-32). `SetWorkingHours` listeyi **eşitler** (mevcut gün güncellenir, yeni gün eklenir, listede olmayan kaldırılır; önce doğrular, sonra uygular → atomik). `TimeZoneId` IANA kimliği olarak doğrulanır.
+- **`Service`**: sabit süre (1–480 dk), `numeric(12,2)` ücret (negatif olamaz), 3 harfli para birimi (büyük harfe çevrilir). Bölüm opsiyoneldir; verilirse aynı şubeye ait ve aktif olmalıdır (handler doğrular).
+- **`Department`/`Service`/`HospitalBranch`** silinmez, `Deactivate()` ile pasifleştirilir. Aktif hizmeti olan bölüm pasifleştirilemez.
+- **`Admin`**: `AdminAccessLevel` (`SuperAdmin` = organizasyon kapsamı, `HospitalId` boş; `BranchManager` = tek şube). `ScopeClaims` çok biçimli olarak `organization_id`, `access_level`, (`hospital_id`) üretir; cookie biletine yazılır ([[kimlik-ve-yetki]]).
+- Ortak doğrulama: `Domain/Common/Guard` (boş/uzunluk/Guid).
