@@ -14,6 +14,7 @@ builder.Services.AddWebApi(builder.Configuration, builder.Environment);
 var app = builder.Build();
 
 await app.MigrateDatabaseIfConfiguredAsync();
+await app.SeedDatabaseIfConfiguredAsync();
 
 app.UseWebApi();
 
