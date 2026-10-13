@@ -2,6 +2,7 @@
 
 Yeni kayıtlar en üste eklenir. Biçim: `## [YYYY-AA-GG] [İŞLEM_TİPİ] | Kısa Açıklama`. Harita: [[index]].
 
+## [2026-10-13] CODE | Faz 1B tamamlandı: `Appointment` (spike), exclusion constraint'ler, `DataConflictException`→409, 20 paralel istek testi; 41 birim + 9 mimari + 41 entegrasyon test yeşil — [[faz-plani]], [[randevu-kurallari]], [[kararlar]] K-31
 ## [2026-10-12] DECISION | DI kuralı kaydedildi ve koda uygulandı: `Extensions/<Katman>Ext.cs` + `Add<Katman>`; Program.cs inceltildi; DI kural testleri eklendi — [[di-kurallari]], [[kararlar]] K-30
 ## [2026-10-12] REFACTOR | Onion yapısına geçildi: `src/Core|Infrastructure|Presentation`, yeni `Hospital.Persistence` projesi, `Hospital.Api` → `Hospital.WebAPI`, Application iç klasörleri (Interfaces, Wrappers, Exceptions, Dto, Parameters), Domain `Entities/`; 7 mimari kural — [[mimari]], [[kararlar]] K-29
 ## [2026-10-12] CODE | Faz 1 tamamlandı: Entity/Result/pipeline, User+Patient TPT, ilk migration, cookie auth + CSRF + CORS + rate limit + kilitleme, politikalar; 64 test yeşil (container) — [[faz-plani]], [[kimlik-ve-yetki]]

@@ -6,7 +6,7 @@ Kaynak: `plan.md` §6 (tam Mermaid ER orada). PostgreSQL 16, tek `AppDbContext`,
 - **Kurum:** `ORGANIZATION` → `HOSPITAL` (`time_zone` IANA) → `HOSPITAL_WORKING_HOURS` (gün bazlı; kayıt yoksa kapalı), `DEPARTMENT`, `SERVICE` (`duration_minutes`, `price numeric(12,2)`, `currency`).
 - **Kullanıcı (TPT):** `USER_ACCOUNT` (email UK, password_hash, role, is_active, `security_stamp`, `failed_login_count`, `lockout_end`) + `PATIENT`, `DOCTOR`, `STAFF`, `ADMIN` (PK = `USER_ACCOUNT.id`). Bkz. [[domain-modeli]].
 - **Doktor:** `DOCTOR_SERVICE` (PK doctor+service, `status` PENDING/APPROVED/REJECTED, requested_by, decided_by), `DOCTOR_AVAILABILITY` (gün, saat aralığı, geçerlilik), `DOCTOR_TIME_OFF`.
-- **Randevu:** `APPOINTMENT` (patient, doctor, service, hospital, `start_at/end_at` UTC, `status`, snapshot alanları, `decision_reason`, `row_version`=xmin).
+- **Randevu (Faz 1B'de yalnız çekirdek sütunlar mevcut, bkz. [[randevu-kurallari]]):** `APPOINTMENT` (patient, doctor, service, hospital, `start_at/end_at` UTC, `status`, snapshot alanları, `decision_reason`, `row_version`=xmin).
 - **Bildirim:** `EMAIL_OUTBOX` (dedup_key UK, status, attempt_count). Bkz. [[tasarim-kaliplari]].
 
 ## Çok şubeli / tek şubeli

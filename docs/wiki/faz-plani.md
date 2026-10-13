@@ -12,8 +12,8 @@ Durum işaretleri: `[ ]` başlamadı · `[~]` sürüyor · `[x]` tamam.
 `Common` tipleri (`Entity`, `AggregateRoot`, `Result<T>`, `DomainException`), pipeline behavior'lar, `ProblemDetails` · `User` + TPT, `USER_ACCOUNT`, ilk migration (`btree_gist`) · cookie auth (kayıt/giriş/çıkış/me, stamp doğrulama) · CSRF, CORS, rate limiting, kilitleme · `ICurrentUser`, `Policies.*`, fallback policy.
 **Çıkış (sağlandı):** Hasta kayıt olup giriş yapar; hasta doktor/yönetici uçlarında 403 alır. 37 birim + 9 mimari + 23 entegrasyon testi yeşil (container'da, bkz. [[docker-ortam]]). Doctor/Staff/Admin türleri Faz 2-3'te (FK'leri Faz 2 tablolarına bağlı). Bkz. [[kimlik-ve-yetki]].
 
-### [ ] Faz 1B — Risk Spike'ı
-Çıplak `appointment` + exclusion constraint · EF'te `23P01` → `409` · gerçek PostgreSQL üzerinde N paralel istek → tam 1 başarı. Bkz. [[randevu-kurallari]].
+### [x] Faz 1B — Risk Spike'ı (2026-10-13 tamamlandı, varsayım doğrulandı)
+Çıplak `appointment` tablosu + `ex_doctor_no_overlap` / `ex_patient_no_overlap` exclusion constraint'leri (migration `AppointmentOverlapConstraints`) · EF'te `23P01` → `DataConflictException` → `409` · gerçek PostgreSQL'de 20 paralel istek → **tam 1 başarı, 19 çakışma**. 18 yeni entegrasyon + 4 birim test. Sonuç ve ayrıntı: [[randevu-kurallari]] ("Faz 1B bulguları"), [[kararlar]] K-31.
 
 ## [ ] Faz 2 — Kurum ve Tesis
 `ORGANIZATION`, `HOSPITAL`, `HOSPITAL_WORKING_HOURS`, `DEPARTMENT`, `SERVICE` · seed (1 org + 1 hastane) · yönetici CRUD + kapsam kontrolü · pasifleştirme · anonim Catalog sorguları.

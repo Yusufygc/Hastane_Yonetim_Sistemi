@@ -29,6 +29,15 @@ ALTER TABLE appointment ADD CONSTRAINT ex_patient_no_overlap
 ```
 İhlal `23P01` → `409 Conflict`. `[)` aralığı sayesinde bitişik randevular çakışmaz.
 
+## Faz 1B bulguları (spike doğrulandı)
+- İki kısıt da gerçek PostgreSQL 16'da çalışıyor: `ex_doctor_no_overlap` (doktor) ve `ex_patient_no_overlap` (hasta). Aynı hasta iki doktorda çakışan saatte randevu alamaz.
+- Kısıtlar EF ile ifade edilemez; **migration içinde ham SQL** (`migrationBuilder.Sql`) olarak tanımlı. `btree_gist` ilk migration'da açılır.
+- `AppDbContext.SaveChangesAsync`, `PostgresException` `23P01` (exclusion) ve `23505` (unique) hatalarını `DataConflictException(constraintName)` olarak fırlatır; `GlobalExceptionHandler` bunu **409 ProblemDetails**'e çevirir (HTTP seviyesinde test edildi).
+- Doğrulanan davranışlar: birebir aynı aralık, başı/sonu/içinde/kapsayan kesişim çakışır; bitişik aralıklar çakışmaz (`[)`); farklı doktor aynı saat çakışmaz; `CANCELLED`/`REJECTED`/`COMPLETED` slotu serbest bırakır; `PENDING`/`APPROVED` slotu tutar; iptal sonrası alınan slot yine korunur.
+- **20 paralel istek** aynı slota → tam 1 başarılı, 19 `DataConflictException(ex_doctor_no_overlap)`; tabloda 1 satır.
+- CHECK kısıtları: `ck_appointment_range` (`end_at > start_at`, ham SQL ile atlatma denemesi de reddedilir), `ck_appointment_status`.
+- Spike tablosu: `id, patient_id (FK patient), doctor_id (FK yok), start_at, end_at, status, created_at`. `service_id`, `hospital_id`, snapshot alanları, `decision_reason`, `row_version`, doktor/hizmet FK'leri Faz 3-4'te eklenir. Durum geçişleri (State Pattern) Faz 4; spike testlerinde durum doğrudan SQL ile değiştirilir.
+
 ## Durum makinesi
 - `Pending → Approved` (doktor), `Pending → Rejected` (doktor), `Pending → Cancelled` (hasta/yönetici).
 - `Approved → Cancelled` (hasta süre sınırı içinde / doktor / yönetici), `Approved → Completed` (doktor, randevu başladıktan sonra).
