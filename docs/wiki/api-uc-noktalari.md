@@ -6,8 +6,9 @@ Kaynak: `plan.md` §10. Rol URL'de taşınmaz; kaynak odaklı rotalar + `me` kal
 |---|---|---|
 | POST | `/api/auth/register` | anonim (yalnız hasta) |
 | POST | `/api/auth/login` | anonim |
-| POST | `/api/auth/logout` | giriş |
-| GET | `/api/auth/me`, `/api/auth/csrf` | giriş |
+| POST | `/api/auth/logout` (gövde: refreshToken) | giriş |
+| POST | `/api/auth/refresh` (gövde: refreshToken) | anonim (belirteçle) |
+| GET | `/api/auth/me` | giriş |
 | GET | `/api/catalog/hospitals`, `/hospitals/{id}/departments`, `/hospitals/{id}/services` | anonim |
 | GET | `/api/catalog/doctors?hospitalId=&serviceId=` | anonim |
 | GET | `/api/catalog/doctors/{id}/slots?serviceId=&date=` | anonim |
@@ -37,7 +38,7 @@ Kaynak: `plan.md` §10. Rol URL'de taşınmaz; kaynak odaklı rotalar + `me` kal
 | PUT | `/api/departments/{id}` (yeniden adlandır) · POST `/api/departments/{id}/deactivate` | Admin + kapsam |
 | GET/POST/PUT | `/api/services` (`?hospitalId=`), `/api/services/{id}`; POST `/{id}/deactivate` | Admin + kapsam |
 
-**Gerçekleşen:** Faz 1 — `GET /api/auth/csrf`, `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, `/health`. Faz 2 — `GET/PUT /api/organization`; `GET/POST /api/hospitals`, `GET/PUT /api/hospitals/{id}`, `PUT /{id}/working-hours`, `POST /{id}/deactivate`; `GET/POST /api/hospitals/{id}/departments`, `PUT /api/departments/{id}`, `POST /api/departments/{id}/deactivate`; `GET/POST /api/services`, `GET/PUT /api/services/{id}`, `POST /{id}/deactivate`; anonim `GET /api/catalog/hospitals`, `/hospitals/{id}/departments`, `/hospitals/{id}/services`. Diğerleri planlanmıştır.
+**Gerçekleşen:** Faz 1 — `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`, `GET /api/auth/me`, `/health` (CSRF ucu JWT'ye geçişle kaldırıldı). Faz 2 — `GET/PUT /api/organization`; `GET/POST /api/hospitals`, `GET/PUT /api/hospitals/{id}`, `PUT /{id}/working-hours`, `POST /{id}/deactivate`; `GET/POST /api/hospitals/{id}/departments`, `PUT /api/departments/{id}`, `POST /api/departments/{id}/deactivate`; `GET/POST /api/services`, `GET/PUT /api/services/{id}`, `POST /{id}/deactivate`; anonim `GET /api/catalog/hospitals`, `/hospitals/{id}/departments`, `/hospitals/{id}/services`. Diğerleri planlanmıştır.
 
 Yanıt kodları (Faz 2): kapsam dışı şube/bölüm/hizmet → **404**; rol yetersiz → 403; aynı isim → 409; doğrulama (saat dilimi, süre, ücret, para birimi, çalışma saati) → 400 alan bazlı; aktif hizmeti olan bölümü pasifleştirme → 409. Oluşturma 201 `{ id }`, güncelleme/pasifleştirme 204. Çalışma saati: `Day` 0=Pazar…6=Cumartesi; `PUT working-hours` listeyle **eşitler** (listede olmayan gün kapanır; boş liste = hepsi kapalı); okumada Pazartesi başlı sıra.
 

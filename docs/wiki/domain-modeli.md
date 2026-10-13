@@ -25,5 +25,5 @@ Gerçekleşen: `User` → `Patient`, `Admin` · `Organization` · **`HospitalBra
 - **`HospitalBranch`** = ER'deki HOSPITAL (tablo `hospital`, API `/hospitals`). Sınıf adı kök namespace `Hospital` ile çakıştığı için bu ad kullanıldı ([[kararlar]] K-32). `SetWorkingHours` listeyi **eşitler** (mevcut gün güncellenir, yeni gün eklenir, listede olmayan kaldırılır; önce doğrular, sonra uygular → atomik). `TimeZoneId` IANA kimliği olarak doğrulanır.
 - **`Service`**: sabit süre (1–480 dk), `numeric(12,2)` ücret (negatif olamaz), 3 harfli para birimi (büyük harfe çevrilir). Bölüm opsiyoneldir; verilirse aynı şubeye ait ve aktif olmalıdır (handler doğrular).
 - **`Department`/`Service`/`HospitalBranch`** silinmez, `Deactivate()` ile pasifleştirilir. Aktif hizmeti olan bölüm pasifleştirilemez.
-- **`Admin`**: `AdminAccessLevel` (`SuperAdmin` = organizasyon kapsamı, `HospitalId` boş; `BranchManager` = tek şube). `ScopeClaims` çok biçimli olarak `organization_id`, `access_level`, (`hospital_id`) üretir; cookie biletine yazılır ([[kimlik-ve-yetki]]).
+- **`Admin`**: `AdminAccessLevel` (`SuperAdmin` = organizasyon kapsamı, `HospitalId` boş; `BranchManager` = tek şube). `ScopeClaims` çok biçimli olarak `organization_id`, `access_level`, (`hospital_id`) üretir; JWT erişim belirtecine yazılır ([[kimlik-ve-yetki]]).
 - Ortak doğrulama: `Domain/Common/Guard` (boş/uzunluk/Guid).

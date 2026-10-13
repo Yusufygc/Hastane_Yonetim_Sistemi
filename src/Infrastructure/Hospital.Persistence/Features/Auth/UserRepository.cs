@@ -7,6 +7,9 @@ namespace Hospital.Persistence.Features.Auth;
 
 internal sealed class UserRepository(AppDbContext db) : IUserRepository
 {
+    public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
+        db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+
     public Task<User?> GetByEmailAsync(string normalizedEmail, CancellationToken cancellationToken) =>
         db.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
 

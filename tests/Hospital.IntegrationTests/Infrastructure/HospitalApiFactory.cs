@@ -20,6 +20,9 @@ public sealed class HospitalApiFactory(
             ["ConnectionStrings:Default"] = connectionString,
             ["Database:MigrateOnStartup"] = "true",
 
+            // JWT imzalama anahtarı (yalnız test değeri); Issuer/Audience appsettings.json varsayılanlarıdır.
+            ["Jwt:SigningKey"] = TestJwt.SigningKey,
+
             // Varsayılan kurum/şube + örnek bölüm/hizmet + ilk süper yönetici (yalnız test değerleri).
             ["Database:SeedOnStartup"] = "true",
             ["Seed:SampleData"] = "true",

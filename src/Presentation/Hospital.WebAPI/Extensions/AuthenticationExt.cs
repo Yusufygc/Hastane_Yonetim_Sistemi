@@ -1,68 +1,53 @@
-using System.Security.Claims;
+using System.Text;
 using System.Threading.RateLimiting;
-using Hospital.Application.Security;
 using Hospital.Application.Features.Auth;
+using Hospital.Application.Security;
 using Hospital.Domain.Entities.Users;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Hospital.WebAPI.Extensions;
 
 public static class AuthenticationExt
 {
-    public const string CookieName = "hospital.auth";
-    public const string CsrfCookieName = "hospital.csrf";
-    public const string CsrfHeaderName = "X-XSRF-TOKEN";
     public const string AuthRateLimitPolicy = "auth";
     public const string CorsPolicyName = "Frontend";
 
-    public static IServiceCollection AddCookieAuthentication(this IServiceCollection services, IWebHostEnvironment environment)
+    /// <summary>
+    /// JWT Bearer kimlik doğrulaması + rol politikaları. Belirteç doğrulama ayarları çalışma anında
+    /// <see cref="JwtSettings"/>'ten okunur (testler yapılandırmayı geçersiz kılabilsin diye).
+    /// </summary>
+    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services)
     {
         services
-            .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(options =>
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer();
+
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<JwtSettings>((options, jwt) =>
             {
-                options.Cookie.Name = CookieName;
-                options.Cookie.HttpOnly = true;
-                options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = environment.IsDevelopment()
-                    ? CookieSecurePolicy.SameAsRequest
-                    : CookieSecurePolicy.Always;
-                options.ExpireTimeSpan = TimeSpan.FromHours(8);
-                options.SlidingExpiration = true;
+                // Claim adları olduğu gibi kalır (sub, role, ...); eski WS-* eşlemesi kapalı.
+                options.MapInboundClaims = false;
 
-                // API yönlendirme yapmaz: kimlik yok → 401, rol yetersiz → 403.
-                options.Events.OnRedirectToLogin = context =>
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    return Task.CompletedTask;
-                };
-                options.Events.OnRedirectToAccessDenied = context =>
-                {
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    return Task.CompletedTask;
+                    ValidateIssuer = true,
+                    ValidIssuer = jwt.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwt.Audience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
+                    ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+                    ValidateLifetime = true,
+                    RequireExpirationTime = true,
+                    ClockSkew = TimeSpan.FromSeconds(30),
+                    NameClaimType = ClaimNames.Subject,
+                    RoleClaimType = ClaimNames.Role,
                 };
 
-                // Her istekte hesap aktif mi ve security stamp hâlâ aynı mı? (pasife alma / parola değişimi → oturum düşer)
-                options.Events.OnValidatePrincipal = async context =>
-                {
-                    var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
-                    var stamp = context.Principal?.FindFirstValue(SecurityStampClaim);
-
-                    var valid = Guid.TryParse(userId, out var id)
-                                && !string.IsNullOrEmpty(stamp)
-                                && await context.HttpContext.RequestServices
-                                    .GetRequiredService<IAccountSessionReader>()
-                                    .IsSessionValidAsync(id, stamp, context.HttpContext.RequestAborted);
-
-                    if (!valid)
-                    {
-                        context.RejectPrincipal();
-                        await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                    }
-                };
+                options.Events = new JwtBearerEvents { OnTokenValidated = ValidateSessionAsync };
             });
 
         services.AddAuthorizationBuilder()
@@ -74,53 +59,44 @@ public static class AuthenticationExt
             .AddPolicy(Policies.Admin, policy => policy.RequireRole(RoleNames.Admin))
             .AddPolicy(Policies.SuperAdmin, policy => policy
                 .RequireRole(RoleNames.Admin)
-                .RequireClaim(ScopeClaimTypes.AccessLevel, "SUPER_ADMIN"));
+                .RequireClaim(ScopeClaimTypes.AccessLevel, AdminAccessLevelNames.SuperAdmin));
 
         return services;
     }
 
-    public const string SecurityStampClaim = "security_stamp";
-
-    public static ClaimsPrincipal CreatePrincipal(AuthenticatedUser user)
+    /// <summary>
+    /// Her istekte hesap hâlâ aktif mi ve güvenlik damgası (security_stamp) aynı mı? Pasife alınan veya parolası
+    /// değişen kullanıcının henüz süresi dolmamış erişim belirteci de anında geçersiz olur (JWT'nin iptal edilememe sorununu kapatır).
+    /// </summary>
+    private static async Task ValidateSessionAsync(TokenValidatedContext context)
     {
-        var claims = new List<Claim>
+        var principal = context.Principal;
+        var userId = principal?.FindFirst(ClaimNames.Subject)?.Value;
+        var stamp = principal?.FindFirst(ClaimNames.SecurityStamp)?.Value;
+
+        var valid = Guid.TryParse(userId, out var id)
+                    && !string.IsNullOrEmpty(stamp)
+                    && await context.HttpContext.RequestServices
+                        .GetRequiredService<IAccountSessionReader>()
+                        .IsSessionValidAsync(id, stamp, context.HttpContext.RequestAborted);
+
+        if (!valid)
         {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, user.Role),
-            new(SecurityStampClaim, user.SecurityStamp),
-        };
-
-        claims.AddRange(user.ScopeClaims.Select(pair => new Claim(pair.Key, pair.Value)));
-
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        return new ClaimsPrincipal(identity);
-    }
-
-    public static IServiceCollection AddCsrfProtection(this IServiceCollection services)
-    {
-        services.AddAntiforgery(options =>
-        {
-            options.HeaderName = CsrfHeaderName;
-            options.Cookie.Name = CsrfCookieName;
-            options.Cookie.HttpOnly = true;
-            options.Cookie.SameSite = SameSiteMode.Strict;
-        });
-
-        return services;
+            context.Fail("Oturum geçersiz.");
+        }
     }
 
     public static IServiceCollection AddFrontendCors(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddCors(options => options.AddPolicy(CorsPolicyName, policy =>
         {
-            // Çerez gönderimi (AllowCredentials) için joker kaynak kullanılamaz; kaynaklar açıkça listelenir.
+            // Bearer belirteci Authorization başlığında taşınır; çerez olmadığı için AllowCredentials gerekmez.
+            // Yine de kaynaklar açıkça listelenir, joker kullanılmaz.
             var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 
             policy
                 .WithOrigins(origins)
-                .AllowCredentials()
-                .WithHeaders("Content-Type", CsrfHeaderName)
+                .WithHeaders("Content-Type", "Authorization")
                 .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE");
         }));
 

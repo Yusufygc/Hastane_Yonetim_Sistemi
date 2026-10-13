@@ -270,7 +270,7 @@ public class HospitalManagementTests(ApiFixture fixture) : IClassFixture<ApiFixt
     {
         var anonymous = fixture.CreateClient();
 
-        var response = await anonymous.SendAsync(new HttpMethod(method), url, withCsrf: false);
+        var response = await anonymous.SendAsync(new HttpMethod(method), url);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

@@ -8,29 +8,43 @@ namespace Hospital.WebAPI.Extensions;
 
 /// <summary>
 /// WebAPI (Presentation) katmanının DI kaydı ve istek hattı.
-/// Program.cs'te <c>builder.Services.AddWebApi(...)</c> ve <c>app.UseWebApi()</c> ile çağrılır.
+/// Program.cs'te <c>builder.Services.AddWebApi(builder.Configuration)</c> ve <c>app.UseWebApi()</c> ile çağrılır.
 /// </summary>
 public static class WebApiExt
 {
     public static IServiceCollection AddWebApi(
         this IServiceCollection services,
-        IConfiguration configuration,
-        IWebHostEnvironment environment)
+        IConfiguration configuration)
     {
         services.AddEndpoints(typeof(Program).Assembly);
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUser>();
+
+        // Ayarlar çalışma anında okunur (testler yapılandırmayı geçersiz kılabilsin diye).
         services.AddSingleton(serviceProvider =>
         {
-            var section = serviceProvider.GetRequiredService<IConfiguration>().GetSection("Auth");
+            var config = serviceProvider.GetRequiredService<IConfiguration>();
+            var auth = config.GetSection("Auth");
+            var jwt = config.GetSection("Jwt");
+            var defaults = AuthSettings.Default;
+
             return new AuthSettings(
-                section.GetValue("MaxFailedLoginAttempts", AuthSettings.Default.MaxFailedLoginAttempts),
-                TimeSpan.FromMinutes(section.GetValue("LockoutMinutes", AuthSettings.Default.LockoutDuration.TotalMinutes)));
+                auth.GetValue("MaxFailedLoginAttempts", defaults.MaxFailedLoginAttempts),
+                TimeSpan.FromMinutes(auth.GetValue("LockoutMinutes", defaults.LockoutDuration.TotalMinutes)),
+                TimeSpan.FromMinutes(jwt.GetValue("AccessTokenMinutes", defaults.AccessTokenLifetime.TotalMinutes)),
+                TimeSpan.FromDays(jwt.GetValue("RefreshTokenDays", defaults.RefreshTokenLifetime.TotalDays)));
         });
 
-        services.AddCookieAuthentication(environment);
-        services.AddCsrfProtection();
+        // İmzalama anahtarı eksik/kısa ise uygulama başlarken hata verir (güvensiz varsayılanla çalışmaz).
+        services.AddSingleton(serviceProvider =>
+        {
+            var jwt = serviceProvider.GetRequiredService<IConfiguration>().GetSection("Jwt");
+            return new JwtSettings(jwt["Issuer"] ?? string.Empty, jwt["Audience"] ?? string.Empty, jwt["SigningKey"] ?? string.Empty)
+                .Validated();
+        });
+
+        services.AddJwtAuthentication();
         services.AddFrontendCors(configuration);
         services.AddAuthRateLimiting(configuration);
 
@@ -38,7 +52,7 @@ public static class WebApiExt
         services.AddExceptionHandler<GlobalExceptionHandler>();
 
         services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database");
-        services.AddOpenApi();
+        services.AddOpenApiWithBearer();
 
         return services;
     }
@@ -50,7 +64,6 @@ public static class WebApiExt
         app.UseCors(AuthenticationExt.CorsPolicyName);
         app.UseRateLimiter();
         app.UseAuthentication();
-        app.UseMiddleware<CsrfProtectionMiddleware>();
         app.UseAuthorization();
 
         app.MapHealthChecks("/health").AllowAnonymous();

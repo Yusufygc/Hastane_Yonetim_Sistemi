@@ -18,6 +18,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<Admin> Admins => Set<Admin>();
 
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     public DbSet<Appointment> Appointments => Set<Appointment>();
 
     public DbSet<Organization> Organizations => Set<Organization>();

@@ -4,7 +4,7 @@
 
 ## 1. Proje Özeti
 
-Çok şubeli hastane/klinik yapılarını da, tek şubeli bir kurumu da destekleyen bir **Randevu Yönetim Sistemi**. Sistem; cookie tabanlı kimlik doğrulama, rol bazlı yetkilendirme, kurum/çalışan/hizmet yönetimi, doktor uygunluk takvimi, çakışma kontrollü randevu ve doktor onay mekanizması içerir. Randevu olaylarında hastaya (ve doktora) e-posta gönderilir.
+Çok şubeli hastane/klinik yapılarını da, tek şubeli bir kurumu da destekleyen bir **Randevu Yönetim Sistemi**. Sistem; JWT Bearer kimlik doğrulama (erişim + yenileme belirteci), rol bazlı yetkilendirme, kurum/çalışan/hizmet yönetimi, doktor uygunluk takvimi, çakışma kontrollü randevu ve doktor onay mekanizması içerir. Randevu olaylarında hastaya (ve doktora) e-posta gönderilir.
 
 - **Backend:** .NET 9, Onion (Clean) Architecture + feature klasörlü monolit, Minimal API
 - **Veritabanı:** PostgreSQL 16 (Docker)
@@ -133,7 +133,7 @@ src/
 
   Presentation/
     Hospital.WebAPI/
-      Common/                    # IEndpoint, CurrentUser, CSRF middleware, hata işleyici, Result→HTTP eşleme
+      Common/                    # IEndpoint, CurrentUser, hata işleyici, Result→HTTP eşleme
       Extensions/                # WebApiExt (AddWebApi/UseWebApi), AuthenticationExt, EndpointExt, DatabaseMigrationExt
       Features/
         Auth/                    # AuthEndpoints.cs
@@ -189,7 +189,7 @@ Tek PostgreSQL veritabanı, tek `AppDbContext` (`Hospital.Persistence/Context`).
 | Veritabanı | PostgreSQL 16 (Docker) | `btree_gist` eklentisi gerekir |
 | CQRS/Mediator | **`Mediator` (martinothamar, source generator, ücretsiz)** | MediatR v13+ ticari lisanslıdır; kullanılmayacak |
 | Doğrulama | FluentValidation | Mediator pipeline behavior olarak |
-| Kimlik doğrulama | **ASP.NET Core Cookie Authentication** | HttpOnly, Secure, SameSite; bkz. 9 |
+| Kimlik doğrulama | **JWT Bearer** (`Microsoft.AspNetCore.Authentication.JwtBearer`, `Microsoft.IdentityModel.JsonWebTokens`) | HS256, kısa ömürlü erişim token'ı + döndürülen refresh token; bkz. 9 |
 | Parola | `PasswordHasher<T>` (PBKDF2) veya Argon2 | |
 | Hata modeli | `Result<T>` (beklenen hatalar) + `DomainException` (invariant ihlali) | Tek middleware `ProblemDetails` üretir |
 | Kimlik tipi | **`Guid` v7** (`Guid.CreateVersion7()`) | Tahmin edilemez, zamana göre sıralı |
@@ -367,6 +367,16 @@ erDiagram
         uint row_version "xmin, iyimser eşzamanlılık"
     }
 
+    REFRESH_TOKEN {
+        uuid id PK
+        uuid user_account_id FK
+        string token_hash UK "SHA-256; düz değer saklanmaz"
+        timestamptz created_at
+        timestamptz expires_at
+        timestamptz revoked_at
+        uuid replaced_by_token_id "rotation"
+    }
+
     EMAIL_OUTBOX {
         uuid id PK
         string dedup_key UK "olay_id + alıcı; tekrar gönderimi önler"
@@ -395,6 +405,7 @@ erDiagram
     USER_ACCOUNT ||--o| DOCTOR : "IS-A"
     USER_ACCOUNT ||--o| STAFF : "IS-A"
     USER_ACCOUNT ||--o| ADMIN : "IS-A"
+    USER_ACCOUNT ||--o{ REFRESH_TOKEN : "oturumları"
 
     DOCTOR ||--o{ DOCTOR_SERVICE : "sunar"
     SERVICE ||--o{ DOCTOR_SERVICE : "sunulur"
@@ -550,25 +561,26 @@ Aynı olay için tek e-posta gönderilmesi `dedup_key` benzersizliğiyle garanti
 
 ## 9. Kimlik Doğrulama ve Yetkilendirme
 
-### 9.1 Cookie tabanlı kimlik doğrulama
+### 9.1 JWT Bearer kimlik doğrulama
 
-- ASP.NET Core Cookie Authentication. Bilet Data Protection ile şifrelenir; cookie `HttpOnly`, `Secure`, `SameSite=Lax` (veya `Strict`).
-- Bilet claim'leri: `sub` (kullanıcı id), `role`, `hospital_id`, `organization_id`, `access_level`. Rol **cookie içinden** gelir; URL'de rol öneki yoktur.
-- Kayan süre (sliding expiration); `POST /api/auth/logout` cookie'yi siler.
-- **Sunucu tarafı iptal:** `OnValidatePrincipal` her istekte hesabın aktifliğini ve `security_stamp` değerini doğrular. Pasife alınan veya rolü/parolası değişen kullanıcının oturumu anında düşer.
-- API yönlendirme yapmaz: `OnRedirectToLogin` → **401**, `OnRedirectToAccessDenied` → **403**.
+- **Erişim belirteci:** HS256 imzalı, kısa ömürlü (varsayılan 15 dk) JWT; istemci `Authorization: Bearer <token>` gönderir. Claim'ler: `sub`, `email`, `role`, `security_stamp`, `jti`; yöneticide `organization_id`, `access_level`, `hospital_id`. Rol **token içinden** gelir; URL'de rol öneki yoktur.
+- **Yenileme belirteci:** opak, rastgele 256 bit, varsayılan 7 gün. Veritabanında yalnız **SHA-256 özeti** (`REFRESH_TOKEN` tablosu). `POST /api/auth/refresh` belirteci **döndürür (rotation)**: eskisi iptal edilir, yenisi verilir. İptal edilmiş belirteç tekrar sunulursa çalınma şüphesiyle kullanıcının tüm etkin belirteçleri iptal edilir.
+- `POST /api/auth/logout` yenileme belirtecini iptal eder (idempotent; başkasının belirtecini iptal edemez).
+- **Anında iptal:** Doğrulama sırasında (`OnTokenValidated`) her istekte hesabın aktifliği ve `security_stamp` DB'den denetlenir; pasife alınan veya parolası değişen kullanıcının süresi dolmamış erişim belirteci de anında geçersiz olur.
+- İmza anahtarı (`Jwt:SigningKey`, ≥ 32 bayt) koda/depoya konmaz; üretimde ortam değişkeni/gizli depo. Eksik/kısa ise uygulama başlarken hata verir. Issuer/Audience doğrulanır, yalnız HS256 kabul edilir.
 - `POST /api/auth/register` yalnızca **hasta** kaydı açar. Doktor, personel ve yönetici hesapları yalnızca yönetici tarafından oluşturulur.
-- Giriş ucunda rate limiting ve ardışık başarısızlıkta geçici kilitleme (`failed_login_count`, `lockout_end`).
+- `register`/`login`/`refresh` uçlarında rate limiting; girişte ardışık başarısızlıkta geçici kilitleme (`failed_login_count`, `lockout_end`).
 
-### 9.2 Cookie'ye özgü güvenlik önlemleri
+### 9.2 Güvenlik notları
 
-- **CSRF:** Cookie tarayıcı tarafından otomatik gönderildiği için POST/PUT/DELETE uçları korunur: `SameSite` + antiforgery token (`X-XSRF-TOKEN` başlığı). Token `GET /api/auth/csrf` ile alınır.
-- **CORS:** Arayüz ayrı origin'de çalışırsa `AllowCredentials` + açık origin listesi kullanılır; joker (`*`) kullanılmaz. Üretimde arayüz ve API'nin tek origin altında (reverse proxy) sunulması önerilir.
-- Gizli bilgiler (SMTP parolası, Data Protection anahtarları) koda değil ortam değişkeni/`user-secrets`'a konur. Birden fazla örnek çalışacaksa Data Protection anahtarları paylaşılan depoda tutulur.
+- **CSRF gerekmez:** Token cookie ile değil `Authorization` başlığıyla taşındığı için tarayıcı onu kendiliğinden göndermez; CSRF katmanı yoktur.
+- **CORS:** Yalnız bilinen origin'ler (`Authorization` ve `Content-Type` başlıklarına izin); joker kullanılmaz; `AllowCredentials` gerekmez.
+- **İstemci tarafı:** Token'ı istemci saklar (XSS'e karşı içerik kaçışlama; token'ı kalıcı depoda değil bellekte tutmak tercih edilir).
+- Gizli bilgiler (JWT anahtarı, SMTP parolası) koda değil ortam değişkeni/`user-secrets`'a konur.
 
 ### 9.3 Rol ve kaynak bazlı yetkilendirme
 
-Rol URL'de değil cookie'dedir; bu yüzden yetki her uçta **açık politika** ile verilir:
+Rol URL'de değil token'dadır; bu yüzden yetki her uçta **açık politika** ile verilir:
 
 ```csharp
 Policies.Patient, Policies.Doctor, Policies.Admin, Policies.SuperAdmin, Policies.Authenticated
@@ -578,11 +590,11 @@ Dört savunma katmanı:
 1. **Fallback policy = giriş zorunlu.** Politikası unutulan uç anonim kalmaz. Anonim uçlar (`login`, `register`, `catalog/*`) açıkça `AllowAnonymous` taşır.
 2. **Uca özel rol politikası.** Örnek: `/api/doctors/me/**` uçları `Policies.Doctor` taşır; giriş yapmış bir hasta bu uçlara **403** alır.
 3. **Kaynak sahipliği (handler içinde, `ICurrentUser` ile):** Doktor yalnız kendi randevusunu onaylar; hasta yalnız kendi randevusunu görür; şube yöneticisi yalnız kendi şubesini yönetir. Başkasına ait kaynak → **404** (varlığı sızdırmama).
-4. **Kapsam (tenant) filtreleme:** `hospital_id` / `organization_id` kapsamı cookie claim'lerinden okunur ve ilgili sorgulara zorunlu uygulanır.
+4. **Kapsam (tenant) filtreleme:** `hospital_id` / `organization_id` kapsamı token claim'lerinden okunur ve ilgili sorgulara zorunlu uygulanır.
 
 | Durum | Yanıt |
 |---|---|
-| Cookie yok / süresi dolmuş | 401 |
+| Token yok / bozuk / süresi dolmuş / güvenlik damgası uyuşmuyor | 401 |
 | Rol yetersiz (hasta → doktor ucu) | 403 |
 | Rol uygun ama kaynak başkasının | 404 |
 | Kapsam dışı şube | 404 |
@@ -606,7 +618,7 @@ Rol URL'de taşınmaz; kaynak odaklı rotalar ve `me` kalıbı kullanılır. Yet
 | POST | `/api/auth/login` | anonim |
 | POST | `/api/auth/logout` | giriş |
 | GET | `/api/auth/me` | giriş |
-| GET | `/api/auth/csrf` | giriş / anonim |
+| POST | `/api/auth/refresh` | anonim (yenileme belirteciyle) |
 | GET | `/api/catalog/hospitals` | **anonim** |
 | GET | `/api/catalog/hospitals/{id}/departments`, `/hospitals/{id}/services` | **anonim** |
 | GET | `/api/catalog/doctors?hospitalId=&serviceId=` | **anonim** (ad, uzmanlık; kişisel veri yok) |
@@ -653,7 +665,7 @@ Tüm endpoint'ler Minimal API olarak her feature'ın Api klasöründe `IEndpoint
 | Entegrasyon | **Gerçek PostgreSQL** (docker compose / CI service container; her test sınıfı için geçici veritabanı) | Exclusion constraint'in gerçekten çalıştığı doğrulanır; EF eşlemeleri; outbox |
 | Eşzamanlılık | Gerçek PostgreSQL | N paralel istek aynı slota → **tam 1 başarılı, N-1 `409`** |
 | Mimari | NetArchTest | Katman ve feature bağımlılık kuralları (bkz. 3.3) |
-| API / Yetki | `WebApplicationFactory` | Endpoint tarama testi, yetki matrisi, IDOR, cookie/CSRF davranışı |
+| API / Yetki | `WebApplicationFactory` | Endpoint tarama testi, yetki matrisi, IDOR, JWT doğrulama (bozuk/sahte/süresi dolmuş token, refresh rotation) |
 
 Zorunlu çakışma senaryoları: birebir aynı aralık; kısmi kesişim (başı/sonu/içinde/kapsayan); bitişik aralıklar (çakışmaz); farklı doktor aynı saat (çakışmaz); iptal/red sonrası slotun yeniden alınabilmesi; aynı hastanın iki doktorda aynı saat; DST geçiş günü; gün sonu (23:xx) sınır durumları; uygunluk dışı / izin günü / hastane kapalı saatinde talep; `PENDING` durumdaki doktor-hizmetiyle randevu talebi (reddedilmeli).
 

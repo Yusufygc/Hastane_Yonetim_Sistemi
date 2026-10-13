@@ -9,7 +9,7 @@ Durum işaretleri: `[ ]` başlamadı · `[~]` sürüyor · `[x]` tamam.
 **Çıkış (sağlandı):** `docker compose up -d` + `dotnet run` ile `/health` → `Healthy`; 4 mimari test + endpoint-yetki testi + health entegrasyon testi yeşil. Ortam notları: [[docker-ortam]], [[kararlar]] (K-18, K-20).
 
 ## [x] Faz 1 — Çekirdek ve Kimlik (Auth) (2026-10-12 tamamlandı; yalnız Patient türü)
-`Common` tipleri (`Entity`, `AggregateRoot`, `Result<T>`, `DomainException`), pipeline behavior'lar, `ProblemDetails` · `User` + TPT, `USER_ACCOUNT`, ilk migration (`btree_gist`) · cookie auth (kayıt/giriş/çıkış/me, stamp doğrulama) · CSRF, CORS, rate limiting, kilitleme · `ICurrentUser`, `Policies.*`, fallback policy.
+`Common` tipleri (`Entity`, `AggregateRoot`, `Result<T>`, `DomainException`), pipeline behavior'lar, `ProblemDetails` · `User` + TPT, `USER_ACCOUNT`, ilk migration (`btree_gist`) · kimlik doğrulama (kayıt/giriş/çıkış/me; **2026-10-13'te cookie'den JWT'ye geçildi**: erişim + refresh token, rotation, stamp doğrulama) · CORS, rate limiting, kilitleme · `ICurrentUser`, `Policies.*`, fallback policy.
 **Çıkış (sağlandı):** Hasta kayıt olup giriş yapar; hasta doktor/yönetici uçlarında 403 alır. 37 birim + 9 mimari + 23 entegrasyon testi yeşil (container'da, bkz. [[docker-ortam]]). Doctor/Staff/Admin türleri Faz 2-3'te (FK'leri Faz 2 tablolarına bağlı). Bkz. [[kimlik-ve-yetki]].
 
 ### [x] Faz 1B — Risk Spike'ı (2026-10-13 tamamlandı, varsayım doğrulandı)
@@ -35,4 +35,4 @@ Durum işaretleri: `[ ]` başlamadı · `[~]` sürüyor · `[x]` tamam.
 Yetki matrisi + IDOR tam kapsam · OpenAPI/Scalar · opsiyonel `Pending` zaman aşımı · performans/indeks · API Dockerfile · README/sunum özeti. **API sözleşmesi dondurulur.**
 
 ## [ ] Faz 7 — Arayüz (Three.js, scroll tabanlı)
-Backend sonrası ayrıca planlanacak: animasyonlu scroll akışı, işlevsel ekranlar, cookie auth için aynı-origin/CORS+CSRF akışı, performans/erişilebilirlik dengesi.
+Backend sonrası ayrıca planlanacak: animasyonlu scroll akışı, işlevsel ekranlar, JWT için token saklama/yenileme akışı ve CORS, performans/erişilebilirlik dengesi.

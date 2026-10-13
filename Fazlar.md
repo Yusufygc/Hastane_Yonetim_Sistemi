@@ -30,12 +30,12 @@ Her faz sonunda: derlenen kod, geçen testler, `main` üzerinde çalışan uygul
 - `Domain/Common`: `Entity`, `AggregateRoot`, `DomainEvent`, `DomainException`. `Application/Common`: `Result<T>`, Mediator pipeline behavior'ları (loglama, doğrulama; transaction behavior yok — handler tek SaveChanges ile atomik yazar).
 - Global exception handling (`ProblemDetails`).
 - `User` soyut sınıfı + EF **TPT** (paylaşılan PK) eşlemesi; `USER_ACCOUNT` ve ilk migration (`btree_gist` dahil). Guid v7 kimlikler.
-- **Cookie kimlik doğrulama:** kayıt (yalnız hasta), giriş, çıkış, `me`, `OnValidatePrincipal` ile `security_stamp` doğrulaması, 401/403 davranışı.
-- CSRF (antiforgery) ve CORS (credentials) yapılandırması, giriş rate limiting + kilitleme.
+- **JWT kimlik doğrulama (cookie'den geçildi):** kayıt (yalnız hasta), giriş (erişim + yenileme belirteci), `refresh` (rotation + yeniden kullanım tespiti), çıkış, `me`, her istekte `security_stamp` doğrulaması, 401/403 davranışı.
+- CORS yapılandırması (CSRF gerekmez), giriş/refresh rate limiting + kilitleme.
 - `ICurrentUser`, politikalar (`Policies.*`), fallback policy.
-- Testler: kayıt-giriş akışı, yetkisiz erişim, kilitleme, CSRF reddi, pasif kullanıcının oturumunun düşmesi.
+- Testler: kayıt-giriş akışı, yetkisiz erişim, kilitleme, bozuk/sahte/süresi dolmuş token reddi, refresh rotation, pasif kullanıcının token'ının anında düşmesi.
 
-**Çıkış kriteri:** Hasta kayıt olup giriş yapar; cookie ile korumalı uca erişir; rolü olmayan uç 403 döner.
+**Çıkış kriteri:** Hasta kayıt olup giriş yapar; Bearer token ile korumalı uca erişir; rolü olmayan uç 403 döner.
 
 ### FAZ 1B — Risk Spike'ı (erken doğrulama)
 
@@ -105,7 +105,7 @@ Sıralı alt adımlar (her biri ayrı PR):
 
 *Backend bittikten sonra ayrıca planlanacak.* Ön notlar:
 - Kaydırdıkça içeriğin değiştiği animasyonlu giriş/tanıtım akışı (Three.js; React Three Fiber + scroll kontrolü veya GSAP ScrollTrigger değerlendirilecek).
-- Cookie auth nedeniyle arayüz ve API'nin aynı site/origin altında çalışması (veya doğru CORS + credentials + CSRF token akışı) baştan planlanır.
+- JWT: access token bellekte, refresh akışı (süre dolunca `POST /api/auth/refresh`) arayüzde ele alınır; CORS'ta arayüz origin'i listelenir.
 - Işlevsel ekranlar: klinik/hizmet seçimi, doktor ve slot listesi, randevu talebi, hasta geçmişi, doktor onay paneli ve hizmet talepleri, yönetici paneli.
 - 3B animasyon ile erişilebilirlik/performans dengesi (düşük cihazlar için sadeleştirilmiş mod).
 

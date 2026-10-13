@@ -16,10 +16,10 @@ Kullanıcı kararı: her katman kendi servislerini **kendi `Extensions/` klasör
 | Application | `.../Extensions/FeatureRegistrationExt.cs` | `AddFeatureImplementations(assembly, ns)` | Yardımcı: `Features/**` somutlarını `Hospital.Application.*` arayüzleriyle tarayıp kaydeder |
 | Infrastructure | `Hospital.Infrastructure/Extensions/InfrastructureExt.cs` | `AddInfrastructure()` | Dış servisler (`Features/**` taranır: parola özeti, e-posta…) |
 | Persistence | `Hospital.Persistence/Extensions/PersistenceExt.cs` | `AddPersistence()` | `AppDbContext` (Npgsql, snake_case), `IUnitOfWork`, `Features/**` taraması (repository, okuma servisleri) |
-| WebAPI | `Hospital.WebAPI/Extensions/WebApiExt.cs` | `AddWebApi(configuration, environment)` | Endpoint taraması, `ICurrentUser`, `AuthSettings`, cookie auth + politikalar, CSRF, CORS, rate limit, ProblemDetails/hata işleyici, health check, OpenAPI |
+| WebAPI | `Hospital.WebAPI/Extensions/WebApiExt.cs` | `AddWebApi(configuration)` | Endpoint taraması, `ICurrentUser`, `AuthSettings`/`JwtSettings`, JWT Bearer + politikalar, CORS, rate limit, ProblemDetails/hata işleyici, health check, OpenAPI (Bearer şemalı) |
 | WebAPI | `.../Extensions/WebApiExt.cs` | `UseWebApi()` | İstek hattı (middleware) sırası ve endpoint eşlemeleri |
 
-WebAPI içindeki alt kayıt yardımcıları da aynı kuralla `Extensions/` altında durur: `AuthenticationExt` (cookie auth, CSRF, CORS, rate limit), `EndpointExt` (`IEndpoint` taraması), `DatabaseMigrationExt`.
+WebAPI içindeki alt kayıt yardımcıları da aynı kuralla `Extensions/` altında durur: `AuthenticationExt` (JWT Bearer, politikalar, CORS, rate limit), `OpenApiExt` (Bearer şeması), `EndpointExt` (`IEndpoint` taraması), `DatabaseMigrationExt`.
 
 ## Program.cs şablonu
 ```csharp

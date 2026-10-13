@@ -1,5 +1,5 @@
-using Hospital.Application.Wrappers;
 using Hospital.Application.Interfaces;
+using Hospital.Application.Wrappers;
 using Hospital.Domain.Entities.Users;
 using Mediator;
 
@@ -12,11 +12,12 @@ namespace Hospital.Application.Features.Auth.Commands.Login;
 public sealed class LoginHandler(
     IUserRepository users,
     IPasswordHasher passwordHasher,
+    AuthTokenIssuer tokenIssuer,
     IUnitOfWork unitOfWork,
     AuthSettings settings,
-    TimeProvider clock) : ICommandHandler<LoginCommand, Result<AuthenticatedUser>>
+    TimeProvider clock) : ICommandHandler<LoginCommand, Result<AuthTokens>>
 {
-    public async ValueTask<Result<AuthenticatedUser>> Handle(LoginCommand command, CancellationToken cancellationToken)
+    public async ValueTask<Result<AuthTokens>> Handle(LoginCommand command, CancellationToken cancellationToken)
     {
         var now = clock.GetUtcNow();
         var user = await users.GetByEmailAsync(User.NormalizeEmail(command.Email), cancellationToken);
@@ -41,13 +42,9 @@ public sealed class LoginHandler(
         }
 
         user.RecordSuccessfulLogin(now);
+        var issued = tokenIssuer.Issue(user, now);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new AuthenticatedUser(
-            user.Id,
-            user.Email,
-            RoleNames.From(user.Role),
-            user.SecurityStamp,
-            user.ScopeClaims);
+        return issued.Tokens;
     }
 }

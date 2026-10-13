@@ -1,10 +1,9 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json;
 using AwesomeAssertions;
 using Hospital.Domain.Entities.Users;
-using Hospital.Persistence.Context;
 using Hospital.IntegrationTests.Infrastructure;
+using Hospital.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,24 +12,18 @@ namespace Hospital.IntegrationTests;
 public class AuthFlowTests(ApiFixture fixture) : IClassFixture<ApiFixture>
 {
     [Fact]
-    public async Task Kayit_basarili_olursa_201_doner()
+    public async Task Kayit_basarili_olursa_201_doner_ve_CSRF_belirteci_istemez()
     {
         var client = fixture.CreateClient();
 
+        // Bearer (JWT) kullanıldığı için çerez/CSRF yoktur: yazma isteği başlıksız çalışır.
         var response = await client.PostAsync("/api/auth/register", TestAccount.New().RegistrationBody());
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-    }
 
-    [Fact]
-    public async Task Kayit_CSRF_belirteci_olmadan_400_doner()
-    {
-        var client = fixture.CreateClient();
-
-        var response = await client.PostAsync("/api/auth/register", TestAccount.New().RegistrationBody(), withCsrf: false);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await ProblemCodeAsync(response)).Should().Be("csrf.invalid");
+        // CSRF uç noktası artık yok (girişli kullanıcı için 404; anonim istekte varsayılan kapalı politika 401 verir).
+        await client.RegisterAndLoginAsync();
+        (await client.GetAsync("/api/auth/csrf")).StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -78,10 +71,13 @@ public class AuthFlowTests(ApiFixture fixture) : IClassFixture<ApiFixture>
     }
 
     [Fact]
-    public async Task Giris_basarili_olursa_cookie_set_edilir_ve_me_hastayi_dondurur()
+    public async Task Giris_basarili_olursa_erisim_ve_yenileme_belirteci_doner_me_hastayi_dondurur()
     {
         var client = fixture.CreateClient();
         var account = await client.RegisterAndLoginAsync();
+
+        client.AccessToken.Should().NotBeNullOrWhiteSpace();
+        client.RefreshToken.Should().NotBeNullOrWhiteSpace();
 
         var response = await client.GetAsync("/api/auth/me");
 
@@ -134,20 +130,7 @@ public class AuthFlowTests(ApiFixture fixture) : IClassFixture<ApiFixture>
     }
 
     [Fact]
-    public async Task Cikis_yapinca_oturum_kapanir()
-    {
-        var client = fixture.CreateClient();
-        await client.RegisterAndLoginAsync();
-
-        var logout = await client.PostAsync("/api/auth/logout");
-        var me = await client.GetAsync("/api/auth/me");
-
-        logout.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        me.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-    }
-
-    [Fact]
-    public async Task Hesap_pasife_alininca_acik_oturum_dusur()
+    public async Task Hesap_pasife_alininca_acik_erisim_belirteci_aninda_gecersiz_olur()
     {
         var client = fixture.CreateClient();
         var account = await client.RegisterAndLoginAsync();
@@ -161,13 +144,14 @@ public class AuthFlowTests(ApiFixture fixture) : IClassFixture<ApiFixture>
             await db.SaveChangesAsync();
         }
 
+        // Belirtecin süresi dolmadı, ama hesap pasif: security_stamp değişti.
         var response = await client.GetAsync("/api/auth/me");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
-    public async Task Parola_degisince_security_stamp_degisir_ve_eski_oturum_dusur()
+    public async Task Parola_degisince_security_stamp_degisir_ve_eski_erisim_belirteci_gecersiz_olur()
     {
         var client = fixture.CreateClient();
         var account = await client.RegisterAndLoginAsync();

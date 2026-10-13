@@ -1,5 +1,6 @@
 using FluentValidation;
 using Hospital.Application.Behaviors;
+using Hospital.Application.Features.Auth;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Hospital.Application.Extensions;
@@ -22,6 +23,9 @@ public static class ApplicationExt
         services.AddValidatorsFromAssembly(AssemblyReference.Assembly, includeInternalTypes: true);
 
         services.AddSingleton(TimeProvider.System);
+
+        // Login/Refresh komutlarının ortak belirteç üretimi.
+        services.AddScoped<AuthTokenIssuer>();
 
         return services;
     }

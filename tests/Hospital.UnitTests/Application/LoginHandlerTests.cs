@@ -1,5 +1,4 @@
 using AwesomeAssertions;
-using Hospital.Application.Interfaces;
 using Hospital.Application.Features.Auth;
 using Hospital.Application.Features.Auth.Commands.Login;
 using Hospital.Domain.Entities.Users;
@@ -9,13 +8,16 @@ namespace Hospital.UnitTests.Application;
 public class LoginHandlerTests
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 12, 9, 0, 0, TimeSpan.Zero);
+    private static readonly AuthSettings Settings = new(3, TimeSpan.FromMinutes(15), TimeSpan.FromMinutes(15), TimeSpan.FromDays(7));
 
     private readonly FakeUsers _users = new();
+    private readonly FakeRefreshTokens _refreshTokens = new();
     private readonly FakeHasher _hasher = new();
     private readonly FakeUnitOfWork _unitOfWork = new();
+    private readonly FakeTokenService _tokenService = new();
 
     private LoginHandler CreateHandler() =>
-        new(_users, _hasher, _unitOfWork, new AuthSettings(3, TimeSpan.FromMinutes(15)), new FixedTime(Now));
+        new(_users, _hasher, new AuthTokenIssuer(_tokenService, _refreshTokens, Settings), _unitOfWork, Settings, new FixedTime(Now));
 
     private Patient AddPatient()
     {
@@ -25,18 +27,45 @@ public class LoginHandlerTests
     }
 
     [Fact]
-    public async Task Dogru_parola_kullanici_bilgisini_doner_ve_son_giris_kaydedilir()
+    public async Task Dogru_parola_erisim_ve_yenileme_belirteci_doner_son_giris_kaydedilir()
     {
         var patient = AddPatient();
 
         var result = await CreateHandler().Handle(new LoginCommand("Hasta@Example.Test", "Test1234x"), default);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.Id.Should().Be(patient.Id);
-        result.Value.Role.Should().Be("PATIENT");
-        result.Value.SecurityStamp.Should().Be(patient.SecurityStamp);
+        result.Value.AccessToken.Should().StartWith($"jwt-for-{patient.Id}");
+        result.Value.AccessTokenExpiresAt.Should().Be(Now.AddMinutes(15));
+        result.Value.RefreshTokenExpiresAt.Should().Be(Now.AddDays(7));
+        result.Value.User.Role.Should().Be("PATIENT");
         patient.LastLoginAt.Should().Be(Now);
         _unitOfWork.SaveCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Yenileme_belirtecinin_duz_degeri_saklanmaz_yalnizca_ozeti_saklanir()
+    {
+        AddPatient();
+
+        var result = await CreateHandler().Handle(new LoginCommand("hasta@example.test", "Test1234x"), default);
+
+        var stored = _refreshTokens.Items.Should().ContainSingle().Subject;
+        stored.TokenHash.Should().NotBe(result.Value.RefreshToken);
+        stored.TokenHash.Should().Be(RefreshTokenSecret.Hash(result.Value.RefreshToken));
+        stored.ExpiresAt.Should().Be(Now.AddDays(7));
+    }
+
+    [Fact]
+    public async Task Her_giris_farkli_yenileme_belirteci_uretir()
+    {
+        AddPatient();
+        var handler = CreateHandler();
+
+        var first = await handler.Handle(new LoginCommand("hasta@example.test", "Test1234x"), default);
+        var second = await handler.Handle(new LoginCommand("hasta@example.test", "Test1234x"), default);
+
+        first.Value.RefreshToken.Should().NotBe(second.Value.RefreshToken);
+        _refreshTokens.Items.Should().HaveCount(2);
     }
 
     [Fact]
@@ -46,10 +75,11 @@ public class LoginHandlerTests
 
         result.Error.Should().Be(AuthErrors.InvalidCredentials);
         _hasher.HashCalls.Should().Be(1);
+        _refreshTokens.Items.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task Yanlis_parola_sayaci_artirir_ve_genel_hata_doner()
+    public async Task Yanlis_parola_sayaci_artirir_belirteç_uretmez_ve_genel_hata_doner()
     {
         var patient = AddPatient();
 
@@ -57,6 +87,8 @@ public class LoginHandlerTests
 
         result.Error.Should().Be(AuthErrors.InvalidCredentials);
         patient.FailedLoginCount.Should().Be(1);
+        _tokenService.Created.Should().Be(0);
+        _refreshTokens.Items.Should().BeEmpty();
     }
 
     [Fact]
@@ -74,6 +106,7 @@ public class LoginHandlerTests
 
         patient.IsLockedOut(Now).Should().BeTrue();
         result.Error.Should().Be(AuthErrors.InvalidCredentials);
+        _refreshTokens.Items.Should().BeEmpty();
     }
 
     [Fact]
@@ -85,50 +118,5 @@ public class LoginHandlerTests
         var result = await CreateHandler().Handle(new LoginCommand(patient.Email, "Test1234x"), default);
 
         result.Error.Should().Be(AuthErrors.InvalidCredentials);
-    }
-
-    private sealed class FakeUsers : IUserRepository
-    {
-        public List<User> Items { get; } = [];
-
-        public Task<User?> GetByEmailAsync(string normalizedEmail, CancellationToken cancellationToken) =>
-            Task.FromResult(Items.FirstOrDefault(u => u.Email == normalizedEmail));
-
-        public Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken cancellationToken) =>
-            Task.FromResult(Items.Any(u => u.Email == normalizedEmail));
-
-        public Task<bool> PatientIdentityNumberExistsAsync(string identityNumber, CancellationToken cancellationToken) =>
-            Task.FromResult(Items.OfType<Patient>().Any(p => p.IdentityNumber == identityNumber));
-
-        public void Add(User user) => Items.Add(user);
-    }
-
-    private sealed class FakeHasher : IPasswordHasher
-    {
-        public int HashCalls { get; private set; }
-
-        public string Hash(string password)
-        {
-            HashCalls++;
-            return $"hash:{password}";
-        }
-
-        public bool Verify(string passwordHash, string password) => passwordHash == $"hash:{password}";
-    }
-
-    private sealed class FakeUnitOfWork : IUnitOfWork
-    {
-        public int SaveCount { get; private set; }
-
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            SaveCount++;
-            return Task.FromResult(1);
-        }
-    }
-
-    private sealed class FixedTime(DateTimeOffset now) : TimeProvider
-    {
-        public override DateTimeOffset GetUtcNow() => now;
     }
 }

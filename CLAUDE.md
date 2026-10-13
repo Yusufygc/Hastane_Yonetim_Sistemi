@@ -32,7 +32,7 @@ Ayrıntılar wiki'de ([[mimari]], [[kimlik-ve-yetki]], [[test-stratejisi]]). Öz
 
 - Hedef: **.NET 9**, **Onion Architecture** (Core: Domain, Application · Infrastructure: Infrastructure, Persistence · Presentation: WebAPI), **feature klasörlü** (her katmanda `Features/<Ad>/`). Bağımlılıklar yalnız içeriye; Infrastructure ve Persistence birbirini bilmez.
 - Command/Query/Handler/Validator kendi feature klasöründe; handler'lar tek yerde toplanmaz.
-- Minimal API, Mediator (martinothamar), FluentValidation, EF Core 9 + Npgsql, PostgreSQL (Docker), Guid v7, `Result<T>`, cookie authentication.
+- Minimal API, Mediator (martinothamar), FluentValidation, EF Core 9 + Npgsql, PostgreSQL (Docker), Guid v7, `Result<T>`, **JWT Bearer** kimlik doğrulama (kısa ömürlü erişim token'ı + döndürülen refresh token; cookie/CSRF yok).
 - **DI kuralı:** her katman servislerini kendi `Extensions/` klasöründe `<Katman>Ext` sınıfında, `IServiceCollection` extension'ı `Add<Katman>` ile kaydeder (`AddApplication`, `AddInfrastructure`, `AddPersistence`, `AddWebApi`); `Program.cs` yalnızca bunları çağırır. Ayrıntı: [[di-kurallari]].
 - Her endpoint açık yetki politikası veya `AllowAnonymous` taşır; kaynak sahipliği handler'da kontrol edilir.
 - Çakışma kontrolü hem uygulamada hem veritabanında (exclusion constraint).

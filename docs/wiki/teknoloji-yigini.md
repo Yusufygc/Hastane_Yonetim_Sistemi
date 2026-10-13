@@ -9,7 +9,7 @@ Kaynak: `plan.md` §4. Gerekçeler: [[kararlar]]. Yapı: [[mimari]].
 | Veritabanı | PostgreSQL 16 (Docker) | `btree_gist` eklentisi gerekir ([[randevu-kurallari]]) |
 | Mediator/CQRS | `Mediator` (martinothamar, source generator) | MediatR v13+ ticari lisanslı, kullanılmıyor |
 | Doğrulama | FluentValidation | Pipeline behavior |
-| Kimlik doğrulama | ASP.NET Core Cookie Authentication | Bkz. [[kimlik-ve-yetki]] |
+| Kimlik doğrulama | **JWT Bearer** (`Microsoft.AspNetCore.Authentication.JwtBearer`, `Microsoft.IdentityModel.JsonWebTokens`), HS256 | Erişim 15 dk + döndürülen refresh token 7 gün; bkz. [[kimlik-ve-yetki]] |
 | Parola | `PasswordHasher<T>` (PBKDF2) veya Argon2 | |
 | Hata modeli | `Result<T>` + `DomainException`; tek middleware `ProblemDetails` | |
 | Kimlik tipi | `Guid` v7 (`Guid.CreateVersion7()`) | Tahmin edilemez, sıralı |

@@ -1,14 +1,12 @@
-using System.Security.Claims;
-using Hospital.WebAPI.Common;
-using Hospital.WebAPI.Extensions;
+using Hospital.Application.Features.Auth.Commands.Login;
+using Hospital.Application.Features.Auth.Commands.Logout;
+using Hospital.Application.Features.Auth.Commands.RefreshToken;
+using Hospital.Application.Features.Auth.Commands.RegisterPatient;
 using Hospital.Application.Interfaces;
 using Hospital.Application.Security;
-using Hospital.Application.Features.Auth.Commands.Login;
-using Hospital.Application.Features.Auth.Commands.RegisterPatient;
+using Hospital.WebAPI.Common;
+using Hospital.WebAPI.Extensions;
 using Mediator;
-using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace Hospital.WebAPI.Features.Auth;
 
@@ -23,19 +21,13 @@ public sealed record RegisterRequest(
 
 public sealed record LoginRequest(string Email, string Password);
 
+public sealed record RefreshRequest(string RefreshToken);
+
 internal sealed class AuthEndpoints : IEndpoint
 {
     public void Map(IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/auth").WithTags("Auth");
-
-        // Anonim istemci de durum değiştiren istekten önce belirteç alabilmelidir.
-        group.MapGet("/csrf", (HttpContext context, IAntiforgery antiforgery) =>
-            {
-                var tokens = antiforgery.GetAndStoreTokens(context);
-                return Results.Ok(new { headerName = AuthenticationExt.CsrfHeaderName, token = tokens.RequestToken });
-            })
-            .AllowAnonymous();
 
         group.MapPost("/register", async (RegisterRequest request, ISender sender, CancellationToken ct) =>
             {
@@ -55,28 +47,22 @@ internal sealed class AuthEndpoints : IEndpoint
             .AllowAnonymous()
             .RequireRateLimiting(AuthenticationExt.AuthRateLimitPolicy);
 
-        group.MapPost("/login", async (LoginRequest request, HttpContext context, ISender sender, CancellationToken ct) =>
-            {
-                var result = await sender.Send(new LoginCommand(request.Email, request.Password), ct);
-                if (result.IsFailure)
-                {
-                    return result.ToProblem();
-                }
-
-                await context.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    AuthenticationExt.CreatePrincipal(result.Value));
-
-                return Results.Ok(new { result.Value.Id, result.Value.Email, result.Value.Role });
-            })
+        // Başarılı girişte kısa ömürlü JWT (accessToken) + yenileme belirteci (refreshToken) döner.
+        group.MapPost("/login", async (LoginRequest request, ISender sender, CancellationToken ct) =>
+                (await sender.Send(new LoginCommand(request.Email, request.Password), ct)).Match(Results.Ok))
             .AllowAnonymous()
             .RequireRateLimiting(AuthenticationExt.AuthRateLimitPolicy);
 
-        group.MapPost("/logout", async (HttpContext context) =>
-            {
-                await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                return Results.NoContent();
-            })
+        // Yenileme belirteci döndürme (rotation): eski belirteç iptal edilir, yeni çift verilir.
+        group.MapPost("/refresh", async (RefreshRequest request, ISender sender, CancellationToken ct) =>
+                (await sender.Send(new RefreshTokenCommand(request.RefreshToken), ct)).Match(Results.Ok))
+            .AllowAnonymous()
+            .RequireRateLimiting(AuthenticationExt.AuthRateLimitPolicy);
+
+        // Oturumu kapatır: yenileme belirtecini iptal eder. Erişim JWT'si süresi dolana kadar geçerli kalır
+        // (kısa ömürlü olduğu için); hesap pasife alınırsa anında geçersiz olur.
+        group.MapPost("/logout", async (RefreshRequest request, ISender sender, CancellationToken ct) =>
+                (await sender.Send(new LogoutCommand(request.RefreshToken), ct)).ToNoContent())
             .RequireAuthorization(Policies.Authenticated);
 
         group.MapGet("/me", (ICurrentUser user) =>
