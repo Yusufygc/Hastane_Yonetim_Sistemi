@@ -11,7 +11,7 @@ namespace Hospital.IntegrationTests.Infrastructure;
 public sealed class HospitalApiFactory(
     string connectionString,
     IReadOnlyDictionary<string, string?>? settings = null,
-    bool includeRoleProbeEndpoints = false) : WebApplicationFactory<Program>
+    bool includeProbeEndpoints = false) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -34,9 +34,13 @@ public sealed class HospitalApiFactory(
 
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(merged));
 
-        if (includeRoleProbeEndpoints)
+        if (includeProbeEndpoints)
         {
-            builder.ConfigureTestServices(services => services.AddTransient<IEndpoint, RoleProbeEndpoints>());
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddTransient<IEndpoint, RoleProbeEndpoints>();
+                services.AddTransient<IEndpoint, AppointmentProbeEndpoints>();
+            });
         }
     }
 }

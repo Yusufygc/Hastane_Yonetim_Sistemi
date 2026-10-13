@@ -1,4 +1,5 @@
 using Hospital.Application.Exceptions;
+using Hospital.Domain.Entities.Appointments;
 using Hospital.Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -13,6 +14,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<User> Users => Set<User>();
 
     public DbSet<Patient> Patients => Set<Patient>();
+
+    public DbSet<Appointment> Appointments => Set<Appointment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

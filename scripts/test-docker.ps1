@@ -24,6 +24,9 @@ cd /work
 dotnet test Hospital.sln $extra
 "@
 
+# Git checkout bu dosyayı CRLF'e çevirmiş olabilir; bash'e \r karakteri gitmesin.
+$inner = $inner -replace "`r", ''
+
 docker run --rm `
     --add-host=host.docker.internal:host-gateway `
     -v "${repo}:/src:ro" `

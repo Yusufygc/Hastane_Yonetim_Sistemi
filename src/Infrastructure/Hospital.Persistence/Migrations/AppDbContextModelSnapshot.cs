@@ -23,6 +23,56 @@ namespace Hospital.Persistence.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "btree_gist");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Hospital.Domain.Entities.Appointments.Appointment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("doctor_id");
+
+                    b.Property<DateTimeOffset>("EndAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("end_at");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("patient_id");
+
+                    b.Property<DateTimeOffset>("StartAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("start_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_appointment");
+
+                    b.HasIndex("DoctorId", "StartAt")
+                        .HasDatabaseName("ix_appointment_doctor_id_start_at");
+
+                    b.HasIndex("PatientId", "StartAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("ix_appointment_patient_id_start_at");
+
+                    b.ToTable("appointment", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_appointment_range", "end_at > start_at");
+
+                            t.HasCheckConstraint("ck_appointment_status", "status IN ('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED')");
+                        });
+                });
+
             modelBuilder.Entity("Hospital.Domain.Entities.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -132,6 +182,16 @@ namespace Hospital.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_user_account_role", "role IN ('ADMIN', 'DOCTOR', 'STAFF', 'PATIENT')");
                         });
+                });
+
+            modelBuilder.Entity("Hospital.Domain.Entities.Appointments.Appointment", b =>
+                {
+                    b.HasOne("Hospital.Domain.Entities.Users.Patient", null)
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_appointment_patients_patient_id");
                 });
 
             modelBuilder.Entity("Hospital.Domain.Entities.Users.Patient", b =>

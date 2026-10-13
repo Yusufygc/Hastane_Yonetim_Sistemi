@@ -11,7 +11,7 @@ public class RoleAuthorizationTests : IClassFixture<ApiFixture>
 
     public RoleAuthorizationTests(ApiFixture fixture)
     {
-        _factory = fixture.CreateFactory(includeRoleProbeEndpoints: true);
+        _factory = fixture.CreateFactory(includeProbeEndpoints: true);
     }
 
     [Theory]

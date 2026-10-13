@@ -5,6 +5,11 @@ public abstract class AggregateRoot : Entity
 {
     private readonly List<IDomainEvent> _domainEvents = [];
 
+    /// <summary>EF Core materialization için.</summary>
+    protected AggregateRoot()
+    {
+    }
+
     protected AggregateRoot(Guid id) : base(id)
     {
     }
