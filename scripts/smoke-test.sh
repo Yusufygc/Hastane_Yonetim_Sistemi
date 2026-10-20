@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Çalışan API'yi uçtan uca dener (JWT Bearer): kayıt → giriş → me → yetki → refresh/rotation → çıkış → yönetici.
+# Çalışan API'yi uçtan uca dener (JWT Bearer): kayıt → giriş → me → yetki → refresh/rotation → çıkış → yönetici → doktor/profil.
 #
 # Kullanım (API çalışırken; Git Bash / WSL / Linux):
 #   ./scripts/smoke-test.sh                          # https://localhost:7032 (geliştirme sertifikası için -k)
@@ -7,8 +7,9 @@
 #
 # Her çalıştırma benzersiz e-posta ve geçerli bir T.C. kimlik numarası üretir (geliştirme veritabanına bir test hastası ekler).
 # Süper yönetici bilgileri geliştirme ayar dosyasından (Seed:SuperAdmin) okunur; bulunamazsa yönetici adımları atlanır.
-# Not: register/login/refresh uçları IP başına dakikada 10 istekle sınırlıdır; bu betik ~9 istek yapar,
-#      aralıksız iki kez çalıştırmayın (429 alırsınız).
+# Not: register/login/refresh uçları IP başına dakikada 10 istekle sınırlıdır (Development ayarında 100); bu betik ~12 istek yapar,
+#      Production ayarlarıyla aralıksız iki kez çalıştırmayın (429 alırsınız).
+# Doktor adımları Seed:SampleDoctor (geliştirme) hesabını kullanır; DOCTOR_EMAIL/DOCTOR_PASSWORD ile değiştirilebilir.
 set -u
 
 BASE="${BASE:-https://localhost:7032}"
@@ -148,6 +149,66 @@ if [ -n "$ADMIN_EMAIL" ] && [ -n "$ADMIN_PASSWORD" ]; then
   check "GET /api/services?hospitalId= (yönetici)" 200
 else
   echo "  (atlandı: ADMIN_EMAIL/ADMIN_PASSWORD verilmedi ve ayar dosyasında Seed:SuperAdmin bulunamadı)"
+fi
+
+echo
+echo "6) Faz 3: profil, doktor ve çalışan uçları"
+# Hasta profili: T.C. maskeli döner.
+login "$EMAIL" "$PASSWORD"
+PATIENT_ACCESS="$ACCESS"
+call "$PATIENT_ACCESS" GET /api/patients/me
+check "GET /api/patients/me (hasta)" 200
+echo "         maskeli T.C.: $(json_value maskedIdentityNumber)"
+call "$PATIENT_ACCESS" PUT /api/patients/me '{"firstName":"Ayşe","lastName":"Yılmaz","phone":"05551112233","bloodType":"A+"}'
+check "PUT /api/patients/me (kan grubu A+)" 200
+call "$PATIENT_ACCESS" PUT /api/patients/me '{"firstName":"Ayşe","lastName":"Yılmaz","bloodType":"Z+"}'
+check "PUT /api/patients/me geçersiz kan grubu" 400
+call "$PATIENT_ACCESS" GET /api/doctors/me
+check "Hasta -> GET /api/doctors/me" 403
+call "$PATIENT_ACCESS" GET /api/doctors
+check "Hasta -> GET /api/doctors (yönetici ucu)" 403
+
+# Katalogdaki doktorlar (anonim): yalnız onaylı hizmeti olan aktif doktorlar, kişisel veri yok.
+if [ -n "$HOSPITAL_ID" ]; then
+  call - GET "/api/catalog/doctors?hospitalId=$HOSPITAL_ID"
+  check "GET /api/catalog/doctors (anonim)" 200
+  call - GET "/api/catalog/doctors"
+  check "GET /api/catalog/doctors hospitalId olmadan" 400
+fi
+
+# Örnek doktor (seed) kendi profilini, uygunluğunu ve hizmetlerini görür.
+DOCTOR_EMAIL="${DOCTOR_EMAIL:-doktor@hastane.local}"
+DOCTOR_PASSWORD="${DOCTOR_PASSWORD:-Doktor12345x}"
+login "$DOCTOR_EMAIL" "$DOCTOR_PASSWORD"
+if [ -n "$ACCESS" ]; then
+  DOCTOR_ACCESS="$ACCESS"
+  call "$DOCTOR_ACCESS" GET /api/doctors/me
+  check "GET /api/doctors/me (doktor)" 200
+  call "$DOCTOR_ACCESS" GET /api/doctors/me/availability
+  check "GET /api/doctors/me/availability" 200
+  call "$DOCTOR_ACCESS" GET /api/doctors/me/services
+  check "GET /api/doctors/me/services" 200
+  call "$DOCTOR_ACCESS" GET /api/patients/me
+  check "Doktor -> GET /api/patients/me" 403
+  call "$DOCTOR_ACCESS" POST /api/doctors/me/availability '{"day":0,"startTime":"09:00","endTime":"12:00","validFrom":"2026-01-01"}'
+  check "Doktor: şube kapalıyken (Pazar) uygunluk ekleme" 400
+else
+  echo "  (atlandı: örnek doktor ile giriş yapılamadı; Seed:SampleDoctor ve Seed:SampleData açık mı?)"
+fi
+
+# Yönetici: doktor ve personel listeleri, bekleyen talepler.
+if [ -n "${ADMIN_EMAIL:-}" ] && [ -n "${ADMIN_PASSWORD:-}" ]; then
+  login "$ADMIN_EMAIL" "$ADMIN_PASSWORD"
+  call "$ACCESS" GET /api/doctors
+  check "GET /api/doctors (yönetici)" 200
+  call "$ACCESS" GET /api/staff
+  check "GET /api/staff (yönetici)" 200
+  call "$ACCESS" GET /api/admins
+  check "GET /api/admins (süper yönetici)" 200
+  call "$ACCESS" GET "/api/doctor-service-requests?status=pending"
+  check "GET /api/doctor-service-requests (yönetici)" 200
+  call "$ACCESS" GET "/api/doctor-service-requests?status=bekliyor"
+  check "Geçersiz durum filtresi" 400
 fi
 
 echo

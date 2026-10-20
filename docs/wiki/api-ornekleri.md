@@ -76,9 +76,27 @@ Her hata yanıtı JSON'dur ve nedenini söyler (ayrıntı: [[hata-yonetimi]]):
 
 Sık hatalar: `birthDate` **`yyyy-MM-dd`** olmalı (`1999-11-11`, `11.11.1999` değil) · `phone` **metin** olmalı (`"5444444444"`, tırnaklı) · `identityNumber` geçerli 11 haneli T.C. · parola ≥ 8 karakter, harf+rakam · `Content-Type: application/json`.
 
+## Faz 3 örnekleri (doktor, hizmet talebi, uygunluk)
+Yönetici (süper) token'ı ile doktor aç, doktor token'ı ile hizmet talep et, yönetici onaylasın:
+```bash
+# 1) Yönetici: doktor oluştur (departmentId = bir bölüm kimliği; parolayı yönetici verir)
+curl -sk -X POST https://localhost:7032/api/doctors -H "Authorization: Bearer $ADMIN" -H "Content-Type: application/json" \
+  --data-binary @doktor.json   # {"departmentId":"...","email":"d@x.test","password":"Doktor1234x","firstName":"Mehmet","lastName":"Demir","specialty":"Dahiliye","diplomaNo":"D-100"}
+# 2) Doktor: giriş yap, hizmet talep et (202), uygunluk ekle (şube saatleri içinde)
+curl -sk -X POST https://localhost:7032/api/doctors/me/services -H "Authorization: Bearer $DOCTOR" -H "Content-Type: application/json" -d '{"serviceId":"..."}'
+curl -sk -X POST https://localhost:7032/api/doctors/me/availability -H "Authorization: Bearer $DOCTOR" -H "Content-Type: application/json" \
+  -d '{"day":1,"startTime":"09:00","endTime":"12:00","validFrom":"2026-10-21"}'     # day: 0=Pazar … 6=Cumartesi
+# 3) Yönetici: bekleyen talepleri gör ve onayla (204)
+curl -sk https://localhost:7032/api/doctor-service-requests?status=pending -H "Authorization: Bearer $ADMIN"
+curl -sk -X POST https://localhost:7032/api/doctors/{doctorId}/services/{serviceId}/approve -H "Authorization: Bearer $ADMIN"
+# 4) Anonim: onaylı doktorlar (kişisel veri yok)
+curl -sk "https://localhost:7032/api/catalog/doctors?hospitalId=...&serviceId=..."
+```
+Geliştirmede seed bir örnek doktor açar (`Seed:SampleDoctor`: `doktor@hastane.local` / `Doktor12345x`, Dahiliye, **Genel Muayene onaylı**, hafta içi 09:00-12:00 uygun). Sık hatalar: şube kapalı günü veya saatleri dışı uygunluk → `400 doctor.availability_outside_hours`; kesişen pencere → `409 doctor.availability_overlap`; `validFrom` biçimi `yyyy-MM-dd`; `startTime`/`endTime` `HH:mm`.
+
 ## Notlar / tuzaklar
 - **Türkçe karakter (ş, ı, ğ…) ve Windows:** `--data '{...}'` ile komut satırı argümanı olarak gönderilen gövde Windows'ta ANSI kod sayfasına çevrilir; sunucu geçersiz UTF-8'i `400 Geçersiz istek` ile reddeder. Çözüm: gövdeyi UTF-8 dosyadan (`--data @hasta.json`) veya stdin'den (`--data-binary @-`) gönderin, ya da Scalar UI kullanın.
-- **Hız sınırı:** `register`/`login`/`refresh` IP başına dakikada 10 istek; aşılırsa `429` gelir, bir dakika bekleyin.
+- **Hız sınırı:** `register`/`login`/`refresh`/`change-password` IP başına dakikada 10 istek (**Development'ta 100**, `appsettings.Development.json`); aşılırsa `429` gelir, bir dakika bekleyin.
 - Bilinmeyen rota anonim kullanıcıya `404` değil `401` döner (varsayılan kapalı politika).
 - Eski cookie/CSRF akışı kaldırıldı (`GET /api/auth/csrf` yok).
 
@@ -89,5 +107,6 @@ Sık hatalar: `birthDate` **`yyyy-MM-dd`** olmalı (`1999-11-11`, `11.11.1999` d
 BASE=http://localhost:5284 ./scripts/smoke-test.sh
 ```
 - Süper yönetici bilgilerini `appsettings.Development.json`'dan okur (veya `ADMIN_EMAIL`/`ADMIN_PASSWORD` ortam değişkenleri).
-- Yaklaşık 9 `auth` isteği yapar; dakikada 10 sınırı yüzünden aralıksız iki kez çalıştırmayın.
+- Yaklaşık 12 `auth` isteği yapar; Development ayarında sınır 100/dk olduğundan sorun çıkmaz, Production ayarlarında dakikada 10 sınırı yüzünden aralıksız iki kez çalıştırmayın.
+- Bölüm 6 (Faz 3): hasta profili (maskeli T.C.), rol sınırları, anonim katalog doktorları, örnek doktor (`DOCTOR_EMAIL`/`DOCTOR_PASSWORD` ile değişir) ve yönetici listeleri.
 - Geliştirme veritabanına her çalıştırmada bir test hastası ekler.

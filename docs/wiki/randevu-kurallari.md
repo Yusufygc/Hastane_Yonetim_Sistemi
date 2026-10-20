@@ -46,7 +46,7 @@ ALTER TABLE appointment ADD CONSTRAINT ex_patient_no_overlap
 - Yetki ve sahiplik: [[kimlik-ve-yetki]]. Endpoint'ler: [[api-uc-noktalari]].
 
 ## Doktor-hizmet ataması (yönetici onaylı)
-- Doktor kendi hastanesindeki aktif hizmeti **talep eder** → `PENDING`; yönetici onaylar (`APPROVED`) veya reddeder (`REJECTED`).
+- Doktor kendi hastanesindeki aktif hizmeti **talep eder** → `PENDING`; yönetici onaylar (`APPROVED`) veya reddeder (`REJECTED`). *(Faz 3'te uygulandı: [[domain-modeli]], [[kararlar]] K-41; katalog yalnız APPROVED hizmetli doktoru gösterir.)*
 - Yönetici doğrudan atarsa kayıt direkt `APPROVED`.
 - Yalnız `APPROVED` slot üretir. Doktor ve hizmet aynı hastaneye ait olmalı.
 - Gelecekte aktif randevusu olan hizmet doktordan kaldırılamaz. Reddedilen talep yeniden `PENDING` olabilir.

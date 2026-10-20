@@ -31,7 +31,7 @@ tests/             Hospital.UnitTests, Hospital.ArchitectureTests, Hospital.Inte
 ```
 
 ## Feature bazlı klasörleme
-Her katmanda **aynı feature adlarını yansıtan** `Features/<Ad>/` klasörü bulunur; handler'lar tek yerde toplanmaz.
+Her katmanda **aynı feature adlarını yansıtan** `Features/<Ad>/` klasörü bulunur; handler'lar tek yerde toplanmaz. Feature'lar: Auth, Organizations, Hospitals, Departments, Services, Catalog, **Doctors, StaffMembers, Admins, Users, Patients** (Faz 3; `StaffMembers` adı K-47). Feature'lar arası ortak doğrulama kuralları `Application/Validation/AccountRules.cs`.
 ```
 Hospital.Application/Features/Appointments/
   Commands/CreateAppointment/   (Command, Handler, Validator)

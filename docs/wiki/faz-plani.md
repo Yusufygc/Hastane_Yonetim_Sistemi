@@ -19,9 +19,9 @@ Durum işaretleri: `[ ]` başlamadı · `[~]` sürüyor · `[x]` tamam.
 `ORGANIZATION`, `HOSPITAL` (sınıf `HospitalBranch`), `HOSPITAL_WORKING_HOURS`, `DEPARTMENT`, `SERVICE`, **`ADMIN` türü** (süper/şube yöneticisi, kapsam claim'leri) · seed (1 org + 1 şube + örnek bölüm/hizmet + ilk süper yönetici, yapılandırmadan) · yönetici CRUD + kapsam kontrolü (kapsam dışı → 404) · pasifleştirme · anonim Catalog sorguları.
 **Çıkış (sağlandı):** Yönetici şube, çalışma saati, bölüm ve süre/ücretli hizmet tanımlar; şube yöneticisi başka şubeye dokunamaz; anonim kullanıcı aktif kataloğu görür. 81 birim + 9 mimari + 91 entegrasyon test yeşil. Ayrıntı: [[kimlik-ve-yetki]], [[domain-modeli]], [[api-uc-noktalari]], [[kararlar]] K-32…K-37.
 
-## [ ] Faz 3 — Çalışan ve Profiller
-`PATIENT`, `DOCTOR`, `STAFF`, `ADMIN` · yönetici ile hesap oluşturma · **doktor-hizmet talep/onay akışı** · `DOCTOR_AVAILABILITY`, `DOCTOR_TIME_OFF` · hasta profili, TC maskeleme · katalog doktor listesi.
-**Çıkış:** Hastane + doktor + onaylı hizmet + uygunluk eksiksiz tanımlanır.
+## [x] Faz 3 — Çalışan ve Profiller (2026-10-20 tamamlandı)
+`DOCTOR`, `STAFF` türleri (+ mevcut `PATIENT`, `ADMIN`) · yönetici ile hesap oluşturma (doktor/personel/yönetici) · **doktor-hizmet talep/onay akışı** · `DOCTOR_AVAILABILITY`, `DOCTOR_TIME_OFF` (kodda + DB exclusion constraint) · hasta profili, TC maskeleme · katalog doktor listesi · parola değiştirme · kullanıcı pasifleştirme/aktifleştirme · seed örnek doktor.
+**Çıkış (sağlandı):** Yönetici doktor açar; doktor hizmet talep eder, yönetici onaylar; doktor şube saatleri içinde uygunluk ve izin tanımlar; anonim katalog yalnız onaylı hizmetli doktorları gösterir; şube yöneticisi başka şubenin doktor/personel/talebine dokunamaz (404). 162 birim + 9 mimari + 215 entegrasyon test yeşil. Ayrıntı: [[domain-modeli]], [[veritabani]], [[kimlik-ve-yetki]], [[api-uc-noktalari]], [[kararlar]] K-40…K-48. Faz 4'e bırakılanlar: `appointment.doctor_id` FK'si, hizmet/uygunluk/kullanıcı pasifleştirmede gelecek randevu denetimi.
 
 ## [ ] Faz 4 — Randevu (Çekirdek)
 1. `GetAvailableSlots` + unit test · 2. State Pattern · 3. `APPOINTMENT` + exclusion + snapshot · 4. Komutlar (Create/Approve/Reject/Cancel/Complete) · 5. Sorgular · 6. Çakışma/eşzamanlılık testleri.
