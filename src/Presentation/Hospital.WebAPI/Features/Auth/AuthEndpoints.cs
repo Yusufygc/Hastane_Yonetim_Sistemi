@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Auth.Commands.ChangePassword;
 using Hospital.Application.Features.Auth.Commands.Login;
 using Hospital.Application.Features.Auth.Commands.Logout;
 using Hospital.Application.Features.Auth.Commands.RefreshToken;
@@ -22,6 +23,8 @@ public sealed record RegisterRequest(
 public sealed record LoginRequest(string Email, string Password);
 
 public sealed record RefreshRequest(string RefreshToken);
+
+public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 
 internal sealed class AuthEndpoints : IEndpoint
 {
@@ -64,6 +67,12 @@ internal sealed class AuthEndpoints : IEndpoint
         group.MapPost("/logout", async (RefreshRequest request, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new LogoutCommand(request.RefreshToken), ct)).ToNoContent())
             .RequireAuthorization(Policies.Authenticated);
+
+        // Parola değişince güvenlik damgası döner (mevcut erişim belirteçleri düşer) ve yenileme belirteçleri iptal edilir.
+        group.MapPost("/change-password", async (ChangePasswordRequest request, ISender sender, CancellationToken ct) =>
+                (await sender.Send(new ChangePasswordCommand(request.CurrentPassword, request.NewPassword), ct)).ToNoContent())
+            .RequireAuthorization(Policies.Authenticated)
+            .RequireRateLimiting(AuthenticationExt.AuthRateLimitPolicy);
 
         group.MapGet("/me", (ICurrentUser user) =>
                 Results.Ok(new { id = user.UserId, email = user.Email, role = user.Role }))

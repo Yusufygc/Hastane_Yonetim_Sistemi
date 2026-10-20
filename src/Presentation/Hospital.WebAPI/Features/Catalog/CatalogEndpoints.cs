@@ -1,4 +1,5 @@
 using Hospital.Application.Features.Catalog.Queries.GetCatalogDepartments;
+using Hospital.Application.Features.Catalog.Queries.GetCatalogDoctors;
 using Hospital.Application.Features.Catalog.Queries.GetCatalogHospitals;
 using Hospital.Application.Features.Catalog.Queries.GetCatalogServices;
 using Hospital.WebAPI.Common;
@@ -23,5 +24,9 @@ internal sealed class CatalogEndpoints : IEndpoint
 
         group.MapGet("/hospitals/{id:guid}/services", async (Guid id, ISender sender, CancellationToken ct) =>
             (await sender.Send(new GetCatalogServicesQuery(id), ct)).Match(Results.Ok));
+
+        // Yalnızca en az bir onaylı hizmeti olan aktif doktorlar; serviceId verilirse o hizmeti sunanlar.
+        group.MapGet("/doctors", async (Guid hospitalId, Guid? serviceId, ISender sender, CancellationToken ct) =>
+            (await sender.Send(new GetCatalogDoctorsQuery(hospitalId, serviceId), ct)).Match(Results.Ok));
     }
 }
