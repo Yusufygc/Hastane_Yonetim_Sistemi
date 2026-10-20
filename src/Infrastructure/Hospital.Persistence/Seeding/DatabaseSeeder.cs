@@ -49,6 +49,65 @@ internal sealed class DatabaseSeeder(
         }
 
         await SeedSuperAdminAsync(organization, cancellationToken);
+        await SeedSampleDoctorAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Yalnızca örnek veri açıkken ve Seed:SampleDoctor:Email/Password verilmişse (geliştirme) bir örnek doktor açar:
+    /// Dahiliye, "Genel Muayene" onaylı, hafta içi 09:00-12:00 uygun. Böylece katalog/uygunluk uçtan uca denenebilir.
+    /// </summary>
+    private async Task SeedSampleDoctorAsync(CancellationToken cancellationToken)
+    {
+        if (!bool.TryParse(configuration["Seed:SampleData"], out var sampleData) || !sampleData
+            || await db.Doctors.AnyAsync(cancellationToken))
+        {
+            return;
+        }
+
+        var email = configuration["Seed:SampleDoctor:Email"];
+        var password = configuration["Seed:SampleDoctor:Password"];
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            return;
+        }
+
+        var hospital = await db.Hospitals.Include(h => h.WorkingHours).OrderBy(h => h.Id).FirstOrDefaultAsync(cancellationToken);
+        var department = hospital is null
+            ? null
+            : await db.Departments.FirstOrDefaultAsync(d => d.HospitalId == hospital.Id && d.Name == "Dahiliye", cancellationToken);
+        var service = hospital is null
+            ? null
+            : await db.Services.FirstOrDefaultAsync(s => s.HospitalId == hospital.Id && s.Name == "Genel Muayene", cancellationToken);
+        var admin = await db.Admins.OrderBy(a => a.Id).FirstOrDefaultAsync(cancellationToken);
+
+        if (hospital is null || department is null || service is null || admin is null)
+        {
+            return;
+        }
+
+        var now = clock.GetUtcNow();
+        var doctor = Doctor.Create(
+            email,
+            passwordHasher.Hash(password),
+            configuration["Seed:SampleDoctor:FirstName"] ?? "Ayşe",
+            configuration["Seed:SampleDoctor:LastName"] ?? "Yılmaz",
+            department.Id,
+            "Dahiliye Uzmanı",
+            "DIPLOMA-0001",
+            phone: null,
+            now);
+
+        doctor.AssignService(service.Id, admin.Id, now);
+
+        var today = DateOnly.FromDateTime(now.UtcDateTime);
+        foreach (var day in new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday })
+        {
+            doctor.AddAvailability(day, new TimeOnly(9, 0), new TimeOnly(12, 0), today, null, hospital.WorkingHours);
+        }
+
+        db.Doctors.Add(doctor);
+        await db.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Örnek doktor oluşturuldu.");
     }
 
     private async Task SeedSuperAdminAsync(Organization organization, CancellationToken cancellationToken)
