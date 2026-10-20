@@ -29,6 +29,10 @@ public sealed class HospitalApiFactory(
             ["Seed:SuperAdmin:Email"] = TestAdmin.Email,
             ["Seed:SuperAdmin:Password"] = TestAdmin.Password,
 
+            // Örnek doktor (Dahiliye, Genel Muayene onaylı, hafta içi 09-12 uygun); yalnız test değerleri.
+            ["Seed:SampleDoctor:Email"] = TestDoctor.SeededEmail,
+            ["Seed:SampleDoctor:Password"] = TestDoctor.Password,
+
             // Testler aynı IP'den çok sayıda kayıt/giriş yapar; hız sınırı ayrı bir testte denenir.
             ["RateLimiting:Auth:PermitLimit"] = "1000",
         };

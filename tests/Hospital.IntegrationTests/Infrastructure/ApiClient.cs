@@ -26,6 +26,8 @@ public sealed class ApiClient(HttpClient http)
     public Task<HttpResponseMessage> PutAsync(string url, object? body = null) =>
         SendAsync(HttpMethod.Put, url, body);
 
+    public Task<HttpResponseMessage> DeleteAsync(string url) => SendAsync(HttpMethod.Delete, url);
+
     public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string url, object? body = null)
     {
         using var request = new HttpRequestMessage(method, url);

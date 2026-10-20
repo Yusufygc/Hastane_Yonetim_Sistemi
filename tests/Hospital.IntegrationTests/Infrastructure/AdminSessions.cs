@@ -15,6 +15,13 @@ public static class TestAdmin
     public const string Password = "SuperAdmin123x";
 }
 
+/// <summary>Seed'in örnek doktoru ve testlerde yönetici ile açılan doktorların ortak parolası (yalnız test değerleri).</summary>
+public static class TestDoctor
+{
+    public const string SeededEmail = "ornek.doktor@test.local";
+    public const string Password = "Doktor12345x";
+}
+
 /// <summary>Yönetici oturumu açma ve ön koşul verisi (şube, şube yöneticisi) kurma yardımcıları.</summary>
 public static class AdminSessions
 {
@@ -100,6 +107,50 @@ public static class AdminSessions
             DurationMinutes = durationMinutes,
             Price = price,
             Currency = "TRY",
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        return (await ApiClient.ReadJsonAsync(response)).GetProperty("id").GetGuid();
+    }
+
+    /// <summary>Yönetici ile doktor hesabı açar (benzersiz e-posta ve diploma). Kimliği ve e-postasını döner.</summary>
+    public static async Task<(Guid Id, string Email)> CreateDoctorAsync(ApiClient admin, Guid departmentId)
+    {
+        var unique = Guid.NewGuid().ToString("N");
+        var email = $"doktor.{unique}@test.local";
+
+        var response = await admin.PostAsync("/api/doctors", new
+        {
+            DepartmentId = departmentId,
+            Email = email,
+            Password = TestDoctor.Password,
+            FirstName = "Mehmet",
+            LastName = "Demir",
+            Specialty = "Dahiliye",
+            DiplomaNo = $"D-{unique}",
+            Phone = "05551112233",
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        return ((await ApiClient.ReadJsonAsync(response)).GetProperty("id").GetGuid(), email);
+    }
+
+    public static async Task<ApiClient> LoginAsync(ApiFixture fixture, string email, string password)
+    {
+        var client = fixture.CreateClient();
+        await client.LoginAsync(email, password);
+        return client;
+    }
+
+    /// <summary>Doktor için hafta içi (Pzt) 09:00-12:00 uygunluk ekler; seed şubesinin saatleri içindedir.</summary>
+    public static async Task<Guid> AddAvailabilityAsync(ApiClient doctor, DayOfWeek day = DayOfWeek.Monday, string start = "09:00", string end = "12:00")
+    {
+        var response = await doctor.PostAsync("/api/doctors/me/availability", new
+        {
+            Day = day,
+            StartTime = start,
+            EndTime = end,
+            ValidFrom = DateOnly.FromDateTime(DateTime.UtcNow),
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
