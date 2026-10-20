@@ -13,6 +13,12 @@ public interface ICatalogReader
     Task<IReadOnlyList<CatalogDepartmentDto>?> GetDepartmentsAsync(Guid hospitalId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<CatalogServiceDto>?> GetServicesAsync(Guid hospitalId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Şubenin aktif doktorları; yalnızca en az bir <b>onaylı</b> hizmeti olanlar. <paramref name="serviceId"/> verilirse
+    /// yalnızca o hizmeti onaylı sunanlar. Şube yoksa/pasifse <c>null</c>.
+    /// </summary>
+    Task<IReadOnlyList<CatalogDoctorDto>?> GetDoctorsAsync(Guid hospitalId, Guid? serviceId, CancellationToken cancellationToken);
 }
 
 public sealed record CatalogHospitalDto(
@@ -32,6 +38,18 @@ public sealed record CatalogServiceDto(
     int DurationMinutes,
     decimal Price,
     string Currency);
+
+/// <summary>Kişisel olmayan doktor bilgisi: e-posta, telefon, diploma no yer almaz.</summary>
+public sealed record CatalogDoctorDto(
+    Guid Id,
+    string FirstName,
+    string LastName,
+    string Specialty,
+    Guid DepartmentId,
+    string DepartmentName,
+    IReadOnlyList<CatalogDoctorServiceDto> Services);
+
+public sealed record CatalogDoctorServiceDto(Guid Id, string Name, int DurationMinutes, decimal Price, string Currency);
 
 public static class CatalogErrors
 {

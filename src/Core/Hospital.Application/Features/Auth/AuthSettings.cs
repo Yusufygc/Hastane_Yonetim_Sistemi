@@ -66,6 +66,18 @@ public static class AuthErrors
     public static readonly Wrappers.Error InvalidRefreshToken =
         Wrappers.Error.Unauthorized("auth.invalid_refresh_token", "Oturum geçersiz veya süresi dolmuş. Lütfen yeniden giriş yapın.");
 
+    public static readonly Wrappers.Error CurrentPasswordInvalid =
+        Wrappers.Error.Validation(
+            "auth.current_password_invalid",
+            "Mevcut parola hatalı.",
+            new Dictionary<string, string[]> { ["currentPassword"] = ["Mevcut parola hatalı."] });
+
+    public static readonly Wrappers.Error PasswordUnchanged =
+        Wrappers.Error.Validation(
+            "auth.password_unchanged",
+            "Yeni parola mevcut parolayla aynı olamaz.",
+            new Dictionary<string, string[]> { ["newPassword"] = ["Yeni parola mevcut parolayla aynı olamaz."] });
+
     public static readonly Wrappers.Error EmailTaken =
         Wrappers.Error.Conflict("auth.email_taken", "Bu e-posta adresi zaten kayıtlı.");
 
