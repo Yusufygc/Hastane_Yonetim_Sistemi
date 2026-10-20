@@ -5,6 +5,12 @@ public static class TurkishIdentityNumber
 {
     public const int Length = 11;
 
+    /// <summary>Kişisel veriyi korumak için maskeler: ilk 3 ve son 2 hane görünür (ör. 100******46).</summary>
+    public static string Mask(string identityNumber) =>
+        identityNumber.Length == Length
+            ? string.Concat(identityNumber.AsSpan(0, 3), "******", identityNumber.AsSpan(9, 2))
+            : new string('*', identityNumber.Length);
+
     public static bool IsValid(string? value)
     {
         if (value is null || value.Length != Length || value[0] == '0' || !value.All(char.IsAsciiDigit))

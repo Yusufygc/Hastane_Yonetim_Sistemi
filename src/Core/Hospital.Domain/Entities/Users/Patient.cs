@@ -45,6 +45,25 @@ public sealed class Patient : User
 
     public override string FullName => $"{FirstName} {LastName}";
 
+    public static readonly IReadOnlySet<string> BloodTypes =
+        new HashSet<string>(["A+", "A-", "B+", "B-", "AB+", "AB-", "0+", "0-"]);
+
+    /// <summary>Hastanın kendi profilinde değiştirebildikleri (T.C. ve doğum tarihi değiştirilemez).</summary>
+    public void UpdateProfile(string firstName, string lastName, string? phone, string? bloodType)
+    {
+        FirstName = Guard.NotBlank(firstName, "Ad", 100);
+        LastName = Guard.NotBlank(lastName, "Soyad", 100);
+        Phone = Guard.OptionalText(phone, "Telefon", 32);
+
+        var normalized = string.IsNullOrWhiteSpace(bloodType) ? null : bloodType.Trim().ToUpperInvariant();
+        if (normalized is not null && !BloodTypes.Contains(normalized))
+        {
+            throw new DomainException("Kan grubu geçersiz (A+, A-, B+, B-, AB+, AB-, 0+, 0-).");
+        }
+
+        BloodType = normalized;
+    }
+
     public static Patient Register(
         string email,
         string passwordHash,
