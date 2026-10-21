@@ -30,6 +30,15 @@ internal sealed class DoctorRepository(AppDbContext db) : IDoctorRepository
         return query.AsSplitQuery().FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
     }
 
+    public Task<Doctor?> GetForSchedulingAsync(Guid id, CancellationToken cancellationToken) =>
+        db.Doctors
+            .AsNoTracking()
+            .Include(d => d.Services)
+            .Include(d => d.Availabilities)
+            .Include(d => d.TimeOffs)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+
     public Task<bool> DiplomaExistsAsync(string diplomaNo, Guid? excludeId, CancellationToken cancellationToken) =>
         db.Doctors.AnyAsync(d => d.DiplomaNo == diplomaNo && d.Id != excludeId, cancellationToken);
 

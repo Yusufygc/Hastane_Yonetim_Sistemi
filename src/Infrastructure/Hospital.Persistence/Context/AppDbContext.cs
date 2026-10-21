@@ -60,5 +60,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             throw new DataConflictException(pg.ConstraintName ?? pg.SqlState);
         }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Aynı satırı aynı anda iki istek değiştirdi (xmin eşzamanlılık belirteci): kaybeden 409 alır.
+            throw new DataConflictException("concurrency");
+        }
     }
 }

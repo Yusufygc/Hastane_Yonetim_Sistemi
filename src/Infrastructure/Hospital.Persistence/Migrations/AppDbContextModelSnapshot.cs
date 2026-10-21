@@ -33,17 +33,57 @@ namespace Hospital.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("CurrencySnapshot")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_snapshot")
+                        .IsFixedLength();
+
+                    b.Property<string>("DecisionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("decision_reason");
+
                     b.Property<Guid>("DoctorId")
                         .HasColumnType("uuid")
                         .HasColumnName("doctor_id");
+
+                    b.Property<int>("DurationMinutesSnapshot")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_minutes_snapshot");
 
                     b.Property<DateTimeOffset>("EndAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("end_at");
 
+                    b.Property<Guid>("HospitalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("hospital_id");
+
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uuid")
                         .HasColumnName("patient_id");
+
+                    b.Property<string>("PatientNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("patient_note");
+
+                    b.Property<decimal>("PriceSnapshot")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("price_snapshot");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_id");
+
+                    b.Property<string>("ServiceNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("service_name_snapshot");
 
                     b.Property<DateTimeOffset>("StartAt")
                         .HasColumnType("timestamp with time zone")
@@ -55,8 +95,28 @@ namespace Hospital.Persistence.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("status");
 
+                    b.Property<Guid?>("StatusChangedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("status_changed_by");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id")
                         .HasName("pk_appointment");
+
+                    b.HasIndex("ServiceId")
+                        .HasDatabaseName("ix_appointment_service_id");
+
+                    b.HasIndex("StatusChangedBy")
+                        .HasDatabaseName("ix_appointment_status_changed_by");
 
                     b.HasIndex("DoctorId", "StartAt")
                         .HasDatabaseName("ix_appointment_doctor_id_start_at");
@@ -65,9 +125,14 @@ namespace Hospital.Persistence.Migrations
                         .IsDescending(false, true)
                         .HasDatabaseName("ix_appointment_patient_id_start_at");
 
+                    b.HasIndex("HospitalId", "Status", "StartAt")
+                        .HasDatabaseName("ix_appointment_hospital_id_status_start_at");
+
                     b.ToTable("appointment", null, t =>
                         {
                             t.HasCheckConstraint("ck_appointment_range", "end_at > start_at");
+
+                            t.HasCheckConstraint("ck_appointment_snapshot", "duration_minutes_snapshot > 0 AND price_snapshot >= 0");
 
                             t.HasCheckConstraint("ck_appointment_status", "status IN ('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED')");
                         });
@@ -699,12 +764,39 @@ namespace Hospital.Persistence.Migrations
 
             modelBuilder.Entity("Hospital.Domain.Entities.Appointments.Appointment", b =>
                 {
+                    b.HasOne("Hospital.Domain.Entities.Users.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_appointment_doctors_doctor_id");
+
+                    b.HasOne("Hospital.Domain.Entities.Facility.HospitalBranch", null)
+                        .WithMany()
+                        .HasForeignKey("HospitalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_appointment_hospitals_hospital_id");
+
                     b.HasOne("Hospital.Domain.Entities.Users.Patient", null)
                         .WithMany()
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_appointment_patients_patient_id");
+
+                    b.HasOne("Hospital.Domain.Entities.Facility.Service", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_appointment_services_service_id");
+
+                    b.HasOne("Hospital.Domain.Entities.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("StatusChangedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_appointment_users_status_changed_by");
                 });
 
             modelBuilder.Entity("Hospital.Domain.Entities.Facility.Department", b =>
