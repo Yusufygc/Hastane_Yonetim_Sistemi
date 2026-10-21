@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Appointments;
 using Hospital.Application.Features.Auth;
 using Hospital.Application.Features.Departments;
 using Hospital.Application.Features.Hospitals;
@@ -12,6 +13,7 @@ public sealed class DeactivateUserHandler(
     IRefreshTokenRepository refreshTokens,
     IDepartmentRepository departments,
     IHospitalRepository hospitals,
+    IAppointmentRepository appointments,
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
     TimeProvider clock) : ICommandHandler<DeactivateUserCommand, Result>
@@ -34,6 +36,13 @@ public sealed class DeactivateUserHandler(
         }
 
         var now = clock.GetUtcNow();
+
+        // Gelecekte aktif randevusu olan hasta/doktor pasifleştirilemez; yönetici önce randevuları iptal eder.
+        if (await appointments.UserHasFutureActiveAsync(user.Id, now, cancellationToken))
+        {
+            return UserErrors.HasFutureAppointments;
+        }
+
         user.Deactivate();
 
         foreach (var token in await refreshTokens.GetActiveByUserAsync(user.Id, now, cancellationToken))

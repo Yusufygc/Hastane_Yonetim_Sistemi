@@ -13,6 +13,9 @@ public static class UserErrors
     public static readonly Error NotFound =
         Error.NotFound("user.not_found", "Kullanıcı bulunamadı.");
 
+    public static readonly Error HasFutureAppointments =
+        Error.Conflict("user.has_future_appointments", "Kullanıcının gelecekte aktif (bekleyen/onaylı) randevusu var; önce randevuları iptal edin.");
+
     public static readonly Error CannotModifySelf =
         Error.Conflict("user.cannot_modify_self", "Kendi hesabınızı pasifleştiremezsiniz.");
 }

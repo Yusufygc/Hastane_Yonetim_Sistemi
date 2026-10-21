@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Appointments;
 using Hospital.Application.Features.Departments;
 using Hospital.Application.Features.Hospitals;
 using Hospital.Application.Interfaces;
@@ -10,6 +11,7 @@ public sealed class AddMyTimeOffHandler(
     IDoctorRepository doctors,
     IDepartmentRepository departments,
     IHospitalRepository hospitals,
+    IAppointmentRepository appointments,
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
     TimeProvider clock) : ICommandHandler<AddMyTimeOffCommand, Result<Guid>>
@@ -35,6 +37,12 @@ public sealed class AddMyTimeOffHandler(
         if (doctor.FindOverlappingTimeOff(command.StartAt, command.EndAt) is not null)
         {
             return DoctorErrors.TimeOffOverlap;
+        }
+
+        // İzin, mevcut aktif randevuları geçersiz kılamaz.
+        if (await appointments.DoctorHasActiveInRangeAsync(doctor.Id, command.StartAt, command.EndAt, cancellationToken))
+        {
+            return DoctorErrors.TimeOffHasAppointments;
         }
 
         var timeOff = doctor.AddTimeOff(command.StartAt, command.EndAt, command.Reason, now);

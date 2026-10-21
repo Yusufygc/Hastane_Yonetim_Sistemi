@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Appointments;
 using Hospital.Application.Features.Departments;
 using Hospital.Application.Features.Hospitals;
 using Hospital.Application.Features.Services;
@@ -13,6 +14,7 @@ public sealed class AssignDoctorServicesHandler(
     IDepartmentRepository departments,
     IHospitalRepository hospitals,
     IServiceRepository services,
+    IAppointmentRepository appointments,
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
     TimeProvider clock) : ICommandHandler<AssignDoctorServicesCommand, Result>
@@ -46,6 +48,15 @@ public sealed class AssignDoctorServicesHandler(
             .Where(link => link.Status == DoctorServiceStatus.Approved && !wanted.Contains(link.ServiceId))
             .Select(link => link.ServiceId)
             .ToList();
+
+        // Gelecekte aktif randevusu olan onaylı hizmet kümeden çıkarılamaz.
+        foreach (var serviceId in toRemove)
+        {
+            if (await appointments.DoctorHasFutureActiveAsync(doctor.Id, serviceId, now, cancellationToken))
+            {
+                return DoctorErrors.ServiceHasFutureAppointments;
+            }
+        }
 
         foreach (var serviceId in toRemove)
         {

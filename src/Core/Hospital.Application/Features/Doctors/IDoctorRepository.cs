@@ -18,6 +18,11 @@ public interface IDoctorRepository
 {
     Task<Doctor?> GetByIdAsync(Guid id, DoctorInclude include, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Randevu için salt okunur yükleme: izlenmeyen doktor + hizmetler + uygunluklar + izinler (slot hesabı ve oluşturma ön kontrolü).
+    /// </summary>
+    Task<Doctor?> GetForSchedulingAsync(Guid id, CancellationToken cancellationToken);
+
     Task<bool> DiplomaExistsAsync(string diplomaNo, Guid? excludeId, CancellationToken cancellationToken);
 
     void Add(Doctor doctor);
@@ -124,6 +129,12 @@ public static class DoctorErrors
 
     public static readonly Wrappers.Error ServiceApprovedLocked =
         Wrappers.Error.Conflict("doctor.service_approved_locked", "Onaylı hizmeti yalnızca yönetici kaldırabilir.");
+
+    public static readonly Wrappers.Error ServiceHasFutureAppointments =
+        Wrappers.Error.Conflict("doctor.service_has_future_appointments", "Bu hizmet için gelecekte aktif (bekleyen/onaylı) randevu var; önce randevuları iptal edin.");
+
+    public static readonly Wrappers.Error TimeOffHasAppointments =
+        Wrappers.Error.Conflict("doctor.time_off_has_appointments", "Bu aralıkta aktif (bekleyen/onaylı) randevu var; önce randevuları iptal edin.");
 
     public static readonly Wrappers.Error AvailabilityNotFound =
         Wrappers.Error.NotFound("doctor.availability_not_found", "Uygunluk kaydı bulunamadı.");

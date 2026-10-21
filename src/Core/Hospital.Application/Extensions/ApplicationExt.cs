@@ -1,5 +1,6 @@
 using FluentValidation;
 using Hospital.Application.Behaviors;
+using Hospital.Application.Features.Appointments;
 using Hospital.Application.Features.Auth;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,6 +27,9 @@ public static class ApplicationExt
 
         // Login/Refresh komutlarının ortak belirteç üretimi.
         services.AddScoped<AuthTokenIssuer>();
+
+        // Slot sorgusu ve randevu oluşturmanın ortak ön koşul + müsaitlik hesabı.
+        services.AddScoped<SlotAvailabilityService>();
 
         return services;
     }
