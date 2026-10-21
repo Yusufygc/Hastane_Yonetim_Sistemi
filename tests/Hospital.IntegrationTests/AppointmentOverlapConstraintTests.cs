@@ -1,9 +1,8 @@
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
+using System.Collections.Concurrent;
 using AwesomeAssertions;
 using Hospital.Application.Exceptions;
 using Hospital.Domain.Entities.Appointments;
+using Hospital.Domain.Entities.Facility;
 using Hospital.Domain.Entities.Users;
 using Hospital.IntegrationTests.Infrastructure;
 using Hospital.Persistence.Context;
@@ -13,8 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Hospital.IntegrationTests;
 
 /// <summary>
-/// Faz 1B risk spike'ı: çakışma koruması veritabanı seviyesinde (PostgreSQL exclusion constraint) gerçekten çalışıyor mu?
-/// Her test kendi doktor kimliğini kullanır; bu yüzden testler birbirini etkilemez.
+/// Çakışma koruması veritabanı seviyesinde (PostgreSQL exclusion constraint) çalışıyor mu? (Faz 1B spike'ı; Faz 4'te
+/// doktor/hizmet/şube FK'li gerçek modele uyarlandı.) Her test kendi doktorunu açar; testler birbirini etkilemez.
+/// HTTP üzerinden gerçek yarış testi: <see cref="AppointmentConcurrencyTests"/>.
 /// </summary>
 public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixture<ApiFixture>
 {
@@ -28,7 +28,7 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
     [Fact]
     public async Task Ayni_doktor_ayni_aralik_cakisir()
     {
-        var doctor = Guid.NewGuid();
+        var doctor = await NewDoctorAsync();
         var (p1, p2) = (await NewPatientAsync(), await NewPatientAsync());
         await BookAsync(p1, doctor, At(10, 0), At(10, 30));
 
@@ -44,7 +44,7 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
     [InlineData(9, 30, 11, 0)]    // kapsar
     public async Task Ayni_doktorda_kismi_kesisim_cakisir(int sh, int sm, int eh, int em)
     {
-        var doctor = Guid.NewGuid();
+        var doctor = await NewDoctorAsync();
         var (p1, p2) = (await NewPatientAsync(), await NewPatientAsync());
         await BookAsync(p1, doctor, At(10, 0), At(10, 30));
 
@@ -56,7 +56,7 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
     [Fact]
     public async Task Bitisik_araliklar_cakismaz()
     {
-        var doctor = Guid.NewGuid();
+        var doctor = await NewDoctorAsync();
         var (p1, p2, p3) = (await NewPatientAsync(), await NewPatientAsync(), await NewPatientAsync());
 
         await BookAsync(p1, doctor, At(10, 0), At(10, 30));
@@ -69,7 +69,7 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
     [Fact]
     public async Task Farkli_doktor_ayni_saatte_cakismaz()
     {
-        var (d1, d2) = (Guid.NewGuid(), Guid.NewGuid());
+        var (d1, d2) = (await NewDoctorAsync(), await NewDoctorAsync());
         var (p1, p2) = (await NewPatientAsync(), await NewPatientAsync());
 
         await BookAsync(p1, d1, At(10, 0), At(10, 30));
@@ -85,7 +85,7 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
     [InlineData("COMPLETED")]
     public async Task Iptal_red_ve_tamamlanan_randevu_slotu_serbest_birakir(string status)
     {
-        var doctor = Guid.NewGuid();
+        var doctor = await NewDoctorAsync();
         var (p1, p2) = (await NewPatientAsync(), await NewPatientAsync());
         var first = await BookAsync(p1, doctor, At(10, 0), At(10, 30));
         await SetStatusAsync(first, status);
@@ -100,7 +100,7 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
     [InlineData("APPROVED")]
     public async Task Bekleyen_ve_onayli_randevu_slotu_tutar(string status)
     {
-        var doctor = Guid.NewGuid();
+        var doctor = await NewDoctorAsync();
         var (p1, p2) = (await NewPatientAsync(), await NewPatientAsync());
         var first = await BookAsync(p1, doctor, At(10, 0), At(10, 30));
         await SetStatusAsync(first, status);
@@ -113,7 +113,7 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
     [Fact]
     public async Task Iptal_edilen_randevunun_slotu_yeniden_alinabilir_ve_yeni_randevu_yine_korunur()
     {
-        var doctor = Guid.NewGuid();
+        var doctor = await NewDoctorAsync();
         var (p1, p2, p3) = (await NewPatientAsync(), await NewPatientAsync(), await NewPatientAsync());
         var first = await BookAsync(p1, doctor, At(10, 0), At(10, 30));
         await SetStatusAsync(first, "CANCELLED");
@@ -127,7 +127,7 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
     [Fact]
     public async Task Ayni_hasta_iki_doktorda_ayni_saatte_randevu_alamaz()
     {
-        var (d1, d2) = (Guid.NewGuid(), Guid.NewGuid());
+        var (d1, d2) = (await NewDoctorAsync(), await NewDoctorAsync());
         var patient = await NewPatientAsync();
         await BookAsync(patient, d1, At(10, 0), At(10, 30));
 
@@ -139,7 +139,7 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
     [Fact]
     public async Task Ayni_hasta_farkli_saatlerde_randevu_alabilir()
     {
-        var (d1, d2) = (Guid.NewGuid(), Guid.NewGuid());
+        var (d1, d2) = (await NewDoctorAsync(), await NewDoctorAsync());
         var patient = await NewPatientAsync();
 
         await BookAsync(patient, d1, At(10, 0), At(10, 30));
@@ -153,7 +153,7 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
     public async Task Yirmi_paralel_istek_ayni_slota_yalnizca_biri_basarili_olur()
     {
         const int parallelism = 20;
-        var doctor = Guid.NewGuid();
+        var doctor = await NewDoctorAsync();
         var patients = new List<Guid>();
         for (var i = 0; i < parallelism; i++)
         {
@@ -166,7 +166,7 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
         {
             await using var scope = fixture.Factory.Services.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Appointments.Add(Appointment.Request(patientId, doctor, At(14, 0), At(14, 30), DateTimeOffset.UtcNow));
+            db.Appointments.Add(NewRequest(patientId, doctor, At(14, 0), At(14, 30)));
 
             await gate.Task; // hepsi hazır olunca aynı anda kaydet
 
@@ -190,37 +190,20 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
     }
 
     [Fact]
-    public async Task Kisit_ihlali_HTTP_de_409_Conflict_olarak_doner()
-    {
-        var factory = fixture.CreateFactory(includeProbeEndpoints: true);
-        var client = new ApiClient(factory.CreateClient());
-        await client.RegisterAndLoginAsync();
-
-        var doctor = Guid.NewGuid();
-        var (p1, p2) = (await NewPatientAsync(), await NewPatientAsync());
-
-        var first = await client.PostAsync("/api/test/appointments", new ProbeAppointmentRequest(p1, doctor, At(10, 0), At(10, 30)));
-        var second = await client.PostAsync("/api/test/appointments", new ProbeAppointmentRequest(p2, doctor, At(10, 15), At(10, 45)));
-
-        first.StatusCode.Should().Be(HttpStatusCode.Created);
-        second.StatusCode.Should().Be(HttpStatusCode.Conflict);
-
-        using var body = JsonDocument.Parse(await second.Content.ReadAsStringAsync());
-        body.RootElement.GetProperty("status").GetInt32().Should().Be(409);
-    }
-
-    [Fact]
     public async Task Bitis_baslangictan_once_olan_aralik_veritabaninda_da_reddedilir()
     {
         // Domain bunu zaten engeller; CHECK kısıtı ham SQL ile atlatılmaya karşı ikinci savunmadır.
         await using var scope = fixture.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var patient = await NewPatientAsync();
+        var doctor = await NewDoctorAsync();
+        var context = Contexts[doctor];
 
         var act = () => db.Database.ExecuteSqlRawAsync(
-            "INSERT INTO appointment (id, patient_id, doctor_id, start_at, end_at, status, created_at) " +
-            "VALUES ({0}, {1}, {2}, {3}, {4}, 'PENDING', now())",
-            Guid.NewGuid(), patient, Guid.NewGuid(), At(10, 30), At(10, 0));
+            "INSERT INTO appointment (id, hospital_id, patient_id, doctor_id, service_id, start_at, end_at, status, " +
+            "service_name_snapshot, duration_minutes_snapshot, price_snapshot, currency_snapshot, created_at, updated_at) " +
+            "VALUES ({0}, {1}, {2}, {3}, {4}, {5}, {6}, 'PENDING', 'Hizmet', 30, 100, 'TRY', now(), now())",
+            Guid.NewGuid(), context.HospitalId, patient, doctor, context.Service.ServiceId, At(10, 30), At(10, 0));
 
         await act.Should().ThrowAsync<Exception>().WithMessage("*ck_appointment_range*");
     }
@@ -239,18 +222,50 @@ public class AppointmentOverlapConstraintTests(ApiFixture fixture) : IClassFixtu
         return patient.Id;
     }
 
+    private sealed record DoctorContext(Guid HospitalId, ServiceSnapshot Service);
+
+    private static readonly ConcurrentDictionary<Guid, DoctorContext> Contexts = new();
+
+    /// <summary>Seed şubesinde gerçek bir bölüm + hizmet + doktor yazar (FK'ler gerçek kayıtlara işaret eder).</summary>
+    private async Task<Guid> NewDoctorAsync()
+    {
+        await using var scope = fixture.Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var hospital = await db.Hospitals.AsNoTracking().OrderBy(h => h.Id).FirstAsync();
+        var department = Department.Create(hospital.Id, $"Bölüm {Guid.NewGuid():N}");
+        var service = Service.Create(hospital.Id, department.Id, $"Hizmet {Guid.NewGuid():N}", 30, 100m, "TRY");
+        var unique = Guid.NewGuid().ToString("N");
+        var doctor = Doctor.Create(
+            $"doktor.{unique}@test.local", "test-hash", "Mehmet", "Demir", department.Id, "Dahiliye", $"D-{unique}", null, DateTimeOffset.UtcNow);
+
+        db.Departments.Add(department);
+        db.Services.Add(service);
+        db.Doctors.Add(doctor);
+        await db.SaveChangesAsync();
+
+        Contexts[doctor.Id] = new DoctorContext(hospital.Id, ServiceSnapshot.From(service));
+        return doctor.Id;
+    }
+
+    private static Appointment NewRequest(Guid patientId, Guid doctorId, DateTimeOffset start, DateTimeOffset end)
+    {
+        var context = Contexts[doctorId];
+        return Appointment.Request(patientId, doctorId, context.HospitalId, context.Service, start, end, null, DateTimeOffset.UtcNow);
+    }
+
     private async Task<Guid> BookAsync(Guid patientId, Guid doctorId, DateTimeOffset start, DateTimeOffset end)
     {
         await using var scope = fixture.Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var appointment = Appointment.Request(patientId, doctorId, start, end, DateTimeOffset.UtcNow);
+        var appointment = NewRequest(patientId, doctorId, start, end);
         db.Appointments.Add(appointment);
         await db.SaveChangesAsync();
         return appointment.Id;
     }
 
-    /// <summary>Durum geçişleri (State Pattern) Faz 4'te gelir; spike'ta durum doğrudan SQL ile değiştirilir.</summary>
+    /// <summary>Kısıt davranışı durum değerine bağlıdır; durum doğrudan SQL ile değiştirilir (geçiş kuralları ayrı sınanır).</summary>
     private async Task SetStatusAsync(Guid appointmentId, string status)
     {
         await using var scope = fixture.Factory.Services.CreateAsyncScope();

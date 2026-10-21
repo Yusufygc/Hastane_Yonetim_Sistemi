@@ -52,7 +52,6 @@ public sealed class HospitalApiFactory(
             builder.ConfigureTestServices(services =>
             {
                 services.AddTransient<IEndpoint, RoleProbeEndpoints>();
-                services.AddTransient<IEndpoint, AppointmentProbeEndpoints>();
                 services.AddTransient<IEndpoint, ErrorProbeEndpoints>();
             });
         }
