@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Appointments;
 using Hospital.Application.Features.Auth;
 using Hospital.Application.Interfaces;
 using Hospital.Persistence.Context;
@@ -34,6 +35,19 @@ public static class WebApiExt
                 TimeSpan.FromMinutes(auth.GetValue("LockoutMinutes", defaults.LockoutDuration.TotalMinutes)),
                 TimeSpan.FromMinutes(jwt.GetValue("AccessTokenMinutes", defaults.AccessTokenLifetime.TotalMinutes)),
                 TimeSpan.FromDays(jwt.GetValue("RefreshTokenDays", defaults.RefreshTokenLifetime.TotalDays)));
+        });
+
+        // Randevu kuralları (ızgara, hazırlık süresi, ufuk, iptal süresi) de çalışma anında okunur.
+        services.AddSingleton(serviceProvider =>
+        {
+            var section = serviceProvider.GetRequiredService<IConfiguration>().GetSection("Appointment");
+            var defaults = AppointmentSettings.Default;
+
+            return new AppointmentSettings(
+                section.GetValue("SlotGridMinutes", defaults.SlotGridMinutes),
+                section.GetValue("MinLeadMinutes", defaults.MinLeadMinutes),
+                section.GetValue("MaxBookingHorizonDays", defaults.MaxBookingHorizonDays),
+                section.GetValue("CancellationDeadlineHours", defaults.CancellationDeadlineHours));
         });
 
         // İmzalama anahtarı eksik/kısa ise uygulama başlarken hata verir (güvensiz varsayılanla çalışmaz).
