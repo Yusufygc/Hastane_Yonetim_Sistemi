@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Çalışan API'yi uçtan uca dener (JWT Bearer): kayıt → giriş → me → yetki → refresh/rotation → çıkış → yönetici → doktor/profil.
+# Çalışan API'yi uçtan uca dener (JWT Bearer): kayıt → giriş → me → yetki → refresh/rotation → çıkış → yönetici → doktor/profil → randevu akışı.
 #
 # Kullanım (API çalışırken; Git Bash / WSL / Linux):
 #   ./scripts/smoke-test.sh                          # https://localhost:7032 (geliştirme sertifikası için -k)
@@ -7,7 +7,7 @@
 #
 # Her çalıştırma benzersiz e-posta ve geçerli bir T.C. kimlik numarası üretir (geliştirme veritabanına bir test hastası ekler).
 # Süper yönetici bilgileri geliştirme ayar dosyasından (Seed:SuperAdmin) okunur; bulunamazsa yönetici adımları atlanır.
-# Not: register/login/refresh uçları IP başına dakikada 10 istekle sınırlıdır (Development ayarında 100); bu betik ~12 istek yapar,
+# Not: register/login/refresh uçları IP başına dakikada 10 istekle sınırlıdır (Development ayarında 100); bu betik ~15 istek yapar,
 #      Production ayarlarıyla aralıksız iki kez çalıştırmayın (429 alırsınız).
 # Doktor adımları Seed:SampleDoctor (geliştirme) hesabını kullanır; DOCTOR_EMAIL/DOCTOR_PASSWORD ile değiştirilebilir.
 set -u
@@ -62,6 +62,10 @@ new_identity_number() {
   local tenth=$(((((odd * 7 - even) % 10) + 10) % 10))
   local sum=$((odd + even + tenth))
   echo "${n}${tenth}$((sum % 10))"
+}
+
+first_match() { # first_match <regex> → LAST_BODY içindeki ilk eşleşmenin tamamı
+  echo "$LAST_BODY" | grep -oE "$1" | head -n1
 }
 
 json_value() { # json_value <anahtar> → LAST_BODY içinden ilk eşleşen değer
@@ -209,6 +213,70 @@ if [ -n "${ADMIN_EMAIL:-}" ] && [ -n "${ADMIN_PASSWORD:-}" ]; then
   check "GET /api/doctor-service-requests (yönetici)" 200
   call "$ACCESS" GET "/api/doctor-service-requests?status=bekliyor"
   check "Geçersiz durum filtresi" 400
+fi
+
+echo
+echo "7) Faz 4: slot sorgusu ve randevu yaşam döngüsü (örnek doktor + Genel Muayene)"
+if [ -n "$HOSPITAL_ID" ] && [ -n "${DOCTOR_ACCESS:-}" ]; then
+  call - GET "/api/catalog/hospitals/$HOSPITAL_ID/services"
+  SERVICE_ID="$(echo "$LAST_BODY" | sed -nE 's/.*"id":"([^"]+)","departmentId":"[^"]*","name":"Genel Muayene".*//p' | head -n1)"
+  call - GET "/api/catalog/doctors?hospitalId=$HOSPITAL_ID&serviceId=$SERVICE_ID"
+  DOCTOR_ID="$(first_match '"id":"[^"]+"' | sed -E 's/"id":"([^"]+)"//')"
+
+  # En az 3 gün sonrası, hafta içi (örnek doktor Pzt-Cum 09:00-12:00 uygun).
+  DAYS=3
+  while [ "$(date -d "+$DAYS days" +%u)" -ge 6 ]; do DAYS=$((DAYS + 1)); done
+  APPT_DATE="$(date -d "+$DAYS days" +%F)"
+
+  if [ -n "$SERVICE_ID" ] && [ -n "$DOCTOR_ID" ]; then
+    call - GET "/api/catalog/doctors/$DOCTOR_ID/slots?serviceId=$SERVICE_ID&date=$APPT_DATE"
+    check "GET /api/catalog/doctors/{id}/slots (anonim, $APPT_DATE)" 200
+    SLOT_START="$(first_match '"startAt":"[^"]+"' | sed -E 's/"startAt":"([^"]+)"//')"
+    echo "         ilk müsait slot (UTC): $SLOT_START"
+    call - GET "/api/catalog/doctors/$DOCTOR_ID/slots?serviceId=$SERVICE_ID&date=02.11.2026"
+    check "Slot sorgusu geçersiz tarih biçimi (02.11.2026)" 400
+
+    if [ -n "$SLOT_START" ]; then
+      call "$PATIENT_ACCESS" POST /api/appointments "{\"doctorId\":\"$DOCTOR_ID\",\"serviceId\":\"$SERVICE_ID\",\"startAt\":\"$SLOT_START\",\"patientNote\":\"Smoke test\"}"
+      check "POST /api/appointments (hasta, slot)" 201
+      APPT_ID="$(json_value id)"
+      call "$PATIENT_ACCESS" POST /api/appointments "{\"doctorId\":\"$DOCTOR_ID\",\"serviceId\":\"$SERVICE_ID\",\"startAt\":\"$SLOT_START\"}"
+      check "Aynı slot için ikinci talep" 409
+      call "$PATIENT_ACCESS" GET "/api/appointments/$APPT_ID"
+      check "GET /api/appointments/{id} (hasta, kendi randevusu)" 200
+      echo "         durum: $(json_value status)"
+      call "$PATIENT_ACCESS" POST "/api/appointments/$APPT_ID/approve"
+      check "Hasta -> onaylama" 403
+      call "$DOCTOR_ACCESS" POST "/api/appointments/$APPT_ID/reject" '{"reason":""}'
+      check "Doktor -> nedensiz red" 400
+      call "$DOCTOR_ACCESS" POST "/api/appointments/$APPT_ID/approve"
+      check "Doktor -> onaylama" 204
+      call "$DOCTOR_ACCESS" POST "/api/appointments/$APPT_ID/complete"
+      check "Doktor -> başlamamış randevuyu tamamlama" 409
+      call "$PATIENT_ACCESS" POST "/api/appointments/$APPT_ID/cancel" '{"reason":"Smoke test iptali"}'
+      check "Hasta -> iptal (süre sınırı dışında)" 204
+      call "$PATIENT_ACCESS" POST "/api/appointments/$APPT_ID/cancel" '{"reason":"tekrar"}'
+      check "İptal edilmiş randevuyu tekrar iptal" 409
+      call "$PATIENT_ACCESS" GET "/api/patients/me/appointments?status=CANCELLED"
+      check "GET /api/patients/me/appointments" 200
+      call "$DOCTOR_ACCESS" GET "/api/doctors/me/appointments"
+      check "GET /api/doctors/me/appointments (doktor)" 200
+      call "$DOCTOR_ACCESS" GET "/api/doctors/me/schedule"
+      check "GET /api/doctors/me/schedule (doktor)" 200
+    fi
+  else
+    echo "  (atlandı: örnek doktor/hizmet katalogda bulunamadı; Seed:SampleData ve Seed:SampleDoctor açık mı?)"
+  fi
+
+  if [ -n "${ADMIN_EMAIL:-}" ] && [ -n "${ADMIN_PASSWORD:-}" ]; then
+    login "$ADMIN_EMAIL" "$ADMIN_PASSWORD"
+    call "$ACCESS" GET "/api/appointments?hospitalId=$HOSPITAL_ID"
+    check "GET /api/appointments (yönetici)" 200
+    call "$PATIENT_ACCESS" GET "/api/appointments"
+    check "Hasta -> GET /api/appointments (yönetici ucu)" 403
+  fi
+else
+  echo "  (atlandı: şube veya örnek doktor oturumu yok)"
 fi
 
 echo

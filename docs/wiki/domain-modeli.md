@@ -19,7 +19,7 @@ EF Core **gerçek Table Per Type (TPT)**: `USER_ACCOUNT` taban tablo; alt tipler
 - `AggregateRoot` domain event listesi tutar; olaylar `SaveChanges` sırasında dağıtılır.
 
 ## Aggregate'ler
-Gerçekleşen: `User` → `Patient`, `Admin`, **`Doctor`** (+`DoctorServiceLink`, `DoctorAvailability`, `DoctorTimeOff`), **`Staff`** · `Organization` · **`HospitalBranch`** (+`HospitalWorkingHours` çocuk varlıkları) · `Department` · `Service` · `Appointment` (Faz 1B çekirdeği). Planlanan: `Appointment` State Pattern. Kurallar: [[randevu-kurallari]].
+Gerçekleşen: `User` → `Patient`, `Admin`, **`Doctor`** (+`DoctorServiceLink`, `DoctorAvailability`, `DoctorTimeOff`), **`Staff`** · `Organization` · **`HospitalBranch`** (+`HospitalWorkingHours` çocuk varlıkları) · `Department` · `Service` · `Appointment` (Faz 1B çekirdeği). `Appointment` artık tam aggregate (Faz 4). Kurallar: [[randevu-kurallari]].
 
 ## Kurum varlıkları (Faz 2)
 - **`HospitalBranch`** = ER'deki HOSPITAL (tablo `hospital`, API `/hospitals`). Sınıf adı kök namespace `Hospital` ile çakıştığı için bu ad kullanıldı ([[kararlar]] K-32). `SetWorkingHours` listeyi **eşitler** (mevcut gün güncellenir, yeni gün eklenir, listede olmayan kaldırılır; önce doğrular, sonra uygular → atomik). `TimeZoneId` IANA kimliği olarak doğrulanır.
@@ -34,5 +34,11 @@ Gerçekleşen: `User` → `Patient`, `Admin`, **`Doctor`** (+`DoctorServiceLink`
 - **`Staff : User`** (tablo `staff`): ad, soyad, ünvan, şube, opsiyonel bölüm. Randevu işine karışmaz.
 - **`Patient.UpdateProfile`:** ad, soyad, telefon, kan grubu (A+, A-, B+, B-, AB+, AB-, 0+, 0-); T.C. ve doğum tarihi değiştirilemez. **`TurkishIdentityNumber.Mask`:** ilk 3 + son 2 hane görünür (`100******46`).
 - Domain kuralları ihlalinde `DomainException` fırlatır; handler'lar beklenen durumları önceden denetleyip `Result`/`Error` döner (Türkçe `code`'lu), `DomainException` ikinci savunmadır ([[hata-yonetimi]]).
+
+## Randevu aggregate'i (Faz 4)
+- **`Appointment`** (`AggregateRoot`): şube, hasta, doktor, hizmet kimlikleri; `[StartAt, EndAt)` UTC; `Status`; **snapshot** (`ServiceNameSnapshot`, `DurationMinutesSnapshot`, `PriceSnapshot`, `CurrencySnapshot`); `PatientNote`, `DecisionReason`, `StatusChangedBy`, `CreatedAt/UpdatedAt`. Oluşturma tek yoldan: `Appointment.Request(...)` (+ `ServiceSnapshot.From(service)`).
+- **State Pattern:** `AppointmentState` (soyut) → `PendingState`, `ApprovedState`, `RejectedState`, `CancelledState`, `CompletedState`. `Approve/Reject/Cancel/Complete` önce `State.Next(action)` ile geçişi doğrular (geçersizse `DomainException`), sonra durumu, işleyeni ve zamanı kaydeder; red/iptalde neden zorunlu; `Complete` randevu başlamadan çalışmaz. `HoldsSlot` = PENDING/APPROVED. `IsWithinCancellationDeadline` hastanın iptal süre sınırını hesaplar (yalnız onaylı randevu).
+- **Olaylar:** `AppointmentRequestedEvent`, `AppointmentApprovedEvent`, `AppointmentRejectedEvent`, `AppointmentCancelledEvent` (`DomainEvent` kayıtları) `Raise` ile üretilir; Faz 5'te outbox'a çevrilir.
+- **`SlotCalculator`** (`Domain/Scheduling`): saf fonksiyon; girdiler `SlotParameters` (şube saatleri, uygunluklar, izin ve dolu aralıklar `TimeRange`), çıktı UTC slot listesi. `LocalDayBounds` DST günlerinde 23/25 saatlik gün sınırlarını verir.
 
 - Ortak doğrulama: `Domain/Common/Guard` (boş/uzunluk/Guid).

@@ -13,9 +13,10 @@ Kaynak: `plan.md` §8. Katman yerleşimi: [[mimari]].
 - Pipeline: loglama (dış) → doğrulama (iç) → handler. Transaction behavior yok: handler tek `SaveChangesAsync` ile atomik yazar. Tüm mesajlar `Result`/`Result<T>` döner; doğrulama hatası handler'a girmeden `Result` olarak döner. Endpoint iş kuralı içermez ([[api-uc-noktalari]]).
 
 ## State Pattern
-`AppointmentState` taban; `Pending/Approved/Rejected/Cancelled/Completed` türevleri. Geçersiz geçiş `DomainException`. DB'de yalnız `status` string. Geçiş tablosu: [[randevu-kurallari]].
+`AppointmentState` taban; `Pending/Approved/Rejected/Cancelled/Completed` türevleri (**Faz 4'te uygulandı**, `Domain/Entities/Appointments/States/`). Geçersiz geçiş `DomainException`; handler önce `Allows(action)` ile denetleyip Türkçe `409` döner. DB'de yalnız `status` string; durum nesnesi `Appointment.State` ile bu değerden üretilir (EF'e eşlenmez). Geçiş tablosu planla birebir birim testle doğrulanır. Tablo: [[randevu-kurallari]].
 
 ## Domain Events + Transactional Outbox
+*(Faz 4 durumu: olaylar `Appointment` içinde üretilir; dağıtım ve `EMAIL_OUTBOX` Faz 5'tedir.)*
 Çökme anında bildirimin kaybolmaması için: event handler **aynı transaction'da** `EMAIL_OUTBOX` satırı yazar; `BackgroundService` satırları `FOR UPDATE SKIP LOCKED` ile alıp MailKit ile gönderir, hatada üstel geri çekilmeyle yeniden dener. `dedup_key` benzersizliği tekrar gönderimi önler.
 
 | Olay | Alıcı |

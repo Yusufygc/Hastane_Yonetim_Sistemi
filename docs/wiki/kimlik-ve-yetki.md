@@ -32,6 +32,11 @@ Bedel/dikkat: token'ı istemci saklar (XSS saldırısında çalınabilir) — ar
 - **Doktor kendi kaynağında:** kimlik her zaman belirteçten (`/api/doctors/me/**`); başka doktorun uygunluk/izin kaydı kimliğiyle gelinse bile doktorun kendi koleksiyonunda aranır → **404**. Doktor yalnız uzmanlık ve telefonunu değiştirir; ad, diploma, bölüm yöneticiye aittir.
 - Katalog doktor listesi anonimdir ve **kişisel alan içermez** (e-posta, telefon, diploma yok) ([[kararlar]] K-45).
 
+## Randevu yetkisi (Faz 4)
+- Hasta yalnız kendi randevusunu görür/iptal eder; doktor yalnız kendi randevusunu görür, onaylar, reddeder, tamamlar, iptal eder; yönetici yalnız kapsamındaki şubenin randevularını görür/iptal eder; başkasının randevusu **404** (varlığı sızdırılmaz). Personel randevu ucuna giremez (403).
+- `AppointmentAccess` (Application) ortak sahiplik denetimidir; slot sorgusu anonimdir, randevu almak için giriş şarttır ([[kararlar]] K-15).
+- Hasta hesabının aktifliği ayrı sorguyla değil, her istekte JWT doğrulamasındaki güvenlik damgası denetimiyle sağlanır.
+
 ## Yetkilendirme (4 savunma katmanı)
 Politikalar: `Policies.Patient`, `Doctor`, `Admin`, `SuperAdmin`, `Authenticated`.
 1. **Fallback policy = giriş zorunlu**; anonim uçlar açıkça `AllowAnonymous` (`login`, `register`, `refresh`, `catalog/*`). Bilinmeyen rotalar da anonim kullanıcıya 401 döner (rota varlığı sızmaz).
