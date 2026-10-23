@@ -1,4 +1,5 @@
 using FluentValidation;
+using Hospital.Application.Interfaces;
 using Hospital.Application.Behaviors;
 using Hospital.Application.Features.Appointments;
 using Hospital.Application.Features.Auth;
@@ -30,6 +31,26 @@ public static class ApplicationExt
 
         // Slot sorgusu ve randevu oluşturmanın ortak ön koşul + müsaitlik hesabı.
         services.AddScoped<SlotAvailabilityService>();
+
+        // Domain event dinleyicileri (IDomainEventHandler<>) Features/** altından taranıp kaydedilir.
+        services.AddDomainEventHandlers();
+
+        return services;
+    }
+
+    /// <summary>Application assembly'sindeki tüm <see cref="IDomainEventHandler{TEvent}"/> uygulamalarını kaydeder.</summary>
+    private static IServiceCollection AddDomainEventHandlers(this IServiceCollection services)
+    {
+        var handlerContract = typeof(IDomainEventHandler<>);
+
+        foreach (var type in AssemblyReference.Assembly.GetTypes().Where(t => t is { IsClass: true, IsAbstract: false }))
+        {
+            foreach (var contract in type.GetInterfaces()
+                         .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == handlerContract))
+            {
+                services.AddScoped(contract, type);
+            }
+        }
 
         return services;
     }
