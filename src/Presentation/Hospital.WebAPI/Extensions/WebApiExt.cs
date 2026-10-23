@@ -1,5 +1,7 @@
 using Hospital.Application.Features.Appointments;
 using Hospital.Application.Features.Auth;
+using Hospital.Application.Features.Notifications;
+using Hospital.Domain.Entities.Notifications;
 using Hospital.Application.Interfaces;
 using Hospital.Persistence.Context;
 using Hospital.WebAPI.Common;
@@ -48,6 +50,37 @@ public static class WebApiExt
                 section.GetValue("MinLeadMinutes", defaults.MinLeadMinutes),
                 section.GetValue("MaxBookingHorizonDays", defaults.MaxBookingHorizonDays),
                 section.GetValue("CancellationDeadlineHours", defaults.CancellationDeadlineHours));
+        });
+
+        // E-posta (SMTP) ve outbox işleyici ayarları. Parola yalnız ortam değişkeni/gizli depo ile verilir.
+        services.AddSingleton(serviceProvider =>
+        {
+            var email = serviceProvider.GetRequiredService<IConfiguration>().GetSection("Email");
+            var smtp = email.GetSection("Smtp");
+            var outbox = email.GetSection("Outbox");
+            var defaults = NotificationSettings.Default;
+
+            var security = Enum.TryParse<SmtpSecurity>(smtp["Security"], ignoreCase: true, out var parsed)
+                ? parsed
+                : defaults.Smtp.Security;
+
+            return new NotificationSettings(
+                new SmtpSettings(
+                    smtp["Host"] ?? defaults.Smtp.Host,
+                    smtp.GetValue("Port", defaults.Smtp.Port),
+                    security,
+                    smtp["UserName"],
+                    smtp["Password"],
+                    smtp["FromAddress"] ?? defaults.Smtp.FromAddress,
+                    smtp["FromName"] ?? defaults.Smtp.FromName),
+                new OutboxSettings(
+                    outbox.GetValue("Enabled", defaults.Outbox.Enabled),
+                    TimeSpan.FromSeconds(outbox.GetValue("PollSeconds", defaults.Outbox.PollInterval.TotalSeconds)),
+                    outbox.GetValue("BatchPerCycle", defaults.Outbox.BatchPerCycle),
+                    new RetryPolicy(
+                        outbox.GetValue("MaxAttempts", defaults.Outbox.Retry.MaxAttempts),
+                        TimeSpan.FromSeconds(outbox.GetValue("BaseDelaySeconds", defaults.Outbox.Retry.BaseDelay.TotalSeconds)),
+                        TimeSpan.FromSeconds(outbox.GetValue("MaxDelaySeconds", defaults.Outbox.Retry.MaxDelay.TotalSeconds)))));
         });
 
         // İmzalama anahtarı eksik/kısa ise uygulama başlarken hata verir (güvensiz varsayılanla çalışmaz).
