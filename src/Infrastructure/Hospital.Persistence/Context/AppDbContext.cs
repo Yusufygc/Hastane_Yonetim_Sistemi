@@ -1,13 +1,20 @@
 using Hospital.Application.Exceptions;
+using Hospital.Application.Interfaces;
+using Hospital.Domain.Common;
 using Hospital.Domain.Entities.Appointments;
 using Hospital.Domain.Entities.Facility;
+using Hospital.Domain.Entities.Notifications;
 using Hospital.Domain.Entities.Users;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 namespace Hospital.Persistence.Context;
 
-public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+/// <param name="dispatcher">
+/// Domain event dağıtıcı. DI'dan gelir; tasarım zamanı (migration) gibi dağıtıcısız oluşturulursa olaylar dağıtılmaz.
+/// </param>
+public sealed class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDispatcher? dispatcher = null)
+    : DbContext(options)
 {
     private const string UniqueViolation = "23505";
     private const string ExclusionViolation = "23P01";
@@ -34,6 +41,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<Service> Services => Set<Service>();
 
+    public DbSet<EmailOutboxMessage> EmailOutbox => Set<EmailOutboxMessage>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Randevu çakışma kısıtı (exclusion constraint) için gerekli eklenti.
@@ -49,6 +58,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     /// </summary>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        // Olay dinleyicileri (ör. e-posta outbox satırı) değişikliklerle AYNI SaveChanges'te yazılır: atomik.
+        await DispatchDomainEventsAsync(cancellationToken);
+
         try
         {
             return await base.SaveChangesAsync(cancellationToken);
@@ -64,6 +76,35 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         {
             // Aynı satırı aynı anda iki istek değiştirdi (xmin eşzamanlılık belirteci): kaybeden 409 alır.
             throw new DataConflictException("concurrency");
+        }
+    }
+
+    /// <summary>
+    /// İzlenen aggregate'lerin biriken domain event'lerini toplar, aggregate'ten temizler ve dinleyicilere dağıtır.
+    /// Dinleyicilerin eklediği kayıtlar aynı <c>base.SaveChangesAsync</c> ile yazılır.
+    /// </summary>
+    private async Task DispatchDomainEventsAsync(CancellationToken cancellationToken)
+    {
+        if (dispatcher is null)
+        {
+            return;
+        }
+
+        var roots = ChangeTracker.Entries<AggregateRoot>()
+            .Select(entry => entry.Entity)
+            .Where(root => root.DomainEvents.Count > 0)
+            .ToList();
+
+        var events = roots.SelectMany(root => root.DomainEvents).ToList();
+
+        foreach (var root in roots)
+        {
+            root.ClearDomainEvents();
+        }
+
+        foreach (var domainEvent in events)
+        {
+            await dispatcher.DispatchAsync(domainEvent, cancellationToken);
         }
     }
 }
