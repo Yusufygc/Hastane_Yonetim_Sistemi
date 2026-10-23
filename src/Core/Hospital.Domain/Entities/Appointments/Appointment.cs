@@ -149,21 +149,21 @@ public sealed class Appointment : AggregateRoot
     public void Approve(Guid doctorId, DateTimeOffset now)
     {
         Transition(AppointmentAction.Approve, doctorId, reason: null, now);
-        Raise(new AppointmentApprovedEvent(Id, PatientId, DoctorId, HospitalId, StartAt));
+        Raise(new AppointmentApprovedEvent(Id, PatientId, DoctorId, HospitalId, ServiceNameSnapshot, StartAt));
     }
 
     public void Reject(Guid doctorId, string reason, DateTimeOffset now)
     {
         var text = Guard.NotBlank(reason, "Red nedeni", ReasonMaxLength);
         Transition(AppointmentAction.Reject, doctorId, text, now);
-        Raise(new AppointmentRejectedEvent(Id, PatientId, DoctorId, text));
+        Raise(new AppointmentRejectedEvent(Id, PatientId, DoctorId, HospitalId, ServiceNameSnapshot, StartAt, text));
     }
 
     public void Cancel(Guid actorId, string reason, DateTimeOffset now)
     {
         var text = Guard.NotBlank(reason, "İptal nedeni", ReasonMaxLength);
         Transition(AppointmentAction.Cancel, actorId, text, now);
-        Raise(new AppointmentCancelledEvent(Id, PatientId, DoctorId, actorId, text));
+        Raise(new AppointmentCancelledEvent(Id, PatientId, DoctorId, HospitalId, ServiceNameSnapshot, StartAt, actorId, text));
     }
 
     /// <summary>Yalnızca onaylı ve başlamış randevu tamamlanır.</summary>
