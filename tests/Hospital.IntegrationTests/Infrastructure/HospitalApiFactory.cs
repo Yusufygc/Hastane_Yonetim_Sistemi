@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Notifications;
 using Hospital.WebAPI.Common;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -11,8 +12,12 @@ namespace Hospital.IntegrationTests.Infrastructure;
 public sealed class HospitalApiFactory(
     string connectionString,
     IReadOnlyDictionary<string, string?>? settings = null,
-    bool includeProbeEndpoints = false) : WebApplicationFactory<Program>
+    bool includeProbeEndpoints = false,
+    bool useFakeEmailSender = true) : WebApplicationFactory<Program>
 {
+    /// <summary>Test göndericisi (yalnız <c>useFakeEmailSender</c> açıkken kayıtlıdır).</summary>
+    public FakeEmailSender EmailSender => Services.GetRequiredService<FakeEmailSender>();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         var merged = new Dictionary<string, string?>
@@ -35,6 +40,10 @@ public sealed class HospitalApiFactory(
 
             // Testler aynı IP'den çok sayıda kayıt/giriş yapar; hız sınırı ayrı bir testte denenir.
             ["RateLimiting:Auth:PermitLimit"] = "1000",
+
+            // E-posta outbox işleyicisi varsayılan olarak kapalı: testler outbox satırlarını ve IEmailOutboxStore'u
+            // doğrudan, deterministik biçimde sınar. Arka plan işleyiciyi sınayan testler açıkça etkinleştirir.
+            ["Email:Outbox:Enabled"] = "false",
         };
 
         if (settings is not null)
@@ -46,6 +55,15 @@ public sealed class HospitalApiFactory(
         }
 
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(merged));
+
+        if (useFakeEmailSender)
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddSingleton<FakeEmailSender>();
+                services.AddSingleton<IEmailSender>(provider => provider.GetRequiredService<FakeEmailSender>());
+            });
+        }
 
         if (includeProbeEndpoints)
         {

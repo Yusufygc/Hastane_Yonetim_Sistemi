@@ -19,9 +19,10 @@ public sealed class ApiFixture : IAsyncLifetime
     /// <summary>Rol politikası uçlarını (yalnız test) içeren, ayrı yapılandırılabilir ikinci bir uygulama örneği.</summary>
     public HospitalApiFactory CreateFactory(
         IReadOnlyDictionary<string, string?>? settings = null,
-        bool includeProbeEndpoints = false)
+        bool includeProbeEndpoints = false,
+        bool useFakeEmailSender = true)
     {
-        var factory = new HospitalApiFactory(_database.ConnectionString, settings, includeProbeEndpoints);
+        var factory = new HospitalApiFactory(_database.ConnectionString, settings, includeProbeEndpoints, useFakeEmailSender);
         _extraFactories.Add(factory);
         return factory;
     }
