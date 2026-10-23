@@ -76,6 +76,9 @@ Her hata yanıtı JSON'dur ve nedenini söyler (ayrıntı: [[hata-yonetimi]]):
 
 Sık hatalar: `birthDate` **`yyyy-MM-dd`** olmalı (`1999-11-11`, `11.11.1999` değil) · `phone` **metin** olmalı (`"5444444444"`, tırnaklı) · `identityNumber` geçerli 11 haneli T.C. · parola ≥ 8 karakter, harf+rakam · `Content-Type: application/json`.
 
+## Faz 5: e-postaları görme (Mailpit)
+Randevu talep/onay/red/iptal işlemlerinden sonra e-postalar birkaç saniye içinde **http://localhost:8025** (Mailpit) arayüzünde görünür: hasta "Randevu talebiniz alındı", doktor "Yeni randevu talebi onayınızı bekliyor"; onayda hastaya "Randevunuz onaylandı"; red/iptalde neden metniyle ilgili tarafa. Gönderim arka planda (outbox işleyici) yapıldığından API yanıtı e-postayı beklemez; Mailpit/SMTP kapalıysa e-postalar `email_outbox` tablosunda `PENDING` kalır ve SMTP gelince gider. Ayrıntı ve yapılandırma: [[bildirimler]].
+
 ## Faz 4 örnekleri (slot, randevu)
 ```bash
 # 1) Anonim: müsait slotlar (tarih yalnız yyyy-MM-dd; yanıtta UTC startAt/endAt + şubenin yerel saati localStart)
@@ -126,6 +129,7 @@ BASE=http://localhost:5284 ./scripts/smoke-test.sh
 ```
 - Süper yönetici bilgilerini `appsettings.Development.json`'dan okur (veya `ADMIN_EMAIL`/`ADMIN_PASSWORD` ortam değişkenleri).
 - Yaklaşık 12 `auth` isteği yapar; Development ayarında sınır 100/dk olduğundan sorun çıkmaz, Production ayarlarında dakikada 10 sınırı yüzünden aralıksız iki kez çalıştırmayın.
+- Bölüm 8 (Faz 5): randevu akışında üretilen e-postaların Mailpit'e düştüğünü API'sinden doğrular (Mailpit kapalıysa atlanır; `MAILPIT_URL` ile değişir).
 - Bölüm 7 (Faz 4): anonim slot sorgusu (geçersiz tarih biçimi dahil), hasta randevu talebi → çift talep 409 → doktor onayı → hasta/doktor yetki sınırları → iptal (tekrar iptal 409) → hasta/doktor/yönetici listeleri. Randevuyu iptal ettiğinden slotu serbest bırakır, betik tekrar çalıştırılabilir.
 - Bölüm 6 (Faz 3): hasta profili (maskeli T.C.), rol sınırları, anonim katalog doktorları, örnek doktor (`DOCTOR_EMAIL`/`DOCTOR_PASSWORD` ile değişir) ve yönetici listeleri.
 - Geliştirme veritabanına her çalıştırmada bir test hastası ekler.

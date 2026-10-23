@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Çalışan API'yi uçtan uca dener (JWT Bearer): kayıt → giriş → me → yetki → refresh/rotation → çıkış → yönetici → doktor/profil → randevu akışı.
+# Çalışan API'yi uçtan uca dener (JWT Bearer): kayıt → giriş → me → yetki → refresh/rotation → çıkış → yönetici → doktor/profil → randevu akışı → e-posta bildirimleri (Mailpit).
 #
 # Kullanım (API çalışırken; Git Bash / WSL / Linux):
 #   ./scripts/smoke-test.sh                          # https://localhost:7032 (geliştirme sertifikası için -k)
@@ -277,6 +277,37 @@ if [ -n "$HOSPITAL_ID" ] && [ -n "${DOCTOR_ACCESS:-}" ]; then
   fi
 else
   echo "  (atlandı: şube veya örnek doktor oturumu yok)"
+fi
+
+echo
+echo "8) Faz 5: e-posta bildirimleri (Mailpit; randevu akışı çalıştıysa)"
+MAILPIT_URL="${MAILPIT_URL:-http://localhost:8025}"
+if [ -n "${APPT_ID:-}" ] && curl -s -m 3 -o /dev/null "$MAILPIT_URL/api/v1/info"; then
+  # Outbox işleyici birkaç saniyede bir çalışır; Mailpit'e düşmesini bekle (en fazla ~20 sn).
+  wait_mail() { # wait_mail <alıcı> <konu parçası>
+    local i body
+    for i in $(seq 1 20); do
+      body="$(curl -s -m 5 "$MAILPIT_URL/api/v1/search?query=to:%22$1%22")"
+      if echo "$body" | grep -q "$2"; then return 0; fi
+      sleep 1
+    done
+    return 1
+  }
+  mail_check() { # mail_check <açıklama> <alıcı> <konu parçası>
+    if wait_mail "$2" "$3"; then
+      echo "  [OK]   $1"
+      PASS=$((PASS + 1))
+    else
+      echo "  [FAIL] $1 (Mailpit'te bulunamadı: $2 / $3)"
+      FAIL=$((FAIL + 1))
+    fi
+  }
+  mail_check "Hasta: 'Randevu talebiniz alındı' e-postası" "$EMAIL" "Randevu talebiniz alındı"
+  mail_check "Doktor: 'Yeni randevu talebi' e-postası" "$DOCTOR_EMAIL" "Yeni randevu talebi"
+  mail_check "Doktor: hasta iptali e-postası" "$DOCTOR_EMAIL" "Bir randevu iptal edildi"
+  mail_check "Hasta: 'Randevunuz onaylandı' e-postası" "$EMAIL" "Randevunuz onaylandı"
+else
+  echo "  (atlandı: randevu oluşturulmadı veya Mailpit ($MAILPIT_URL) çalışmıyor; 'docker compose up -d' ile açın)"
 fi
 
 echo

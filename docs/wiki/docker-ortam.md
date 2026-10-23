@@ -4,7 +4,7 @@ Kaynak: `plan.md` §12. Bağlı sayfalar: [[teknoloji-yigini]], [[test-stratejis
 
 ## Planlanan `docker-compose.yml`
 - `postgres:16` — kalıcı volume; `btree_gist` migration ile açılır.
-- `axllent/mailpit` — SMTP `:1025`, web arayüzü `:8025`.
+- `axllent/mailpit` — SMTP `:1025`, web arayüzü ve HTTP API `:8025`. Faz 5 entegrasyon testleri gerçek SMTP ile Mailpit'e gönderir ve API'sinden doğrular; container testlerinde adres `MAILPIT_HOST=host.docker.internal` ile verilir (`scripts/test-docker.ps1`), CI'da Mailpit service container'ıdır.
 - (Son fazda) API imajı.
 
 Bağlantı dizesi ve SMTP ayarları `appsettings.Development.json` + `user-secrets`; depoda parola yok.

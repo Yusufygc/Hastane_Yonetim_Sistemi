@@ -18,6 +18,7 @@ Hastane/Klinik Randevu Sistemi bilgi tabanı. Kurallar için kök dizindeki `CLA
 - [[domain-modeli]] — Kullanıcı hiyerarşisi (TPT), kapsülleme, State.
 - [[veritabani]] — ER özeti, bütünlük kuralları, indeksler.
 - [[randevu-kurallari]] — Slot üretimi, çakışma koruması, durum makinesi, doktor-hizmet onayı.
+- [[bildirimler]] — E-posta bildirimleri: olay → outbox → işleyici → SMTP, şablonlar, yeniden deneme, yapılandırma, hata ayıklama.
 
 ## API ve Güvenlik
 - [[kimlik-ve-yetki]] — JWT Bearer + refresh token (rotation), CORS, politikalar, kaynak sahipliği, kapsam.

@@ -9,8 +9,14 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
 
-    # Entegrasyon testleri gerçek PostgreSQL kullanır (geçici veritabanı açar/siler).
+    # Entegrasyon testleri gerçek PostgreSQL (geçici veritabanı açar/siler) ve gerçek SMTP için Mailpit kullanır.
     services:
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+          - 8025:8025
+
       postgres:
         image: postgres:16-alpine
         env:

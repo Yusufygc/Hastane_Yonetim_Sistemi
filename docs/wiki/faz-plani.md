@@ -27,9 +27,9 @@ Durum işaretleri: `[ ]` başlamadı · `[~]` sürüyor · `[x]` tamam.
 1. `SlotCalculator` (saf, DST'ye duyarlı) + `GetAvailableSlots` · 2. State Pattern (`AppointmentState` + 5 durum) · 3. `APPOINTMENT` genişletildi: FK'ler, snapshot, `xmin` eşzamanlılık belirteci (migration `AppointmentCore`) · 4. Komutlar: Create/Approve/Reject/Cancel/Complete · 5. Sorgular: slotlar, detay, hasta/doktor/yönetici listeleri, doktor takvimi · 6. Çakışma/eşzamanlılık testleri (HTTP seviyesinde 20 paralel istek) · 7. Faz 3'ten devreden gelecek-randevu denetimleri (hizmet kaldırma, izin ekleme, hesap pasifleştirme).
 **Çıkış (sağlandı):** Anonim slot sorgusu → hasta talebi (PENDING, snapshot) → doktor onayı/reddi → iptal/tamamlama; çakışma kodda ve DB'de engelli; başkasının randevusu 404; hastanın iptal süre sınırı. 251 birim + 9 mimari + 260 entegrasyon test yeşil. Bkz. [[randevu-kurallari]], [[domain-modeli]], [[veritabani]], [[api-uc-noktalari]], [[kararlar]] K-49…K-56, [[test-stratejisi]]. Faz 5'e bırakılanlar: olay dağıtımı + e-posta outbox; Faz 6: sayfalama.
 
-## [ ] Faz 5 — Bildirimler
-`EMAIL_OUTBOX`, event handler'lar, `BackgroundService` işleyici (`SKIP LOCKED`, yeniden deneme), MailKit, Mailpit doğrulaması. Bkz. [[tasarim-kaliplari]].
-**Çıkış:** Talep/onay/red/iptalde Mailpit'te doğru e-posta; SMTP kapalıyken akış bozulmaz.
+## [x] Faz 5 — Bildirimler (2026-10-23 tamamlandı)
+`EMAIL_OUTBOX` (migration `EmailOutbox`), olay dağıtımı SaveChanges içinde (`IDomainEventDispatcher`), randevu e-posta dinleyicileri (talep/onay/red/iptal), Türkçe şablonlar, `dedup_key` ile tekrar önleme, `BackgroundService` outbox işleyici (`FOR UPDATE SKIP LOCKED`, üstel geri çekilme, 5 denemede `FAILED`), MailKit 4.18.1, Mailpit ile doğrulama, smoke test bölüm 8.
+**Çıkış (sağlandı):** Talep/onay/red/iptalde Mailpit'te doğru e-postalar görünür; SMTP kapalıyken (gerçek kapalı port) randevu akışı bozulmaz, e-posta bekler ve SMTP gelince gider; aynı olay için tek e-posta; çoklu işleyici çift göndermez. 275 birim + 9 mimari + 279 entegrasyon test yeşil. Bkz. [[bildirimler]], [[tasarim-kaliplari]], [[kararlar]] K-57…K-61, [[test-stratejisi]].
 
 ## [ ] Faz 6 — Sağlamlaştırma ve Backend Kapanışı
 Yetki matrisi + IDOR tam kapsam · OpenAPI/Scalar · opsiyonel `Pending` zaman aşımı · performans/indeks · API Dockerfile · README/sunum özeti. **API sözleşmesi dondurulur.**

@@ -2,7 +2,7 @@
 #
 # Neden: Windows Smart App Control, yerelde derlenen imzasız DLL'leri (ör. Hospital.Api.dll) bazen
 # "bilinmeyen" sayıp yüklemeyi reddeder (0x800711C7). Container içinde bu politika uygulanmaz.
-# Önkoşul: Docker Desktop açık ve `docker compose up -d` ile PostgreSQL çalışıyor.
+# Önkoşul: Docker Desktop açık ve `docker compose up -d` ile PostgreSQL ve Mailpit çalışıyor.
 #
 # Kullanım:  ./scripts/test-docker.ps1 [dotnet test argümanları]
 #   ./scripts/test-docker.ps1
@@ -32,6 +32,7 @@ docker run --rm `
     -v "${repo}:/src:ro" `
     -v hospital-nuget-cache:/root/.nuget/packages `
     -e "TEST_POSTGRES_ADMIN=$adminConnection" `
+    -e MAILPIT_HOST=host.docker.internal `
     -e DOTNET_CLI_TELEMETRY_OPTOUT=1 `
     -e DOTNET_NOLOGO=1 `
     mcr.microsoft.com/dotnet/sdk:9.0 `

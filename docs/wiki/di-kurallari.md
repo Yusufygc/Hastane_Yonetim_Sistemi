@@ -14,7 +14,7 @@ Kullanıcı kararı: her katman kendi servislerini **kendi `Extensions/` klasör
 |---|---|---|---|
 | Application | `Hospital.Application/Extensions/ApplicationExt.cs` | `AddApplication()` | Mediator (+ loglama/doğrulama behavior'ları), FluentValidation validator taraması, `TimeProvider` |
 | Application | `.../Extensions/FeatureRegistrationExt.cs` | `AddFeatureImplementations(assembly, ns)` | Yardımcı: `Features/**` somutlarını `Hospital.Application.*` arayüzleriyle tarayıp kaydeder |
-| Infrastructure | `Hospital.Infrastructure/Extensions/InfrastructureExt.cs` | `AddInfrastructure()` | Dış servisler (`Features/**` taranır: parola özeti, e-posta…) |
+| Infrastructure | `Hospital.Infrastructure/Extensions/InfrastructureExt.cs` | `AddInfrastructure()` | Dış servisler (`Features/**` taranır: parola özeti, SMTP gönderici…) + arka plan hizmeti `EmailOutboxProcessor` (`AddHostedService`) |
 | Persistence | `Hospital.Persistence/Extensions/PersistenceExt.cs` | `AddPersistence()` | `AppDbContext` (Npgsql, snake_case), `IUnitOfWork`, `Features/**` taraması (repository, okuma servisleri) |
 | WebAPI | `Hospital.WebAPI/Extensions/WebApiExt.cs` | `AddWebApi(configuration)` | Endpoint taraması, `ICurrentUser`, `AuthSettings`/`JwtSettings`, JWT Bearer + politikalar, CORS, rate limit, ProblemDetails/hata işleyici, health check, OpenAPI (Bearer şemalı) |
 | WebAPI | `.../Extensions/WebApiExt.cs` | `UseWebApi()` | İstek hattı (middleware) sırası ve endpoint eşlemeleri |

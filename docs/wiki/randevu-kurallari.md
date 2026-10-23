@@ -40,7 +40,7 @@ ALTER TABLE appointment ADD CONSTRAINT ex_patient_no_overlap
 - **İptal:** hasta (kendi), doktor (kendi), yönetici (kapsamdaki şube); personel 403. Hasta, onaylı randevuyu başlamasına **2 saatten az** kala iptal edemez (`409 appointment.cancellation_deadline_passed`; tam 2 saat kala hâlâ iptal edilebilir); bekleyen randevu her zaman iptal edilir; doktor/yönetici sınırsız.
 - **Eşzamanlı durum geçişleri:** `appointment.xmin` (PostgreSQL sistem sütunu) iyimser eşzamanlılık belirtecidir; aynı randevuyu aynı anda iki istek değiştirirse kaybeden `409` alır (`DbUpdateConcurrencyException` → `DataConflictException`).
 - **Gelecek randevu denetimleri (Faz 3'ten devreden):** gelecekte (bitişi şimdiden sonra) PENDING/APPROVED randevusu olan **hizmet** doktordan kaldırılamaz (`doctor.service_has_future_appointments`, hem `DELETE` hem `PUT services` çıkarma); aktif randevu olan aralığa **izin** eklenemez (`doctor.time_off_has_appointments`); aktif randevusu olan **doktor veya hasta** pasifleştirilemez (`user.has_future_appointments`). Uygunluk penceresi silme/güncelleme bilinçli olarak engellenmez: mevcut randevular geçerli kalır, yalnız yeni slot üretimi etkilenir.
-- Domain olayları (`AppointmentRequested/Approved/Rejected/Cancelled`) aggregate'te üretilir; dağıtım ve outbox Faz 5'tedir.
+- Domain olayları (`AppointmentRequested/Approved/Rejected/Cancelled`) aggregate'te üretilir ve Faz 5'te SaveChanges sırasında e-posta outbox satırlarına çevrilir ([[bildirimler]]).
 - Liste uçları en fazla 200 kayıt döner (sayfalama Faz 6).
 
 ## Faz 1B bulguları (spike doğrulandı)
