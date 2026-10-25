@@ -78,5 +78,11 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         builder.HasIndex(a => new { a.DoctorId, a.StartAt });
         builder.HasIndex(a => new { a.PatientId, a.StartAt }).IsDescending(false, true);
         builder.HasIndex(a => new { a.HospitalId, a.Status, a.StartAt });
+
+        // Bekleyen talep zaman aşımı işleyicisi yalnız PENDING satırları tarar: kısmi indeks, tamamlanmış/iptal edilmiş
+        // randevuların büyüyen kümesini taramaz.
+        builder.HasIndex(a => a.CreatedAt)
+            .HasFilter("status = 'PENDING'")
+            .HasDatabaseName("ix_appointment_pending_created_at");
     }
 }

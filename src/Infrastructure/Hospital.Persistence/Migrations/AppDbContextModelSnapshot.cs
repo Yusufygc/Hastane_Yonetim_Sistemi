@@ -112,6 +112,10 @@ namespace Hospital.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_appointment");
 
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_appointment_pending_created_at")
+                        .HasFilter("status = 'PENDING'");
+
                     b.HasIndex("ServiceId")
                         .HasDatabaseName("ix_appointment_service_id");
 
@@ -501,6 +505,10 @@ namespace Hospital.Persistence.Migrations
                     b.HasKey("DoctorId", "ServiceId")
                         .HasName("pk_doctor_service");
 
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_doctor_service_pending")
+                        .HasFilter("status = 'PENDING'");
+
                     b.HasIndex("DecidedBy")
                         .HasDatabaseName("ix_doctor_service_decided_by");
 
@@ -509,9 +517,6 @@ namespace Hospital.Persistence.Migrations
 
                     b.HasIndex("ServiceId")
                         .HasDatabaseName("ix_doctor_service_service_id");
-
-                    b.HasIndex("Status", "CreatedAt")
-                        .HasDatabaseName("ix_doctor_service_status_created_at");
 
                     b.ToTable("doctor_service", null, t =>
                         {
@@ -780,10 +785,14 @@ namespace Hospital.Persistence.Migrations
 
                     b.Property<string>("IdentityNumber")
                         .IsRequired()
-                        .HasMaxLength(11)
-                        .HasColumnType("character(11)")
-                        .HasColumnName("identity_number")
-                        .IsFixedLength();
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("identity_number");
+
+                    b.Property<string>("IdentityNumberHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("identity_number_hash");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -796,9 +805,9 @@ namespace Hospital.Persistence.Migrations
                         .HasColumnType("character varying(32)")
                         .HasColumnName("phone");
 
-                    b.HasIndex("IdentityNumber")
+                    b.HasIndex("IdentityNumberHash")
                         .IsUnique()
-                        .HasDatabaseName("ix_patient_identity_number");
+                        .HasDatabaseName("ix_patient_identity_number_hash");
 
                     b.ToTable("patient", null, t =>
                         {

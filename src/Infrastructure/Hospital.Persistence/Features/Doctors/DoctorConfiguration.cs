@@ -79,7 +79,10 @@ internal sealed class DoctorServiceLinkConfiguration : IEntityTypeConfiguration<
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(l => l.ServiceId);
-        builder.HasIndex(l => new { l.Status, l.CreatedAt });
+        // Yönetici onay kuyruğu (plan §6.3): yalnız bekleyen talepler için kısmi indeks.
+        builder.HasIndex(l => l.CreatedAt)
+            .HasFilter("status = 'PENDING'")
+            .HasDatabaseName("ix_doctor_service_pending");
     }
 }
 
