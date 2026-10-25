@@ -1,6 +1,7 @@
 using Hospital.Application.Extensions;
 using Hospital.Application.Interfaces;
 using Hospital.Persistence.Context;
+using Hospital.Persistence.DataUpgrades;
 using Hospital.Persistence.Events;
 using Hospital.Persistence.Seeding;
 using Hospital.Persistence.UnitOfWorks;
@@ -29,6 +30,7 @@ public static class PersistenceExt
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IDatabaseSeeder, DatabaseSeeder>();
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
+        services.AddScoped<IdentityNumberUpgrader>();
 
         // Repository, EF konfigürasyonu ve okuma servisleri Features/** altından otomatik kaydedilir.
         return services.AddFeatureImplementations(AssemblyReference.Assembly, FeaturesNamespace);

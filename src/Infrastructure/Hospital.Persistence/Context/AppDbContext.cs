@@ -13,8 +13,14 @@ namespace Hospital.Persistence.Context;
 /// <param name="dispatcher">
 /// Domain event dağıtıcı. DI'dan gelir; tasarım zamanı (migration) gibi dağıtıcısız oluşturulursa olaylar dağıtılmaz.
 /// </param>
-public sealed class AppDbContext(DbContextOptions<AppDbContext> options, IDomainEventDispatcher? dispatcher = null)
-    : DbContext(options)
+/// <param name="protector">
+/// Hassas veri şifreleyici (T.C. kimlik no). DI'dan gelir; tasarım zamanında yoksa dönüştürücü eklenmez (sütun türü değişmez,
+/// migration aynı üretilir).
+/// </param>
+public sealed class AppDbContext(
+    DbContextOptions<AppDbContext> options,
+    IDomainEventDispatcher? dispatcher = null,
+    ISensitiveDataProtector? protector = null) : DbContext(options)
 {
     private const string UniqueViolation = "23505";
     private const string ExclusionViolation = "23P01";
@@ -51,6 +57,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, IDomain
         // Her entity'nin IEntityTypeConfiguration sınıfı Infrastructure/Features/** altında;
         // yeni feature eklemek bu dosyayı değiştirmez.
         modelBuilder.ApplyConfigurationsFromAssembly(AssemblyReference.Assembly);
+
+        // KVKK: T.C. kimlik no veritabanında şifreli (AES-GCM) saklanır; arama/benzersizlik kör indeks sütunuyla yapılır.
+        // Not: EF modeli süreç başına bir kez kurup önbelleğe alır; dönüştürücü ilk protector'ı yakalar. Süreçte tek (singleton)
+        // protector olduğundan sorun yok; aynı süreçte farklı anahtarlı iki uygulama kurmak (test) ilkini kullanır.
+        if (protector is not null)
+        {
+            modelBuilder.Entity<Patient>().Property(p => p.IdentityNumber).HasConversion(
+                plain => protector.Protect(plain, SensitiveDataPurposes.PatientIdentityNumber),
+                stored => protector.Unprotect(stored, SensitiveDataPurposes.PatientIdentityNumber));
+        }
     }
 
     /// <summary>
@@ -60,6 +76,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, IDomain
     {
         // Olay dinleyicileri (ör. e-posta outbox satırı) değişikliklerle AYNI SaveChanges'te yazılır: atomik.
         await DispatchDomainEventsAsync(cancellationToken);
+        StampSensitiveIndexes();
 
         try
         {
@@ -107,4 +124,28 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options, IDomain
             await dispatcher.DispatchAsync(domainEvent, cancellationToken);
         }
     }
+
+    /// <summary>
+    /// Yeni eklenen hastada veya T.C. kimlik numarası gerçekten (yeniden) yazılan hastada kör indeksi (arama ve benzersizlik için)
+    /// günceller. Başka alanı değişen (ör. son giriş zamanı) hastaya dokunmaz: eski düz metin kayıt, kimlik no şifrelenmeden
+    /// indeks almış gibi görünmesin (yükseltme süreci kayıtları kör indeksi boşluğundan tanır).
+    /// </summary>
+    private void StampSensitiveIndexes()
+    {
+        if (protector is null)
+        {
+            return;
+        }
+
+        foreach (var entry in ChangeTracker.Entries<Patient>()
+                     .Where(e => e.State == EntityState.Added
+                                 || (e.State == EntityState.Modified && e.Property(p => p.IdentityNumber).IsModified)))
+        {
+            entry.Property(PatientIdentityHash).CurrentValue =
+                protector.BlindIndex(entry.Entity.IdentityNumber, SensitiveDataPurposes.PatientIdentityNumber);
+        }
+    }
+
+    /// <summary>Hasta T.C. kimlik no kör indeks sütununun gölge özellik adı.</summary>
+    public const string PatientIdentityHash = "IdentityNumberHash";
 }

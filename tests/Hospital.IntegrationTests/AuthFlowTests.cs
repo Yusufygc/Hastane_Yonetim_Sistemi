@@ -183,8 +183,9 @@ public class AuthFlowTests(ApiFixture fixture) : IClassFixture<ApiFixture>
 
         user.Should().BeOfType<Patient>();
         user.Role.Should().Be(UserRole.Patient);
-        (await db.Patients.AsNoTracking().AnyAsync(p => p.Id == user.Id && p.IdentityNumber == account.IdentityNumber))
-            .Should().BeTrue();
+        // T.C. no veritabanında şifreli; EF okurken çözer (sütunun ham değeri IdentityNumberEncryptionTests'te sınanır).
+        var patient = await db.Patients.AsNoTracking().SingleAsync(p => p.Id == user.Id);
+        patient.IdentityNumber.Should().Be(account.IdentityNumber);
     }
 
     private static async Task<string?> ProblemCodeAsync(HttpResponseMessage response)

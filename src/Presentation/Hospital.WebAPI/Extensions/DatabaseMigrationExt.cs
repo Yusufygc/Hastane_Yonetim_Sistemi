@@ -1,5 +1,6 @@
 using Hospital.Application.Interfaces;
 using Hospital.Persistence.Context;
+using Hospital.Persistence.DataUpgrades;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hospital.WebAPI.Extensions;
@@ -17,6 +18,9 @@ public static class DatabaseMigrationExt
         await using var scope = app.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await db.Database.MigrateAsync();
+
+        // Şifrelemeden önce yazılmış kayıtları (T.C. kimlik no) şifreler; yükseltilmiş kayıt varsa hiçbir şey yapmaz.
+        await scope.ServiceProvider.GetRequiredService<IdentityNumberUpgrader>().UpgradeAsync();
     }
 
     /// <summary>`Database:SeedOnStartup` açıksa varsayılan kurum/şube ve ilk süper yöneticiyi (idempotent) oluşturur.</summary>
