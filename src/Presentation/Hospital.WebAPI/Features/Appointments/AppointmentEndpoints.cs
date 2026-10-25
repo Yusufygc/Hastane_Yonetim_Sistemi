@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Appointments;
 using Hospital.Application.Features.Appointments.Commands.ApproveAppointment;
 using Hospital.Application.Features.Appointments.Commands.CancelAppointment;
 using Hospital.Application.Features.Appointments.Commands.CompleteAppointment;
@@ -41,7 +42,8 @@ internal sealed class AppointmentEndpoints : IEndpoint
                     return (await sender.Send(new GetAvailableSlotsQuery(id, serviceId, day), ct)).Match(Results.Ok);
                 })
             .WithTags("Catalog")
-            .AllowAnonymous();
+            .AllowAnonymous()
+            .Produces<AvailableSlotsDto>(StatusCodes.Status200OK);
 
         var group = app.MapGroup("/api/appointments").WithTags("Appointments");
 
@@ -50,49 +52,59 @@ internal sealed class AppointmentEndpoints : IEndpoint
                 var result = await sender.Send(
                     new CreateAppointmentCommand(request.DoctorId, request.ServiceId, request.StartAt, request.PatientNote), ct);
 
-                return result.Match(id => Results.Created($"/api/appointments/{id}", new { id }));
+                return result.Match(id => Results.Created($"/api/appointments/{id}", new CreatedResponse(id)));
             })
-            .RequireAuthorization(Policies.Patient);
+            .RequireAuthorization(Policies.Patient)
+            .Produces<CreatedResponse>(StatusCodes.Status201Created);
 
         // Yönetici: kapsamındaki şubelerin randevuları.
-        group.MapGet("/", async (Guid? hospitalId, string? status, DateTimeOffset? from, DateTimeOffset? to, ISender sender, CancellationToken ct) =>
-                (await sender.Send(new ListAppointmentsQuery(hospitalId, status, from, to), ct)).Match(Results.Ok))
-            .RequireAuthorization(Policies.Admin);
+        group.MapGet("/", async (Guid? hospitalId, string? status, DateTimeOffset? from, DateTimeOffset? to, int? page, int? pageSize, ISender sender, CancellationToken ct) =>
+                (await sender.Send(new ListAppointmentsQuery(hospitalId, status, from, to, page, pageSize), ct)).MatchPaged())
+            .RequireAuthorization(Policies.Admin)
+            .Produces<IReadOnlyList<AppointmentDto>>(StatusCodes.Status200OK);
 
         // Sahiplik/kapsam handler'da: başkasının randevusu → 404.
         group.MapGet("/{id:guid}", async (Guid id, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new GetAppointmentByIdQuery(id), ct)).Match(Results.Ok))
-            .RequireAuthorization(Policies.Authenticated);
+            .RequireAuthorization(Policies.Authenticated)
+            .Produces<AppointmentDto>(StatusCodes.Status200OK);
 
         group.MapPost("/{id:guid}/approve", async (Guid id, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new ApproveAppointmentCommand(id), ct)).ToNoContent())
-            .RequireAuthorization(Policies.Doctor);
+            .RequireAuthorization(Policies.Doctor)
+            .Produces(StatusCodes.Status204NoContent);
 
         group.MapPost("/{id:guid}/reject", async (Guid id, AppointmentReasonRequest request, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new RejectAppointmentCommand(id, request.Reason), ct)).ToNoContent())
-            .RequireAuthorization(Policies.Doctor);
+            .RequireAuthorization(Policies.Doctor)
+            .Produces(StatusCodes.Status204NoContent);
 
         group.MapPost("/{id:guid}/complete", async (Guid id, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new CompleteAppointmentCommand(id), ct)).ToNoContent())
-            .RequireAuthorization(Policies.Doctor);
+            .RequireAuthorization(Policies.Doctor)
+            .Produces(StatusCodes.Status204NoContent);
 
         // Hasta / doktor / yönetici iptal edebilir; rol ve sahiplik denetimi handler'da.
         group.MapPost("/{id:guid}/cancel", async (Guid id, AppointmentReasonRequest request, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new CancelAppointmentCommand(id, request.Reason), ct)).ToNoContent())
-            .RequireAuthorization(Policies.Authenticated);
+            .RequireAuthorization(Policies.Authenticated)
+            .Produces(StatusCodes.Status204NoContent);
 
-        app.MapGet("/api/patients/me/appointments", async (string? status, ISender sender, CancellationToken ct) =>
-                (await sender.Send(new GetMyAppointmentsQuery(status), ct)).Match(Results.Ok))
+        app.MapGet("/api/patients/me/appointments", async (string? status, int? page, int? pageSize, ISender sender, CancellationToken ct) =>
+                (await sender.Send(new GetMyAppointmentsQuery(status, page, pageSize), ct)).MatchPaged())
             .WithTags("Patients")
-            .RequireAuthorization(Policies.Patient);
+            .RequireAuthorization(Policies.Patient)
+            .Produces<IReadOnlyList<AppointmentDto>>(StatusCodes.Status200OK);
 
         var doctorGroup = app.MapGroup("/api/doctors/me").WithTags("Doctors (self)").RequireAuthorization(Policies.Doctor);
 
-        doctorGroup.MapGet("/appointments", async (DateTimeOffset? from, DateTimeOffset? to, string? status, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new GetDoctorAppointmentsQuery(from, to, status), ct)).Match(Results.Ok));
+        doctorGroup.MapGet("/appointments", async (DateTimeOffset? from, DateTimeOffset? to, string? status, int? page, int? pageSize, ISender sender, CancellationToken ct) =>
+            (await sender.Send(new GetDoctorAppointmentsQuery(from, to, status, page, pageSize), ct)).MatchPaged())
+            .Produces<IReadOnlyList<AppointmentDto>>(StatusCodes.Status200OK);
 
         // Takvim: yalnız onaylı randevular (varsayılan: şimdiden 7 gün).
         doctorGroup.MapGet("/schedule", async (DateTimeOffset? from, DateTimeOffset? to, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new GetDoctorScheduleQuery(from, to), ct)).Match(Results.Ok));
+            (await sender.Send(new GetDoctorScheduleQuery(from, to), ct)).Match(Results.Ok))
+            .Produces<IReadOnlyList<AppointmentDto>>(StatusCodes.Status200OK);
     }
 }

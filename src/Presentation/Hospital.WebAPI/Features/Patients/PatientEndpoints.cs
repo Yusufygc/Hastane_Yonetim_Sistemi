@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Patients;
 using Hospital.Application.Features.Patients.Commands.UpdateMyPatientProfile;
 using Hospital.Application.Features.Patients.Queries.GetMyPatientProfile;
 using Hospital.Application.Security;
@@ -18,11 +19,13 @@ internal sealed class PatientEndpoints : IEndpoint
 
         // T.C. kimlik no yanıtta maskelidir (ilk 3 + son 2 hane).
         group.MapGet("/", async (ISender sender, CancellationToken ct) =>
-            (await sender.Send(new GetMyPatientProfileQuery(), ct)).Match(Results.Ok));
+            (await sender.Send(new GetMyPatientProfileQuery(), ct)).Match(Results.Ok))
+            .Produces<PatientProfileDto>(StatusCodes.Status200OK);
 
         group.MapPut("/", async (UpdatePatientProfileRequest request, ISender sender, CancellationToken ct) =>
             (await sender.Send(
                 new UpdateMyPatientProfileCommand(request.FirstName, request.LastName, request.Phone, request.BloodType), ct))
-            .Match(Results.Ok));
+            .Match(Results.Ok))
+            .Produces<PatientProfileDto>(StatusCodes.Status200OK);
     }
 }

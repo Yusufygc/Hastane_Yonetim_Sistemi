@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Hospitals;
 using Hospital.Application.Features.Hospitals.Commands.CreateHospital;
 using Hospital.Application.Features.Hospitals.Commands.DeactivateHospital;
 using Hospital.Application.Features.Hospitals.Commands.SetWorkingHours;
@@ -27,7 +28,8 @@ internal sealed class HospitalEndpoints : IEndpoint
         // Yönetici kapsamındaki şubeler (şube yöneticisi yalnız kendi şubesini görür).
         group.MapGet("/", async (ISender sender, CancellationToken ct) =>
                 (await sender.Send(new ListHospitalsQuery(), ct)).Match(Results.Ok))
-            .RequireAuthorization(Policies.Admin);
+            .RequireAuthorization(Policies.Admin)
+            .Produces<IReadOnlyList<HospitalDto>>(StatusCodes.Status200OK);
 
         // Yeni şube eklemek organizasyon kapsamı ister.
         group.MapPost("/", async (CreateHospitalRequest request, ISender sender, CancellationToken ct) =>
@@ -35,29 +37,34 @@ internal sealed class HospitalEndpoints : IEndpoint
                 var result = await sender.Send(
                     new CreateHospitalCommand(request.Name, request.Address, request.Phone, request.TimeZoneId), ct);
 
-                return result.Match(id => Results.Created($"/api/hospitals/{id}", new { id }));
+                return result.Match(id => Results.Created($"/api/hospitals/{id}", new CreatedResponse(id)));
             })
-            .RequireAuthorization(Policies.SuperAdmin);
+            .RequireAuthorization(Policies.SuperAdmin)
+            .Produces<CreatedResponse>(StatusCodes.Status201Created);
 
         group.MapGet("/{id:guid}", async (Guid id, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new GetHospitalQuery(id), ct)).Match(Results.Ok))
-            .RequireAuthorization(Policies.Admin);
+            .RequireAuthorization(Policies.Admin)
+            .Produces<HospitalDetailDto>(StatusCodes.Status200OK);
 
         group.MapPut("/{id:guid}", async (Guid id, UpdateHospitalRequest request, ISender sender, CancellationToken ct) =>
                 (await sender.Send(
                     new UpdateHospitalCommand(id, request.Name, request.Address, request.Phone, request.TimeZoneId), ct))
                 .ToNoContent())
-            .RequireAuthorization(Policies.Admin);
+            .RequireAuthorization(Policies.Admin)
+            .Produces(StatusCodes.Status204NoContent);
 
         group.MapPut("/{id:guid}/working-hours", async (Guid id, SetWorkingHoursRequest request, ISender sender, CancellationToken ct) =>
             {
                 var hours = (request.Hours ?? []).Select(h => new WorkingHoursItem(h.Day, h.OpenTime, h.CloseTime)).ToList();
                 return (await sender.Send(new SetWorkingHoursCommand(id, hours), ct)).ToNoContent();
             })
-            .RequireAuthorization(Policies.Admin);
+            .RequireAuthorization(Policies.Admin)
+            .Produces(StatusCodes.Status204NoContent);
 
         group.MapPost("/{id:guid}/deactivate", async (Guid id, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new DeactivateHospitalCommand(id), ct)).ToNoContent())
-            .RequireAuthorization(Policies.Admin);
+            .RequireAuthorization(Policies.Admin)
+            .Produces(StatusCodes.Status204NoContent);
     }
 }

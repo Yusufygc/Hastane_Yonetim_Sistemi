@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Services;
 using Hospital.Application.Features.Services.Commands.CreateService;
 using Hospital.Application.Features.Services.Commands.DeactivateService;
 using Hospital.Application.Features.Services.Commands.UpdateService;
@@ -33,7 +34,8 @@ internal sealed class ServiceEndpoints : IEndpoint
             .RequireAuthorization(Policies.Admin);
 
         group.MapGet("/", async (Guid? hospitalId, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new ListServicesQuery(hospitalId), ct)).Match(Results.Ok));
+            (await sender.Send(new ListServicesQuery(hospitalId), ct)).Match(Results.Ok))
+            .Produces<IReadOnlyList<ServiceDto>>(StatusCodes.Status200OK);
 
         group.MapPost("/", async (CreateServiceRequest request, ISender sender, CancellationToken ct) =>
         {
@@ -47,18 +49,22 @@ internal sealed class ServiceEndpoints : IEndpoint
                     request.Currency),
                 ct);
 
-            return result.Match(id => Results.Created($"/api/services/{id}", new { id }));
-        });
+            return result.Match(id => Results.Created($"/api/services/{id}", new CreatedResponse(id)));
+        })
+            .Produces<CreatedResponse>(StatusCodes.Status201Created);
 
         group.MapGet("/{id:guid}", async (Guid id, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new GetServiceQuery(id), ct)).Match(Results.Ok));
+            (await sender.Send(new GetServiceQuery(id), ct)).Match(Results.Ok))
+            .Produces<ServiceDto>(StatusCodes.Status200OK);
 
         group.MapPut("/{id:guid}", async (Guid id, UpdateServiceRequest request, ISender sender, CancellationToken ct) =>
             (await sender.Send(
                 new UpdateServiceCommand(id, request.DepartmentId, request.Name, request.DurationMinutes, request.Price, request.Currency),
-                ct)).ToNoContent());
+                ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
 
         group.MapPost("/{id:guid}/deactivate", async (Guid id, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new DeactivateServiceCommand(id), ct)).ToNoContent());
+            (await sender.Send(new DeactivateServiceCommand(id), ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
     }
 }

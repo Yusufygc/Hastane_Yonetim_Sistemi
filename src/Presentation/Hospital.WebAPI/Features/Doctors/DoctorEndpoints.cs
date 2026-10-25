@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Doctors;
 using Hospital.Application.Features.Doctors.Commands.AddMyAvailability;
 using Hospital.Application.Features.Doctors.Commands.AddMyTimeOff;
 using Hospital.Application.Features.Doctors.Commands.ApproveDoctorService;
@@ -63,69 +64,83 @@ internal sealed class DoctorEndpoints : IEndpoint
         app.MapGroup("/api/doctor-service-requests")
             .WithTags("Doctors (admin)")
             .RequireAuthorization(Policies.Admin)
-            .MapGet("/", async (string? status, ISender sender, CancellationToken ct) =>
-                (await sender.Send(new ListDoctorServiceRequestsQuery(status), ct)).Match(Results.Ok));
+            .MapGet("/", async (string? status, int? page, int? pageSize, ISender sender, CancellationToken ct) =>
+                (await sender.Send(new ListDoctorServiceRequestsQuery(status, page, pageSize), ct)).MatchPaged())
+            .Produces<IReadOnlyList<DoctorServiceRequestDto>>(StatusCodes.Status200OK);
     }
 
     /// <summary>Doktorun kendi profili, uygunluğu, izinleri ve hizmet talepleri. Kimlik her zaman belirteçten gelir.</summary>
     private static void MapSelfService(RouteGroupBuilder group)
     {
         group.MapGet("/", async (ISender sender, CancellationToken ct) =>
-            (await sender.Send(new GetMyDoctorProfileQuery(), ct)).Match(Results.Ok));
+            (await sender.Send(new GetMyDoctorProfileQuery(), ct)).Match(Results.Ok))
+            .Produces<DoctorDetailDto>(StatusCodes.Status200OK);
 
         group.MapPut("/", async (UpdateMyDoctorProfileRequest request, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new UpdateMyDoctorProfileCommand(request.Specialty, request.Phone), ct)).ToNoContent());
+            (await sender.Send(new UpdateMyDoctorProfileCommand(request.Specialty, request.Phone), ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
 
         // Hizmet talebi: yönetici onaylayana kadar randevu alınamaz.
         group.MapGet("/services", async (ISender sender, CancellationToken ct) =>
-            (await sender.Send(new ListMyServicesQuery(), ct)).Match(Results.Ok));
+            (await sender.Send(new ListMyServicesQuery(), ct)).Match(Results.Ok))
+            .Produces<IReadOnlyList<DoctorServiceDto>>(StatusCodes.Status200OK);
 
         group.MapPost("/services", async (RequestServiceRequest request, ISender sender, CancellationToken ct) =>
         {
             var result = await sender.Send(new RequestMyServiceCommand(request.ServiceId), ct);
             return result.IsSuccess ? Results.Accepted() : result.ToProblem();
-        });
+        })
+            .Produces(StatusCodes.Status202Accepted);
 
         group.MapDelete("/services/{serviceId:guid}", async (Guid serviceId, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new RemoveMyServiceCommand(serviceId), ct)).ToNoContent());
+            (await sender.Send(new RemoveMyServiceCommand(serviceId), ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
 
         group.MapGet("/availability", async (ISender sender, CancellationToken ct) =>
-            (await sender.Send(new ListMyAvailabilityQuery(), ct)).Match(Results.Ok));
+            (await sender.Send(new ListMyAvailabilityQuery(), ct)).Match(Results.Ok))
+            .Produces<IReadOnlyList<DoctorAvailabilityDto>>(StatusCodes.Status200OK);
 
         group.MapPost("/availability", async (AvailabilityRequest request, ISender sender, CancellationToken ct) =>
         {
             var result = await sender.Send(
                 new AddMyAvailabilityCommand(request.Day, request.StartTime, request.EndTime, request.ValidFrom, request.ValidTo), ct);
 
-            return result.Match(id => Results.Created($"/api/doctors/me/availability/{id}", new { id }));
-        });
+            return result.Match(id => Results.Created($"/api/doctors/me/availability/{id}", new CreatedResponse(id)));
+        })
+            .Produces<CreatedResponse>(StatusCodes.Status201Created);
 
         group.MapPut("/availability/{id:guid}", async (Guid id, AvailabilityRequest request, ISender sender, CancellationToken ct) =>
             (await sender.Send(
                 new UpdateMyAvailabilityCommand(id, request.Day, request.StartTime, request.EndTime, request.ValidFrom, request.ValidTo), ct))
-            .ToNoContent());
+            .ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
 
         group.MapDelete("/availability/{id:guid}", async (Guid id, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new RemoveMyAvailabilityCommand(id), ct)).ToNoContent());
+            (await sender.Send(new RemoveMyAvailabilityCommand(id), ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
 
         group.MapGet("/time-off", async (ISender sender, CancellationToken ct) =>
-            (await sender.Send(new ListMyTimeOffQuery(), ct)).Match(Results.Ok));
+            (await sender.Send(new ListMyTimeOffQuery(), ct)).Match(Results.Ok))
+            .Produces<IReadOnlyList<DoctorTimeOffDto>>(StatusCodes.Status200OK);
 
         group.MapPost("/time-off", async (AddTimeOffRequest request, ISender sender, CancellationToken ct) =>
         {
             var result = await sender.Send(new AddMyTimeOffCommand(request.StartAt, request.EndAt, request.Reason), ct);
-            return result.Match(id => Results.Created($"/api/doctors/me/time-off/{id}", new { id }));
-        });
+            return result.Match(id => Results.Created($"/api/doctors/me/time-off/{id}", new CreatedResponse(id)));
+        })
+            .Produces<CreatedResponse>(StatusCodes.Status201Created);
 
         group.MapDelete("/time-off/{id:guid}", async (Guid id, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new RemoveMyTimeOffCommand(id), ct)).ToNoContent());
+            (await sender.Send(new RemoveMyTimeOffCommand(id), ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
     }
 
     /// <summary>Yönetici işlemleri: kapsam (şube) denetimi handler'larda uygulanır.</summary>
     private static void MapAdmin(RouteGroupBuilder group)
     {
-        group.MapGet("/", async (Guid? hospitalId, Guid? departmentId, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new ListDoctorsQuery(hospitalId, departmentId), ct)).Match(Results.Ok));
+        group.MapGet("/", async (Guid? hospitalId, Guid? departmentId, int? page, int? pageSize, ISender sender, CancellationToken ct) =>
+            (await sender.Send(new ListDoctorsQuery(hospitalId, departmentId, page, pageSize), ct)).MatchPaged())
+            .Produces<IReadOnlyList<DoctorDto>>(StatusCodes.Status200OK);
 
         group.MapPost("/", async (CreateDoctorRequest request, ISender sender, CancellationToken ct) =>
         {
@@ -141,32 +156,39 @@ internal sealed class DoctorEndpoints : IEndpoint
                     request.Phone),
                 ct);
 
-            return result.Match(id => Results.Created($"/api/doctors/{id}", new { id }));
-        });
+            return result.Match(id => Results.Created($"/api/doctors/{id}", new CreatedResponse(id)));
+        })
+            .Produces<CreatedResponse>(StatusCodes.Status201Created);
 
         group.MapGet("/{id:guid}", async (Guid id, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new GetDoctorQuery(id), ct)).Match(Results.Ok));
+            (await sender.Send(new GetDoctorQuery(id), ct)).Match(Results.Ok))
+            .Produces<DoctorDetailDto>(StatusCodes.Status200OK);
 
         group.MapPut("/{id:guid}", async (Guid id, UpdateDoctorRequest request, ISender sender, CancellationToken ct) =>
             (await sender.Send(
                 new UpdateDoctorCommand(
                     id, request.DepartmentId, request.FirstName, request.LastName, request.Specialty, request.DiplomaNo, request.Phone),
-                ct)).ToNoContent());
+                ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
 
         // Doğrudan atama: onaylı hizmet kümesini verilen listeyle eşitler (onay adımı yok).
         group.MapPut("/{id:guid}/services", async (Guid id, AssignDoctorServicesRequest request, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new AssignDoctorServicesCommand(id, request.ServiceIds), ct)).ToNoContent());
+            (await sender.Send(new AssignDoctorServicesCommand(id, request.ServiceIds), ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
 
         group.MapPost("/{doctorId:guid}/services/{serviceId:guid}/approve",
             async (Guid doctorId, Guid serviceId, ISender sender, CancellationToken ct) =>
-                (await sender.Send(new ApproveDoctorServiceCommand(doctorId, serviceId), ct)).ToNoContent());
+                (await sender.Send(new ApproveDoctorServiceCommand(doctorId, serviceId), ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
 
         group.MapPost("/{doctorId:guid}/services/{serviceId:guid}/reject",
             async (Guid doctorId, Guid serviceId, ISender sender, CancellationToken ct) =>
-                (await sender.Send(new RejectDoctorServiceCommand(doctorId, serviceId), ct)).ToNoContent());
+                (await sender.Send(new RejectDoctorServiceCommand(doctorId, serviceId), ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
 
         group.MapDelete("/{doctorId:guid}/services/{serviceId:guid}",
             async (Guid doctorId, Guid serviceId, ISender sender, CancellationToken ct) =>
-                (await sender.Send(new RemoveDoctorServiceCommand(doctorId, serviceId), ct)).ToNoContent());
+                (await sender.Send(new RemoveDoctorServiceCommand(doctorId, serviceId), ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
     }
 }

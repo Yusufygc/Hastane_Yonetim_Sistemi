@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Catalog;
 using Hospital.Application.Features.Catalog.Queries.GetCatalogDepartments;
 using Hospital.Application.Features.Catalog.Queries.GetCatalogDoctors;
 using Hospital.Application.Features.Catalog.Queries.GetCatalogHospitals;
@@ -17,16 +18,20 @@ internal sealed class CatalogEndpoints : IEndpoint
             .AllowAnonymous();
 
         group.MapGet("/hospitals", async (ISender sender, CancellationToken ct) =>
-            (await sender.Send(new GetCatalogHospitalsQuery(), ct)).Match(Results.Ok));
+            (await sender.Send(new GetCatalogHospitalsQuery(), ct)).Match(Results.Ok))
+            .Produces<IReadOnlyList<CatalogHospitalDto>>(StatusCodes.Status200OK);
 
         group.MapGet("/hospitals/{id:guid}/departments", async (Guid id, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new GetCatalogDepartmentsQuery(id), ct)).Match(Results.Ok));
+            (await sender.Send(new GetCatalogDepartmentsQuery(id), ct)).Match(Results.Ok))
+            .Produces<IReadOnlyList<CatalogDepartmentDto>>(StatusCodes.Status200OK);
 
         group.MapGet("/hospitals/{id:guid}/services", async (Guid id, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new GetCatalogServicesQuery(id), ct)).Match(Results.Ok));
+            (await sender.Send(new GetCatalogServicesQuery(id), ct)).Match(Results.Ok))
+            .Produces<IReadOnlyList<CatalogServiceDto>>(StatusCodes.Status200OK);
 
         // Yalnızca en az bir onaylı hizmeti olan aktif doktorlar; serviceId verilirse o hizmeti sunanlar.
         group.MapGet("/doctors", async (Guid hospitalId, Guid? serviceId, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new GetCatalogDoctorsQuery(hospitalId, serviceId), ct)).Match(Results.Ok));
+            (await sender.Send(new GetCatalogDoctorsQuery(hospitalId, serviceId), ct)).Match(Results.Ok))
+            .Produces<IReadOnlyList<CatalogDoctorDto>>(StatusCodes.Status200OK);
     }
 }

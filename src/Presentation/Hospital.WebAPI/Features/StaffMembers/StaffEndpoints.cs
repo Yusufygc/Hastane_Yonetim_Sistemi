@@ -1,3 +1,4 @@
+using Hospital.Application.Features.StaffMembers;
 using Hospital.Application.Features.StaffMembers.Commands.CreateStaff;
 using Hospital.Application.Features.StaffMembers.Queries.ListStaff;
 using Hospital.Application.Security;
@@ -23,8 +24,9 @@ internal sealed class StaffEndpoints : IEndpoint
             .WithTags("Staff")
             .RequireAuthorization(Policies.Admin);
 
-        group.MapGet("/", async (Guid? hospitalId, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new ListStaffQuery(hospitalId), ct)).Match(Results.Ok));
+        group.MapGet("/", async (Guid? hospitalId, int? page, int? pageSize, ISender sender, CancellationToken ct) =>
+            (await sender.Send(new ListStaffQuery(hospitalId, page, pageSize), ct)).MatchPaged())
+            .Produces<IReadOnlyList<StaffDto>>(StatusCodes.Status200OK);
 
         group.MapPost("/", async (CreateStaffRequest request, ISender sender, CancellationToken ct) =>
         {
@@ -39,7 +41,8 @@ internal sealed class StaffEndpoints : IEndpoint
                     request.Title),
                 ct);
 
-            return result.Match(id => Results.Created($"/api/staff/{id}", new { id }));
-        });
+            return result.Match(id => Results.Created($"/api/staff/{id}", new CreatedResponse(id)));
+        })
+            .Produces<CreatedResponse>(StatusCodes.Status201Created);
     }
 }

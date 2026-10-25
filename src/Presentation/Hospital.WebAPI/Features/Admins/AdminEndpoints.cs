@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Admins;
 using Hospital.Application.Features.Admins.Commands.CreateAdmin;
 using Hospital.Application.Features.Admins.Queries.ListAdmins;
 using Hospital.Application.Security;
@@ -23,7 +24,8 @@ internal sealed class AdminEndpoints : IEndpoint
 
         group.MapGet("/", async (ISender sender, CancellationToken ct) =>
                 (await sender.Send(new ListAdminsQuery(), ct)).Match(Results.Ok))
-            .RequireAuthorization(Policies.Admin);
+            .RequireAuthorization(Policies.Admin)
+            .Produces<IReadOnlyList<AdminDto>>(StatusCodes.Status200OK);
 
         // Yönetici oluşturmak organizasyon kapsamı ister.
         group.MapPost("/", async (CreateAdminRequest request, ISender sender, CancellationToken ct) =>
@@ -38,8 +40,9 @@ internal sealed class AdminEndpoints : IEndpoint
                         request.LastName),
                     ct);
 
-                return result.Match(id => Results.Created($"/api/admins/{id}", new { id }));
+                return result.Match(id => Results.Created($"/api/admins/{id}", new CreatedResponse(id)));
             })
-            .RequireAuthorization(Policies.SuperAdmin);
+            .RequireAuthorization(Policies.SuperAdmin)
+            .Produces<CreatedResponse>(StatusCodes.Status201Created);
     }
 }

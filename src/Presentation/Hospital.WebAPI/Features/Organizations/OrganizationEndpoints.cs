@@ -1,3 +1,4 @@
+using Hospital.Application.Features.Organizations;
 using Hospital.Application.Features.Organizations.Commands.UpdateOrganization;
 using Hospital.Application.Features.Organizations.Queries.GetOrganization;
 using Hospital.Application.Security;
@@ -17,9 +18,11 @@ internal sealed class OrganizationEndpoints : IEndpoint
             .RequireAuthorization(Policies.SuperAdmin);
 
         group.MapGet("/", async (ISender sender, CancellationToken ct) =>
-            (await sender.Send(new GetOrganizationQuery(), ct)).Match(Results.Ok));
+            (await sender.Send(new GetOrganizationQuery(), ct)).Match(Results.Ok))
+            .Produces<OrganizationDto>(StatusCodes.Status200OK);
 
         group.MapPut("/", async (UpdateOrganizationRequest request, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new UpdateOrganizationCommand(request.Name), ct)).ToNoContent());
+            (await sender.Send(new UpdateOrganizationCommand(request.Name), ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
     }
 }

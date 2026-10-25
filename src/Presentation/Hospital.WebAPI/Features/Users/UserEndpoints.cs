@@ -15,9 +15,11 @@ internal sealed class UserEndpoints : IEndpoint
             .RequireAuthorization(Policies.Admin);
 
         group.MapPost("/{id:guid}/deactivate", async (Guid id, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new DeactivateUserCommand(id), ct)).ToNoContent());
+            (await sender.Send(new DeactivateUserCommand(id), ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
 
         group.MapPost("/{id:guid}/activate", async (Guid id, ISender sender, CancellationToken ct) =>
-            (await sender.Send(new ActivateUserCommand(id), ct)).ToNoContent());
+            (await sender.Send(new ActivateUserCommand(id), ct)).ToNoContent())
+            .Produces(StatusCodes.Status204NoContent);
     }
 }
