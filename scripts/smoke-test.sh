@@ -219,9 +219,9 @@ echo
 echo "7) Faz 4: slot sorgusu ve randevu yaşam döngüsü (örnek doktor + Genel Muayene)"
 if [ -n "$HOSPITAL_ID" ] && [ -n "${DOCTOR_ACCESS:-}" ]; then
   call - GET "/api/catalog/hospitals/$HOSPITAL_ID/services"
-  SERVICE_ID="$(echo "$LAST_BODY" | sed -nE 's/.*"id":"([^"]+)","departmentId":"[^"]*","name":"Genel Muayene".*//p' | head -n1)"
+  SERVICE_ID="$(echo "$LAST_BODY" | sed -nE 's/.*"id":"([^"]+)","departmentId":"[^"]*","name":"Genel Muayene".*/\1/p' | head -n1)"
   call - GET "/api/catalog/doctors?hospitalId=$HOSPITAL_ID&serviceId=$SERVICE_ID"
-  DOCTOR_ID="$(first_match '"id":"[^"]+"' | sed -E 's/"id":"([^"]+)"//')"
+  DOCTOR_ID="$(first_match '"id":"[^"]+"' | sed -E 's/"id":"([^"]+)"/\1/')"
 
   # En az 3 gün sonrası, hafta içi (örnek doktor Pzt-Cum 09:00-12:00 uygun).
   DAYS=3
@@ -231,7 +231,7 @@ if [ -n "$HOSPITAL_ID" ] && [ -n "${DOCTOR_ACCESS:-}" ]; then
   if [ -n "$SERVICE_ID" ] && [ -n "$DOCTOR_ID" ]; then
     call - GET "/api/catalog/doctors/$DOCTOR_ID/slots?serviceId=$SERVICE_ID&date=$APPT_DATE"
     check "GET /api/catalog/doctors/{id}/slots (anonim, $APPT_DATE)" 200
-    SLOT_START="$(first_match '"startAt":"[^"]+"' | sed -E 's/"startAt":"([^"]+)"//')"
+    SLOT_START="$(first_match '"startAt":"[^"]+"' | sed -E 's/"startAt":"([^"]+)"/\1/')"
     echo "         ilk müsait slot (UTC): $SLOT_START"
     call - GET "/api/catalog/doctors/$DOCTOR_ID/slots?serviceId=$SERVICE_ID&date=02.11.2026"
     check "Slot sorgusu geçersiz tarih biçimi (02.11.2026)" 400
