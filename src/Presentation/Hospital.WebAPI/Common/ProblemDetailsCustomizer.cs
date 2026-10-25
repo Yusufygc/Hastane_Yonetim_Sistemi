@@ -11,7 +11,8 @@ public static class ProblemDetailsCustomizer
         var problem = context.ProblemDetails;
         var httpContext = context.HttpContext;
 
-        problem.Extensions.TryAdd("traceId", httpContext.TraceIdentifier);
+        // Varsayılan ProblemDetails servisi Activity kimliğini (W3C) yazar; X-Correlation-Id ile aynı olması için üzerine yazılır.
+        problem.Extensions["traceId"] = httpContext.TraceIdentifier;
 
         if (problem.Extensions.ContainsKey("code"))
         {

@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Hospital.Application.Features.Auth;
 using Hospital.Application.Security;
 using Hospital.Domain.Entities.Users;
+using Hospital.WebAPI.Common;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
@@ -96,7 +97,9 @@ public static class AuthenticationExt
 
             policy
                 .WithOrigins(origins)
-                .WithHeaders("Content-Type", "Authorization")
+                .WithHeaders("Content-Type", "Authorization", CorrelationIdMiddleware.HeaderName)
+                // Tarayıcı istemcisinin okuyabilmesi için: izleme kimliği ve liste uçlarının sayfalama başlıkları.
+                .WithExposedHeaders(CorrelationIdMiddleware.HeaderName, "X-Total-Count", "X-Page", "X-Page-Size")
                 .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE");
         }));
 
