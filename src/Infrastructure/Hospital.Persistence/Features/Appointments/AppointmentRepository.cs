@@ -35,6 +35,18 @@ internal sealed class AppointmentRepository(AppDbContext db) : IAppointmentRepos
     public Task<bool> UserHasFutureActiveAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken) =>
         HoldingSlot().AnyAsync(a => (a.PatientId == userId || a.DoctorId == userId) && a.EndAt > now, cancellationToken);
 
+    public async Task<IReadOnlyList<Guid>> ListDuePendingIdsAsync(
+        DateTimeOffset createdBefore,
+        DateTimeOffset now,
+        int take,
+        CancellationToken cancellationToken) =>
+        await db.Appointments.AsNoTracking()
+            .Where(a => a.Status == AppointmentStatus.Pending && (a.CreatedAt <= createdBefore || a.StartAt <= now))
+            .OrderBy(a => a.CreatedAt).ThenBy(a => a.Id)
+            .Select(a => a.Id)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+
     public void Add(Appointment appointment) => db.Appointments.Add(appointment);
 
     /// <summary>Slotu tutan (PENDING/APPROVED) randevular; exclusion kısıtının WHERE koşuluyla aynı.</summary>

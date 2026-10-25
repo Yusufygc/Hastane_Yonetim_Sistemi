@@ -1,3 +1,4 @@
+using Hospital.Application.Parameters;
 using Hospital.Application.Security;
 using Hospital.Domain.Entities.Users;
 
@@ -31,7 +32,7 @@ public interface IDoctorRepository
 /// <summary>Okuma tarafı: DTO projeksiyonları. Yönetici sorguları kapsama göre süzülür.</summary>
 public interface IDoctorReader
 {
-    Task<IReadOnlyList<DoctorDto>> ListAsync(AdminScope scope, Guid? hospitalId, Guid? departmentId, CancellationToken cancellationToken);
+    Task<PagedList<DoctorDto>> ListAsync(AdminScope scope, Guid? hospitalId, Guid? departmentId, PageRequest page, CancellationToken cancellationToken);
 
     Task<DoctorDetailDto?> GetAsync(Guid id, AdminScope scope, CancellationToken cancellationToken);
 
@@ -45,7 +46,7 @@ public interface IDoctorReader
     Task<IReadOnlyList<DoctorTimeOffDto>> ListTimeOffsAsync(Guid doctorId, CancellationToken cancellationToken);
 
     /// <param name="status">PENDING, APPROVED veya REJECTED.</param>
-    Task<IReadOnlyList<DoctorServiceRequestDto>> ListServiceRequestsAsync(AdminScope scope, string status, CancellationToken cancellationToken);
+    Task<PagedList<DoctorServiceRequestDto>> ListServiceRequestsAsync(AdminScope scope, string status, PageRequest page, CancellationToken cancellationToken);
 }
 
 public sealed record DoctorDto(

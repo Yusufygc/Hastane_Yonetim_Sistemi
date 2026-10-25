@@ -1,3 +1,4 @@
+using Hospital.Application.Parameters;
 using Hospital.Application.Security;
 using Hospital.Domain.Entities.Appointments;
 using Hospital.Domain.Scheduling;
@@ -24,38 +25,41 @@ public interface IAppointmentRepository
     /// <summary>Kullanıcının (hasta veya doktor olarak) bitişi <paramref name="now"/>'dan sonra olan PENDING/APPROVED randevusu var mı?</summary>
     Task<bool> UserHasFutureActiveAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Zaman aşımına uğramış bekleyen talepler: oluşturulmasından <paramref name="createdBefore"/>'dan eski VEYA başlangıcı
+    /// <paramref name="now"/>'dan önce kalmış PENDING randevuların kimlikleri (en eskiden başlayarak).
+    /// </summary>
+    Task<IReadOnlyList<Guid>> ListDuePendingIdsAsync(DateTimeOffset createdBefore, DateTimeOffset now, int take, CancellationToken cancellationToken);
+
     void Add(Appointment appointment);
 }
 
-/// <summary>Okuma tarafı: DTO projeksiyonları. Listeler en fazla <see cref="AppointmentReaderLimits.MaxItems"/> kayıt döner.</summary>
+/// <summary>Okuma tarafı: DTO projeksiyonları. Liste sorguları sayfalanır (<see cref="PageRequest"/>); sıra deterministiktir.</summary>
 public interface IAppointmentReader
 {
     Task<AppointmentDto?> GetAsync(Guid id, CancellationToken cancellationToken);
 
     /// <summary>Hastanın randevuları (yeniden eskiye).</summary>
-    Task<IReadOnlyList<AppointmentDto>> ListForPatientAsync(Guid patientId, AppointmentStatus? status, CancellationToken cancellationToken);
+    Task<PagedList<AppointmentDto>> ListForPatientAsync(Guid patientId, AppointmentStatus? status, PageRequest page, CancellationToken cancellationToken);
 
     /// <summary>Doktorun randevuları (eskiden yeniye); <paramref name="from"/>/<paramref name="to"/> başlangıç zamanına uygulanır.</summary>
-    Task<IReadOnlyList<AppointmentDto>> ListForDoctorAsync(
+    Task<PagedList<AppointmentDto>> ListForDoctorAsync(
         Guid doctorId,
         DateTimeOffset? from,
         DateTimeOffset? to,
         AppointmentStatus? status,
+        PageRequest page,
         CancellationToken cancellationToken);
 
     /// <summary>Yönetici kapsamındaki şubelerin randevuları (yeniden eskiye).</summary>
-    Task<IReadOnlyList<AppointmentDto>> ListForAdminAsync(
+    Task<PagedList<AppointmentDto>> ListForAdminAsync(
         AdminScope scope,
         Guid? hospitalId,
         AppointmentStatus? status,
         DateTimeOffset? from,
         DateTimeOffset? to,
+        PageRequest page,
         CancellationToken cancellationToken);
-}
-
-public static class AppointmentReaderLimits
-{
-    public const int MaxItems = 200;
 }
 
 /// <param name="Status">PENDING, APPROVED, REJECTED, CANCELLED veya COMPLETED.</param>

@@ -1,7 +1,9 @@
 using Hospital.Application.Features.Appointments;
+using Hospital.Application.Parameters;
 using Hospital.Application.Security;
 using Hospital.Domain.Entities.Appointments;
 using Hospital.Persistence.Context;
+using Hospital.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hospital.Persistence.Features.Appointments;
@@ -14,51 +16,57 @@ internal sealed class AppointmentReader(AppDbContext db) : IAppointmentReader
         return row is null ? null : ToDto(row);
     }
 
-    public async Task<IReadOnlyList<AppointmentDto>> ListForPatientAsync(
+    public async Task<PagedList<AppointmentDto>> ListForPatientAsync(
         Guid patientId,
         AppointmentStatus? status,
+        PageRequest page,
         CancellationToken cancellationToken) =>
-        await ToListAsync(
+        await ToPagedAsync(
             Rows().Where(r => r.PatientId == patientId && (status == null || r.Status == status))
-                .OrderByDescending(r => r.StartAt),
+                .OrderByDescending(r => r.StartAt).ThenBy(r => r.Id),
+            page,
             cancellationToken);
 
-    public async Task<IReadOnlyList<AppointmentDto>> ListForDoctorAsync(
+    public async Task<PagedList<AppointmentDto>> ListForDoctorAsync(
         Guid doctorId,
         DateTimeOffset? from,
         DateTimeOffset? to,
         AppointmentStatus? status,
+        PageRequest page,
         CancellationToken cancellationToken) =>
-        await ToListAsync(
+        await ToPagedAsync(
             Rows().Where(r => r.DoctorId == doctorId
                               && (status == null || r.Status == status)
                               && (from == null || r.StartAt >= from)
                               && (to == null || r.StartAt <= to))
-                .OrderBy(r => r.StartAt),
+                .OrderBy(r => r.StartAt).ThenBy(r => r.Id),
+            page,
             cancellationToken);
 
-    public async Task<IReadOnlyList<AppointmentDto>> ListForAdminAsync(
+    public async Task<PagedList<AppointmentDto>> ListForAdminAsync(
         AdminScope scope,
         Guid? hospitalId,
         AppointmentStatus? status,
         DateTimeOffset? from,
         DateTimeOffset? to,
+        PageRequest page,
         CancellationToken cancellationToken) =>
-        await ToListAsync(
+        await ToPagedAsync(
             Rows().Where(r => r.OrganizationId == scope.OrganizationId
                               && (scope.HospitalId == null || r.HospitalId == scope.HospitalId)
                               && (hospitalId == null || r.HospitalId == hospitalId)
                               && (status == null || r.Status == status)
                               && (from == null || r.StartAt >= from)
                               && (to == null || r.StartAt <= to))
-                .OrderByDescending(r => r.StartAt),
+                .OrderByDescending(r => r.StartAt).ThenBy(r => r.Id),
+            page,
             cancellationToken);
 
-    private static async Task<IReadOnlyList<AppointmentDto>> ToListAsync(IQueryable<Row> query, CancellationToken cancellationToken)
-    {
-        var rows = await query.Take(AppointmentReaderLimits.MaxItems).ToListAsync(cancellationToken);
-        return rows.Select(ToDto).ToList();
-    }
+    private static async Task<PagedList<AppointmentDto>> ToPagedAsync(
+        IQueryable<Row> orderedQuery,
+        PageRequest page,
+        CancellationToken cancellationToken) =>
+        (await orderedQuery.ToPagedListAsync(page, cancellationToken)).Map(ToDto);
 
     /// <summary>Randevu + şube + hasta + doktor birleşiminin düz satırı (hizmet adı/ücret snapshot'tan okunur).</summary>
     private sealed class Row

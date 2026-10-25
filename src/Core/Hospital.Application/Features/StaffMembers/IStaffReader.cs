@@ -1,3 +1,4 @@
+using Hospital.Application.Parameters;
 using Hospital.Application.Security;
 
 namespace Hospital.Application.Features.StaffMembers;
@@ -5,7 +6,7 @@ namespace Hospital.Application.Features.StaffMembers;
 public interface IStaffReader
 {
     /// <summary>Kapsam içindeki personel; <paramref name="hospitalId"/> verilirse yalnız o şube.</summary>
-    Task<IReadOnlyList<StaffDto>> ListAsync(AdminScope scope, Guid? hospitalId, CancellationToken cancellationToken);
+    Task<PagedList<StaffDto>> ListAsync(AdminScope scope, Guid? hospitalId, PageRequest page, CancellationToken cancellationToken);
 }
 
 public sealed record StaffDto(

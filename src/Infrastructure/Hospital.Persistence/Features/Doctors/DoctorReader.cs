@@ -1,7 +1,9 @@
 using Hospital.Application.Features.Doctors;
+using Hospital.Application.Parameters;
 using Hospital.Application.Security;
 using Hospital.Domain.Entities.Users;
 using Hospital.Persistence.Context;
+using Hospital.Persistence.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -9,17 +11,18 @@ namespace Hospital.Persistence.Features.Doctors;
 
 internal sealed class DoctorReader(AppDbContext db) : IDoctorReader
 {
-    public async Task<IReadOnlyList<DoctorDto>> ListAsync(
+    public async Task<PagedList<DoctorDto>> ListAsync(
         AdminScope scope,
         Guid? hospitalId,
         Guid? departmentId,
+        PageRequest page,
         CancellationToken cancellationToken) =>
         await InScope(scope)
             .Where(x => (hospitalId == null || x.HospitalId == hospitalId)
                         && (departmentId == null || x.DepartmentId == departmentId))
-            .OrderBy(x => x.LastName).ThenBy(x => x.FirstName)
+            .OrderBy(x => x.LastName).ThenBy(x => x.FirstName).ThenBy(x => x.Id)
             .Select(ToDto)
-            .ToListAsync(cancellationToken);
+            .ToPagedListAsync(page, cancellationToken);
 
     public async Task<DoctorDetailDto?> GetAsync(Guid id, AdminScope scope, CancellationToken cancellationToken)
     {
@@ -80,9 +83,10 @@ internal sealed class DoctorReader(AppDbContext db) : IDoctorReader
             .Select(t => new DoctorTimeOffDto(t.Id, t.StartAt, t.EndAt, t.Reason))
             .ToListAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<DoctorServiceRequestDto>> ListServiceRequestsAsync(
+    public async Task<PagedList<DoctorServiceRequestDto>> ListServiceRequestsAsync(
         AdminScope scope,
         string status,
+        PageRequest page,
         CancellationToken cancellationToken)
     {
         var wanted = Enum.Parse<DoctorServiceStatus>(status, ignoreCase: true);
@@ -95,7 +99,7 @@ internal sealed class DoctorReader(AppDbContext db) : IDoctorReader
                 where l.Status == wanted
                       && h.OrganizationId == scope.OrganizationId
                       && (scope.HospitalId == null || h.Id == scope.HospitalId)
-                orderby l.CreatedAt
+                orderby l.CreatedAt, l.DoctorId, l.ServiceId
                 select new
                 {
                     l.DoctorId,
@@ -107,18 +111,16 @@ internal sealed class DoctorReader(AppDbContext db) : IDoctorReader
                     l.Status,
                     l.CreatedAt,
                 })
-            .ToListAsync(cancellationToken);
+            .ToPagedListAsync(page, cancellationToken);
 
-        return rows
-            .Select(r => new DoctorServiceRequestDto(
+        return rows.Map(r => new DoctorServiceRequestDto(
                 r.DoctorId,
                 $"{r.FirstName} {r.LastName}",
                 r.HospitalId,
                 r.ServiceId,
                 r.ServiceName,
                 DoctorServiceStatusNames.From(r.Status),
-                r.CreatedAt))
-            .ToList();
+                r.CreatedAt));
     }
 
     /// <summary>Doktor + bölüm + şube birleşiminin düz satırı (EF'in üzerinde süzebilmesi için nesne başlatıcılı).</summary>

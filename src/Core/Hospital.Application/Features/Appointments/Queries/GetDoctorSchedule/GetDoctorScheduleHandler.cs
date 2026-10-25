@@ -1,5 +1,6 @@
 using Hospital.Application.Features.Hospitals;
 using Hospital.Application.Interfaces;
+using Hospital.Application.Parameters;
 using Hospital.Application.Wrappers;
 using Hospital.Domain.Entities.Appointments;
 using Mediator;
@@ -21,7 +22,8 @@ public sealed class GetDoctorScheduleHandler(IAppointmentReader reader, ICurrent
         var from = query.From ?? clock.GetUtcNow();
         var to = query.To ?? from + DefaultWindow;
 
-        return Result.Success(
-            await reader.ListForDoctorAsync(doctorId, from, to, AppointmentStatus.Approved, cancellationToken));
+        // Takvim penceresi sayfalanmaz (tek bakışta tüm pencere); en fazla PageRequest.MaxPageSize randevu.
+        var page = await reader.ListForDoctorAsync(doctorId, from, to, AppointmentStatus.Approved, PageRequest.Largest, cancellationToken);
+        return Result.Success(page.Items);
     }
 }

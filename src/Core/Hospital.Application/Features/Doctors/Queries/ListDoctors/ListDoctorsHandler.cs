@@ -1,5 +1,6 @@
 using Hospital.Application.Features.Hospitals;
 using Hospital.Application.Interfaces;
+using Hospital.Application.Parameters;
 using Hospital.Application.Security;
 using Hospital.Application.Wrappers;
 using Mediator;
@@ -9,9 +10,9 @@ namespace Hospital.Application.Features.Doctors.Queries.ListDoctors;
 public sealed class ListDoctorsHandler(
     IHospitalRepository hospitals,
     IDoctorReader reader,
-    ICurrentUser currentUser) : IQueryHandler<ListDoctorsQuery, Result<IReadOnlyList<DoctorDto>>>
+    ICurrentUser currentUser) : IQueryHandler<ListDoctorsQuery, Result<PagedList<DoctorDto>>>
 {
-    public async ValueTask<Result<IReadOnlyList<DoctorDto>>> Handle(ListDoctorsQuery query, CancellationToken cancellationToken)
+    public async ValueTask<Result<PagedList<DoctorDto>>> Handle(ListDoctorsQuery query, CancellationToken cancellationToken)
     {
         var scope = AdminScope.From(currentUser);
         if (scope is null)
@@ -28,6 +29,7 @@ public sealed class ListDoctorsHandler(
             }
         }
 
-        return Result.Success(await reader.ListAsync(scope, query.HospitalId, query.DepartmentId, cancellationToken));
+        return Result.Success(await reader.ListAsync(
+            scope, query.HospitalId, query.DepartmentId, PageRequest.From(query.Page, query.PageSize), cancellationToken));
     }
 }
