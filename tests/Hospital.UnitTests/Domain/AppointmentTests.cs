@@ -183,6 +183,37 @@ public class AppointmentTests
         act.Should().Throw<DomainException>();
     }
 
+    // ---------- Zaman aşımı (sistem işlemi) ----------
+
+    [Fact]
+    public void ExpireWithoutResponse_bekleyen_talebi_reddeder_islemci_bos_neden_sabit_olay_uretir()
+    {
+        var appointment = NewAppointment();
+
+        appointment.ExpireWithoutResponse(Now.AddDays(3));
+
+        appointment.Status.Should().Be(AppointmentStatus.Rejected);
+        appointment.HoldsSlot.Should().BeFalse();
+        appointment.StatusChangedBy.Should().BeNull(); // sistem işlemi: kullanıcı yok
+        appointment.DecisionReason.Should().Be(Appointment.ExpiredReason);
+        appointment.UpdatedAt.Should().Be(Now.AddDays(3));
+        appointment.DomainEvents.OfType<AppointmentRejectedEvent>().Should().ContainSingle()
+            .Which.Reason.Should().Be(Appointment.ExpiredReason);
+    }
+
+    [Fact]
+    public void ExpireWithoutResponse_yalniz_bekleyen_talebe_uygulanir()
+    {
+        var approved = NewAppointment();
+        approved.Approve(DoctorId, Now);
+        var cancelled = NewAppointment();
+        cancelled.Cancel(PatientId, "Vazgeçtim", Now);
+
+        ((Action)(() => approved.ExpireWithoutResponse(Now))).Should().Throw<DomainException>();
+        ((Action)(() => cancelled.ExpireWithoutResponse(Now))).Should().Throw<DomainException>();
+        approved.Status.Should().Be(AppointmentStatus.Approved);
+    }
+
     // ---------- Hasta iptal süre sınırı ----------
 
     [Theory]

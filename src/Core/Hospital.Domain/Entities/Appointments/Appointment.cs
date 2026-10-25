@@ -20,6 +20,9 @@ public sealed class Appointment : AggregateRoot
     public const int NoteMaxLength = 500;
     public const int ReasonMaxLength = 500;
 
+    /// <summary>Doktor yanıt vermediği için otomatik düşürülen talebin nedeni (hastaya e-postayla iletilir).</summary>
+    public const string ExpiredReason = "Doktor süresi içinde yanıt vermediği için talep otomatik olarak sonlandırıldı.";
+
     /// <summary>EF Core materialization için.</summary>
     private Appointment()
     {
@@ -166,6 +169,16 @@ public sealed class Appointment : AggregateRoot
         Raise(new AppointmentCancelledEvent(Id, PatientId, DoctorId, HospitalId, ServiceNameSnapshot, StartAt, actorId, text));
     }
 
+    /// <summary>
+    /// Sistem işlemi: doktor süresi içinde karar vermeyen <b>bekleyen</b> talebi reddedilmiş sayar (slot serbest kalır).
+    /// İşlemi yapan kullanıcı yoktur (<see cref="StatusChangedBy"/> boş); hastaya red olayı (neden: <see cref="ExpiredReason"/>) gider.
+    /// </summary>
+    public void ExpireWithoutResponse(DateTimeOffset now)
+    {
+        Transition(AppointmentAction.Reject, changedBy: null, ExpiredReason, now);
+        Raise(new AppointmentRejectedEvent(Id, PatientId, DoctorId, HospitalId, ServiceNameSnapshot, StartAt, ExpiredReason));
+    }
+
     /// <summary>Yalnızca onaylı ve başlamış randevu tamamlanır.</summary>
     public void Complete(Guid doctorId, DateTimeOffset now)
     {
@@ -177,12 +190,12 @@ public sealed class Appointment : AggregateRoot
         Transition(AppointmentAction.Complete, doctorId, reason: null, now);
     }
 
-    private void Transition(AppointmentAction action, Guid changedBy, string? reason, DateTimeOffset now)
+    private void Transition(AppointmentAction action, Guid? changedBy, string? reason, DateTimeOffset now)
     {
         var next = State.Next(action);
 
         Status = next;
-        StatusChangedBy = Guard.NotEmpty(changedBy, "İşlemi yapan kullanıcı");
+        StatusChangedBy = changedBy is { } actor ? Guard.NotEmpty(actor, "İşlemi yapan kullanıcı") : null;
         UpdatedAt = now.ToUniversalTime();
 
         if (reason is not null)
