@@ -28,6 +28,9 @@ public sealed class HospitalApiFactory(
             // JWT imzalama anahtarı (yalnız test değeri); Issuer/Audience appsettings.json varsayılanlarıdır.
             ["Jwt:SigningKey"] = TestJwt.SigningKey,
 
+            // Hassas veri (T.C. kimlik no) şifreleme anahtarı (yalnız test değeri; Base64, 32 bayt).
+            ["Security:DataProtection:Key"] = TestDataProtection.Key,
+
             // Varsayılan kurum/şube + örnek bölüm/hizmet + ilk süper yönetici (yalnız test değerleri).
             ["Database:SeedOnStartup"] = "true",
             ["Seed:SampleData"] = "true",
@@ -44,6 +47,9 @@ public sealed class HospitalApiFactory(
             // E-posta outbox işleyicisi varsayılan olarak kapalı: testler outbox satırlarını ve IEmailOutboxStore'u
             // doğrudan, deterministik biçimde sınar. Arka plan işleyiciyi sınayan testler açıkça etkinleştirir.
             ["Email:Outbox:Enabled"] = "false",
+
+            // Bekleyen randevu zaman aşımı işleyicisi de varsayılan kapalı: testler PendingAppointmentExpirer'ı doğrudan çağırır.
+            ["Appointment:PendingExpiry:Enabled"] = "false",
         };
 
         if (settings is not null)

@@ -3,6 +3,7 @@ using Hospital.Application.Features.Auth;
 using Hospital.Application.Features.Notifications;
 using Hospital.Domain.Entities.Notifications;
 using Hospital.Application.Interfaces;
+using Hospital.Application.Security;
 using Hospital.Persistence.Context;
 using Hospital.WebAPI.Common;
 using Scalar.AspNetCore;
@@ -52,6 +53,19 @@ public static class WebApiExt
                 section.GetValue("CancellationDeadlineHours", defaults.CancellationDeadlineHours));
         });
 
+        // Bekleyen randevu talebi zaman aşımı (Appointment:PendingExpiry).
+        services.AddSingleton(serviceProvider =>
+        {
+            var section = serviceProvider.GetRequiredService<IConfiguration>().GetSection("Appointment:PendingExpiry");
+            var defaults = PendingExpirySettings.Default;
+
+            return new PendingExpirySettings(
+                section.GetValue("Enabled", defaults.Enabled),
+                TimeSpan.FromHours(section.GetValue("Hours", defaults.After.TotalHours)),
+                TimeSpan.FromSeconds(section.GetValue("PollSeconds", defaults.PollInterval.TotalSeconds)),
+                section.GetValue("BatchSize", defaults.BatchSize));
+        });
+
         // E-posta (SMTP) ve outbox işleyici ayarları. Parola yalnız ortam değişkeni/gizli depo ile verilir.
         services.AddSingleton(serviceProvider =>
         {
@@ -91,6 +105,11 @@ public static class WebApiExt
                 .Validated();
         });
 
+        // Hassas veri şifreleme anahtarı (KVKK). Eksik/hatalıysa uygulama başlarken hata verir (ValidateRequiredSettings).
+        services.AddSingleton(serviceProvider =>
+            new DataProtectionSettings(
+                serviceProvider.GetRequiredService<IConfiguration>().GetSection("Security:DataProtection")["Key"] ?? string.Empty));
+
         services.AddJwtAuthentication();
         services.AddFrontendCors(configuration);
         services.AddAuthRateLimiting(configuration);
@@ -110,9 +129,21 @@ public static class WebApiExt
         return services;
     }
 
+    /// <summary>
+    /// Zorunlu gizli ayarları (JWT imza anahtarı, veri şifreleme anahtarı) uygulama ayağa kalkarken doğrular: eksik veya hatalıysa
+    /// ilk istekte değil, başlangıçta anlaşılır bir hatayla durur (güvensiz varsayılanla çalışmaz).
+    /// </summary>
+    public static WebApplication ValidateRequiredSettings(this WebApplication app)
+    {
+        _ = app.Services.GetRequiredService<JwtSettings>();
+        _ = app.Services.GetRequiredService<ISensitiveDataProtector>();
+        return app;
+    }
+
     /// <summary>İstek hattı (middleware) sırası ve endpoint eşlemeleri.</summary>
     public static WebApplication UseWebApi(this WebApplication app)
     {
+        app.UseMiddleware<CorrelationIdMiddleware>(); // en dışta: hata yanıtları ve istek özeti de aynı kimliği taşır
         app.UseExceptionHandler();
         app.UseStatusCodePages(); // gövdesiz hata durumlarını ProblemDetails gövdesine çevirir
         app.UseCors(AuthenticationExt.CorsPolicyName);
@@ -124,7 +155,8 @@ public static class WebApiExt
         app.MapHealthChecks("/health").AllowAnonymous();
         app.MapEndpoints();
 
-        if (app.Environment.IsDevelopment())
+        // OpenAPI belgesi ve Scalar arayüzü: Development'ta açık; diğer ortamlarda yalnız OpenApi:Enabled=true ise.
+        if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("OpenApi:Enabled"))
         {
             app.MapOpenApi().AllowAnonymous();
             app.MapScalarApiReference().AllowAnonymous();

@@ -32,6 +32,9 @@ public static class ApplicationExt
         // Slot sorgusu ve randevu oluşturmanın ortak ön koşul + müsaitlik hesabı.
         services.AddScoped<SlotAvailabilityService>();
 
+        // Bekleyen talep zaman aşımı (arka plan işleyici Infrastructure'da çağırır).
+        services.AddScoped<PendingAppointmentExpirer>();
+
         // Domain event dinleyicileri (IDomainEventHandler<>) Features/** altından taranıp kaydedilir.
         services.AddDomainEventHandlers();
 

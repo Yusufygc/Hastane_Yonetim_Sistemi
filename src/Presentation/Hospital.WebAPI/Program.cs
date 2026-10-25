@@ -13,6 +13,8 @@ builder.Services.AddWebApi(builder.Configuration);
 
 var app = builder.Build();
 
+app.ValidateRequiredSettings();
+
 await app.MigrateDatabaseIfConfiguredAsync();
 await app.SeedDatabaseIfConfiguredAsync();
 
