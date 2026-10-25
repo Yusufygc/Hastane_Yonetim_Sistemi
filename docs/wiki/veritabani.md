@@ -25,4 +25,7 @@ Kaynak: `plan.md` §6 (tam Mermaid ER orada). PostgreSQL 16, tek `AppDbContext`,
 - `appointment.doctor_id` FK'si Faz 4'te eklendi (Faz 3'te belirtilen boşluk kapandı; [[kararlar]] K-55).
 
 ## İndeksler
-`APPOINTMENT (doctor_id, start_at)`, `(patient_id, start_at DESC)`, `(hospital_id, status, start_at)`; kısmi: `EMAIL_OUTBOX WHERE status='PENDING'`, `DOCTOR_SERVICE WHERE status='PENDING'`.
+`APPOINTMENT (doctor_id, start_at)`, `(patient_id, start_at DESC)`, `(hospital_id, status, start_at)`; kısmi: `EMAIL_OUTBOX WHERE status='PENDING'`, `DOCTOR_SERVICE WHERE status='PENDING'`, `APPOINTMENT (created_at) WHERE status='PENDING'` (zaman aşımı taraması). Faz 6 gözden geçirmesi ve plan testleri: [[operasyon]] (K-66).
+
+## T.C. kimlik no şifreleme (Faz 6, KVKK)
+`PATIENT.identity_number` düz metin değil: `enc:v1:` önekli **AES-256-GCM** şifreli metindir (`varchar(100)`; migration `Hardening`, geri alınmamalı). Eşitlik araması ve benzersizlik için aynı satırda `identity_number_hash` (HMAC-SHA256 **kör indeks**, benzersiz indeks `ix_patient_identity_number_hash`) tutulur; uygulama katmanı şifreler/çözer (EF value converter, `AesGcmSensitiveDataProtector`), veritabanı yalnız şifreli değeri görür. Ana anahtar `Security:DataProtection:Key`. Eski düz metin satırlar açılışta `IdentityNumberUpgrader` ile yükseltilir. Ayrıntı ve anahtar yönetimi: [[operasyon]], karar [[kararlar]] K-65.

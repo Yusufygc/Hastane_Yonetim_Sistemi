@@ -133,3 +133,5 @@ BASE=http://localhost:5284 ./scripts/smoke-test.sh
 - Bölüm 7 (Faz 4): anonim slot sorgusu (geçersiz tarih biçimi dahil), hasta randevu talebi → çift talep 409 → doktor onayı → hasta/doktor yetki sınırları → iptal (tekrar iptal 409) → hasta/doktor/yönetici listeleri. Randevuyu iptal ettiğinden slotu serbest bırakır, betik tekrar çalıştırılabilir.
 - Bölüm 6 (Faz 3): hasta profili (maskeli T.C.), rol sınırları, anonim katalog doktorları, örnek doktor (`DOCTOR_EMAIL`/`DOCTOR_PASSWORD` ile değişir) ve yönetici listeleri.
 - Geliştirme veritabanına her çalıştırmada bir test hastası ekler.
+- **Container'daki API'ye karşı (Faz 6, 57/57 başarılı):** bölüm 6–8 örnek doktor ister; `.env`'e `SEED_SAMPLE_DATA=true`, `SEED_SAMPLE_DOCTOR_EMAIL/PASSWORD`, `AUTH_RATE_LIMIT=100` ekleyip **boş veritabanıyla** başlatın (örnek veri yalnız ilk kurulumda eklenir), sonra `BASE=http://localhost:8080 ADMIN_EMAIL=... ADMIN_PASSWORD=... DOCTOR_EMAIL=... DOCTOR_PASSWORD=... ./scripts/smoke-test.sh`. Örnek veri yoksa 7–8 "atlandı" der (hata değil).
+- Betikteki `sed` ayrıştırma hatası (kimlik çıkarma boş dönüyordu; bölüm 7–8 hiç canlı koşmadığı için görünmemişti) Faz 6'da düzeltildi.

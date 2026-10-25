@@ -31,8 +31,9 @@ Durum işaretleri: `[ ]` başlamadı · `[~]` sürüyor · `[x]` tamam.
 `EMAIL_OUTBOX` (migration `EmailOutbox`), olay dağıtımı SaveChanges içinde (`IDomainEventDispatcher`), randevu e-posta dinleyicileri (talep/onay/red/iptal), Türkçe şablonlar, `dedup_key` ile tekrar önleme, `BackgroundService` outbox işleyici (`FOR UPDATE SKIP LOCKED`, üstel geri çekilme, 5 denemede `FAILED`), MailKit 4.18.1, Mailpit ile doğrulama, smoke test bölüm 8.
 **Çıkış (sağlandı):** Talep/onay/red/iptalde Mailpit'te doğru e-postalar görünür; SMTP kapalıyken (gerçek kapalı port) randevu akışı bozulmaz, e-posta bekler ve SMTP gelince gider; aynı olay için tek e-posta; çoklu işleyici çift göndermez. 275 birim + 9 mimari + 279 entegrasyon test yeşil. Bkz. [[bildirimler]], [[tasarim-kaliplari]], [[kararlar]] K-57…K-61, [[test-stratejisi]].
 
-## [ ] Faz 6 — Sağlamlaştırma ve Backend Kapanışı
-Yetki matrisi + IDOR tam kapsam · OpenAPI/Scalar · opsiyonel `Pending` zaman aşımı · performans/indeks · API Dockerfile · README/sunum özeti. **API sözleşmesi dondurulur.**
+## [x] Faz 6 — Sağlamlaştırma ve Backend Kapanışı (2026-10-25 tamamlandı)
+Yetki matrisi (67 uç × 6 kimlik) + IDOR matrisi · OpenAPI/Scalar, tipli yanıtlar, **dondurulmuş sözleşme** (`docs/api/openapi.v1.json`) · `Pending` zaman aşımı arka plan işi · indeks gözden geçirmesi + `QueryPlanTests` · `X-Correlation-Id` + log · sayfalama (K-56 borcu; başlıkla) · T.C. kimlik no şifreleme (KVKK, AES-GCM + kör indeks, migration `Hardening`) · API `Dockerfile` + `docker-compose.app.yml` · zorunlu ayar doğrulaması · README + [[sunum-ozeti]] + [[operasyon]].
+**Çıkış (sağlandı):** 301 birim + 9 mimari + 350 entegrasyon test yeşil; API imajı derlenip container'da çalıştırıldı (root olmayan kullanıcı, `/health` sağlıklı) ve `smoke-test.sh` canlı **57/57** (bölüm 6–8 ve Mailpit e-postaları dahil). Sözleşme dondu: Faz 7 arayüzü yalnız bu dosyaya dayanır. Bkz. [[kararlar]] K-62…K-70, [[operasyon]], [[test-stratejisi]], [[veritabani]], [[kimlik-ve-yetki]], [[api-uc-noktalari]].
 
 ## [ ] Faz 7 — Arayüz (Three.js, scroll tabanlı)
 Backend sonrası ayrıca planlanacak: animasyonlu scroll akışı, işlevsel ekranlar, JWT için token saklama/yenileme akışı ve CORS, performans/erişilebilirlik dengesi.

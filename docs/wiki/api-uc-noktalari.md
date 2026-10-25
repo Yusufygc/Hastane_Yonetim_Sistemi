@@ -2,6 +2,8 @@
 
 Kaynak: `plan.md` §10. Rol URL'de taşınmaz; kaynak odaklı rotalar + `me` kalıbı. Politikalar: [[kimlik-ve-yetki]]. Kurallar: [[randevu-kurallari]].
 
+**Ortak davranışlar (Faz 6):** her yanıtta `X-Correlation-Id` (hata `traceId`'siyle aynı); liste uçları `?page=1&pageSize=50` (1–200) alır ve gövde dizi kalır, toplam `X-Total-Count`, sayfa `X-Page`, boyut `X-Page-Size` başlıklarındadır ([[kararlar]] K-62, K-63). Makine okunur sözleşme: `docs/api/openapi.v1.json` ([[operasyon]]).
+
 | Metot | Yol | Politika |
 |---|---|---|
 | POST | `/api/auth/register` | anonim (yalnız hasta) |

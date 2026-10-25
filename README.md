@@ -21,6 +21,18 @@ dotnet run --project src/Presentation/Hospital.WebAPI
 - Mailpit arayüzü: http://localhost:8025 (randevu e-postaları burada görünür; bkz. docs/wiki/bildirimler.md)
 - Geliştirmede ilk açılışta varsayılan kurum/şube, örnek bölüm-hizmetler ve ilk süper yönetici otomatik oluşur; giriş bilgileri `appsettings.Development.json` içindeki `Seed:SuperAdmin` bölümündedir (üretimde `Seed__SuperAdmin__Email/Password` ortam değişkenleriyle verilir).
 
+### Her şey container'da (PostgreSQL + Mailpit + API)
+```bash
+cp .env.example .env        # gizli değerleri (JWT_SIGNING_KEY, DATA_PROTECTION_KEY, SEED_ADMIN_*) düzenleyin
+docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
+```
+API: http://localhost:8080 (sağlık: `/health`). Yapılandırma anahtarları, anahtar yönetimi (T.C. şifreleme anahtarını yedekleyin), loglar ve dağıtım listesi: [docs/wiki/operasyon.md](docs/wiki/operasyon.md).
+
+## API sözleşmesi
+- Dondurulmuş OpenAPI belgesi: [docs/api/openapi.v1.json](docs/api/openapi.v1.json) (bilinçli değişiklikten sonra `./scripts/update-openapi-snapshot.ps1`).
+- Hata biçimi ProblemDetails (+ `code`, `traceId`, `errors`); her yanıtta `X-Correlation-Id`; liste uçlarında `page`/`pageSize` ve `X-Total-Count` başlığı.
+- Mimari özeti (sunum): [docs/wiki/sunum-ozeti.md](docs/wiki/sunum-ozeti.md)
+
 ## Test
 ```bash
 dotnet test Hospital.sln

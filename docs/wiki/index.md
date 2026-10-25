@@ -29,3 +29,5 @@ Hastane/Klinik Randevu Sistemi bilgi tabanı. Kurallar için kök dizindeki `CLA
 ## Kalite ve Ortam
 - [[test-stratejisi]] — Test katmanları ve zorunlu senaryolar.
 - [[docker-ortam]] — Yerel ortam (PostgreSQL, Mailpit) ve geliştirme ortamı notları.
+- [[operasyon]] — Çalıştırma/dağıtım (Dockerfile, compose), yapılandırma anahtarları, anahtar yönetimi, loglar, arka plan işleri, indeksler, dondurulmuş API sözleşmesi, yetki matrisi.
+- [[sunum-ozeti]] — Ödev sunumu için tek sayfalık backend mimari özeti ve demo akışı.
