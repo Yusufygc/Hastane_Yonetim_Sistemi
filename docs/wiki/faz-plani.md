@@ -35,5 +35,13 @@ Durum işaretleri: `[ ]` başlamadı · `[~]` sürüyor · `[x]` tamam.
 Yetki matrisi (67 uç × 6 kimlik) + IDOR matrisi · OpenAPI/Scalar, tipli yanıtlar, **dondurulmuş sözleşme** (`docs/api/openapi.v1.json`) · `Pending` zaman aşımı arka plan işi · indeks gözden geçirmesi + `QueryPlanTests` · `X-Correlation-Id` + log · sayfalama (K-56 borcu; başlıkla) · T.C. kimlik no şifreleme (KVKK, AES-GCM + kör indeks, migration `Hardening`) · API `Dockerfile` + `docker-compose.app.yml` · zorunlu ayar doğrulaması · README + [[sunum-ozeti]] + [[operasyon]].
 **Çıkış (sağlandı):** 301 birim + 9 mimari + 350 entegrasyon test yeşil; API imajı derlenip container'da çalıştırıldı (root olmayan kullanıcı, `/health` sağlıklı) ve `smoke-test.sh` canlı **57/57** (bölüm 6–8 ve Mailpit e-postaları dahil). Sözleşme dondu: Faz 7 arayüzü yalnız bu dosyaya dayanır. Bkz. [[kararlar]] K-62…K-70, [[operasyon]], [[test-stratejisi]], [[veritabani]], [[kimlik-ve-yetki]], [[api-uc-noktalari]].
 
-## [ ] Faz 7 — Arayüz (Three.js, scroll tabanlı)
-Backend sonrası ayrıca planlanacak: animasyonlu scroll akışı, işlevsel ekranlar, JWT için token saklama/yenileme akışı ve CORS, performans/erişilebilirlik dengesi.
+## [ ] Faz 7 — Arayüz (Three.js, scroll tabanlı akış) — **ilk dilim tamamlandı (2026-10-26)**
+Kararlar: [[kararlar]] K-71…K-75, ayrıntı [[arayuz]].
+- [x] `web/` iskeleti (React + TS + Vite), OpenAPI'den üretilen tipler, CI `web` işi
+- [x] JWT oturumu: bellekte erişim + `sessionStorage` yenileme, tek uçuşlu yenileme
+- [x] Kaydırmalı 3B tanıtım (çift sarmal), sade mod, tembel yükleme
+- [x] Kayıt/giriş, randevu sihirbazı (şube→hizmet→doktor→tarih/saat→talep), randevularım (filtre, sayfalama, iptal)
+- [x] 21 Vitest testi (http istemcisi, yardımcılar, uygulama akışları)
+- [ ] Doktor paneli: bekleyen talepleri onay/red, takvim, hizmet talepleri
+- [ ] Yönetici paneli: şube/bölüm/hizmet, doktor/personel, hizmet talebi onayı
+- [ ] Web imajı (statik dosya + ters vekil) ve compose'a ekleme; erişilebilirlik denetimi

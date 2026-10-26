@@ -28,6 +28,17 @@ docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
 ```
 API: http://localhost:8080 (sağlık: `/health`). Yapılandırma anahtarları, anahtar yönetimi (T.C. şifreleme anahtarını yedekleyin), loglar ve dağıtım listesi: [docs/wiki/operasyon.md](docs/wiki/operasyon.md).
 
+## Arayüz (web/)
+React + TypeScript + Vite; ana sayfada kaydırdıkça değişen 3B sahne (three.js / React Three Fiber). Backend çalışırken:
+```bash
+cd web
+npm install
+npm run dev        # http://localhost:5173  (/api isteklerini http://localhost:5284'e yönlendirir)
+npm test           # birim + bileşen testleri
+npm run gen:api    # docs/api/openapi.v1.json'dan src/api/schema.d.ts üretir
+```
+İlk dilim: tanıtım, kayıt/giriş, randevu sihirbazı (şube → hizmet → doktor → tarih/saat → talep), randevularım (filtre, sayfalama, iptal). Ayrıntı: [docs/wiki/arayuz.md](docs/wiki/arayuz.md).
+
 ## API sözleşmesi
 - Dondurulmuş OpenAPI belgesi: [docs/api/openapi.v1.json](docs/api/openapi.v1.json) (bilinçli değişiklikten sonra `./scripts/update-openapi-snapshot.ps1`).
 - Hata biçimi ProblemDetails (+ `code`, `traceId`, `errors`); her yanıtta `X-Correlation-Id`; liste uçlarında `page`/`pageSize` ve `X-Total-Count` başlığı.

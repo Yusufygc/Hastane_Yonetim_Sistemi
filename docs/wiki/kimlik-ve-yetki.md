@@ -54,6 +54,9 @@ Politikalar: `Policies.Patient`, `Doctor`, `Admin`, `SuperAdmin`, `Authenticated
 
 Arayüzdeki sayfa kilitleri yalnız görsel; koruma backend'de. Yetki testleri: endpoint tarama + rol×uç matrisi + IDOR + JWT doğrulama (bozuk/sahte/süresi dolmuş/yanlış issuer-audience/anahtar) ([[test-stratejisi]]). Mimari: [[mimari]].
 
+## Arayüzde belirteç saklama (Faz 7)
+Erişim belirteci bellekte, yenileme belirteci `sessionStorage`'da; yenileme tek uçuşta yapılır (rotation yeniden-kullanım tespitini tetiklemesin). Ayrıntı: [[arayuz]], [[kararlar]] K-71.
+
 ## Yetki matrisi ve IDOR denetimi (Faz 6)
 Tüm uçların politikası `EndpointMatrix` tablosunda açıkça yazılıdır ve `EndpointPolicyMatrixTests` her uç için 6 kimlikle (anonim, hasta, doktor, personel, şube yöneticisi, süper yönetici) 401/403 davranışını doğrular; `IdorMatrixTests` başkasının kaynağının 404 döndüğünü doğrular ([[kararlar]] K-68, [[test-stratejisi]]). T.C. kimlik no veritabanında şifrelidir ([[veritabani]], K-65).
 
