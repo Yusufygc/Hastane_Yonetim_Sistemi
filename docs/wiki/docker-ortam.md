@@ -18,3 +18,6 @@ Bağlantı dizesi ve SMTP ayarları `appsettings.Development.json` + `user-secre
 - **Yeni gün/yeniden başlatma:** Docker Desktop kapanabilir (`dockerDesktopLinuxEngine` pipe'ı bulunamaz); açıp `docker compose up -d` çalıştırın. `scripts/test-docker.ps1` git checkout'ta CRLF'e dönse de çalışır (script `\r` karakterlerini temizler).
 - Dev bağlantı dizesi `appsettings.Development.json` içinde (yalnız yerel geliştirme değeri); üretimde ortam değişkeni/`user-secrets`.
 - Entegrasyon testi yönetici bağlantısı: `TEST_POSTGRES_ADMIN` ortam değişkeni (varsayılan localhost:5432).
+
+## Arayüz geliştirme sunucusu (Faz 7)
+`cd web && npm install && npm run dev` → http://localhost:5173; Vite `/api`'yi `http://localhost:5284`'e yönlendirir (API `dotnet run` ile açık olmalı). Node 22+ gerekir. Ayrıntı: [[arayuz]].

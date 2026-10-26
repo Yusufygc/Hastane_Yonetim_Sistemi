@@ -42,7 +42,7 @@ npm run gen:api    # docs/api/openapi.v1.json'dan src/api/schema.d.ts üretir
 ## API sözleşmesi
 - Dondurulmuş OpenAPI belgesi: [docs/api/openapi.v1.json](docs/api/openapi.v1.json) (bilinçli değişiklikten sonra `./scripts/update-openapi-snapshot.ps1`).
 - Hata biçimi ProblemDetails (+ `code`, `traceId`, `errors`); her yanıtta `X-Correlation-Id`; liste uçlarında `page`/`pageSize` ve `X-Total-Count` başlığı.
-- Mimari özeti (sunum): [docs/wiki/sunum-ozeti.md](docs/wiki/sunum-ozeti.md)
+- Mimari özeti (sunum): [docs/wiki/sunum-ozeti.md](docs/wiki/sunum-ozeti.md) · Tam rapor: [docs/wiki/sunum-raporu.md](docs/wiki/sunum-raporu.md)
 
 ## Test
 ```bash

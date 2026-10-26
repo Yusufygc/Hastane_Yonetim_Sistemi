@@ -1,6 +1,6 @@
 # Sunum Özeti (Backend)
 
-Ödev sunumu / savunma için tek sayfalık mimari özet. Ayrıntı için ilgili sayfalara gidin. Gereksinim eşlemesi: [[odev-gereksinimleri]]. Karar gerekçeleri: [[kararlar]].
+Ödev sunumu / savunma için tek sayfalık mimari özet. Tam anlatım (mimari, klasörleme, backend/API/frontend, iş akışı, demo, olası sorular): [[sunum-raporu]]. Ayrıntı için ilgili sayfalara gidin. Gereksinim eşlemesi: [[odev-gereksinimleri]]. Karar gerekçeleri: [[kararlar]].
 
 ## Sistem tek cümlede
 Çok şubeli (veya tek şubeli) hastane/klinik için, hastanın doktor-hizmet seçip **çakışmasız** randevu talep ettiği, doktorun onayladığı, e-posta bildirimlerinin güvenilir gittiği REST API. .NET 9, PostgreSQL, JWT Bearer.
@@ -25,6 +25,9 @@
 | İzleme | `X-Correlation-Id` = `traceId` = log kapsamı | [[operasyon]] |
 | Dayanıklılık | Bekleyen talep zaman aşımı arka plan işi, SMTP kapalıyken randevu akışı bozulmaz | [[operasyon]], [[bildirimler]] |
 
+## Arayüz (bkz. [[arayuz]])
+React 19 + TypeScript + Vite (`web/`); ana sayfada kaydırdıkça değişen 3B sahne (three.js), kayıt/giriş, randevu sihirbazı ve randevularım. Tipler dondurulmuş OpenAPI'den üretilir; erişim belirteci bellekte, yenileme belirteci `sessionStorage`'da (tek uçuşlu yenileme); sade mod ile erişilebilirlik/performans dengesi.
+
 ## Kalite güvencesi (bkz. [[test-stratejisi]])
 - Birim (domain/validator/koruyucu/SlotCalculator) + mimari + entegrasyon (gerçek PostgreSQL, gerçek SMTP/Mailpit).
 - **Yetki matrisi:** 67 uç × 6 kimlik; **IDOR matrisi:** başkasının kaynağı 404.
@@ -40,4 +43,4 @@
 5. Yanıt başlığında `X-Correlation-Id`; hata gövdesindeki `traceId` ile aynı.
 
 ## Bilinçli sınırlar
-Anahtar döndürme, denetim izi, kullanıcı bazlı hız sınırı yok; sayfalama sayfa numarası tabanlıdır ([[operasyon]] "Bilinçli sınırlar"). Arayüz Faz 7'de ([[faz-plani]]).
+Anahtar döndürme, denetim izi, kullanıcı bazlı hız sınırı yok; sayfalama sayfa numarası tabanlıdır ([[operasyon]] "Bilinçli sınırlar"). Arayüzde doktor ve yönetici panelleri sonraki dilimlerde ([[faz-plani]]).

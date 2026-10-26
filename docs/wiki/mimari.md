@@ -28,7 +28,9 @@ src/
   Infrastructure/  Hospital.Infrastructure, Hospital.Persistence
   Presentation/    Hospital.WebAPI
 tests/             Hospital.UnitTests, Hospital.ArchitectureTests, Hospital.IntegrationTests
+web/               React + TypeScript + Vite arayüz (Faz 7; bkz. [[arayuz]])
 ```
+`web/` backend katmanlarının dışındadır; backend ile tek bağı dondurulmuş OpenAPI sözleşmesidir (`docs/api/openapi.v1.json`, [[operasyon]]). Bütünsel anlatım: [[sunum-raporu]].
 
 ## Feature bazlı klasörleme
 Her katmanda **aynı feature adlarını yansıtan** `Features/<Ad>/` klasörü bulunur; handler'lar tek yerde toplanmaz. Feature'lar: Auth, Organizations, Hospitals, Departments, Services, Catalog, **Doctors, StaffMembers, Admins, Users, Patients** (Faz 3; `StaffMembers` adı K-47), **Appointments** (Faz 4), **Notifications** (Faz 5; olay dinleyicileri, outbox sözleşmeleri, şablonlar — [[bildirimler]]). Feature'lar arası ortak doğrulama kuralları `Application/Validation/AccountRules.cs`.

@@ -31,4 +31,5 @@ Hastane/Klinik Randevu Sistemi bilgi tabanı. Kurallar için kök dizindeki `CLA
 - [[arayuz]] — Faz 7 web arayüzü: rotalar, oturum/belirteç yönetimi, 3B sahne ve sade mod, test ve çalıştırma.
 - [[docker-ortam]] — Yerel ortam (PostgreSQL, Mailpit) ve geliştirme ortamı notları.
 - [[operasyon]] — Çalıştırma/dağıtım (Dockerfile, compose), yapılandırma anahtarları, anahtar yönetimi, loglar, arka plan işleri, indeksler, dondurulmuş API sözleşmesi, yetki matrisi.
+- [[sunum-raporu]] — Hocaya sunum için kapsamlı rapor: mimari, klasörleme, backend/API/frontend, iş akışı, çalışma sistemi, demo ve olası sorular.
 - [[sunum-ozeti]] — Ödev sunumu için tek sayfalık backend mimari özeti ve demo akışı.

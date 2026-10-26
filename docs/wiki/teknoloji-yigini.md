@@ -18,3 +18,7 @@ Kaynak: `plan.md` §4. Gerekçeler: [[kararlar]]. Yapı: [[mimari]].
 | Loglama | Serilog | Correlation id |
 | API dokümanı | `Microsoft.AspNetCore.OpenApi` + Scalar | Swashbuckle yok |
 | Test | xUnit, AwesomeAssertions, NetArchTest, Npgsql (gerçek PostgreSQL geçici test DB) | [[test-stratejisi]] |
+| Arayüz | React 19, TypeScript, Vite, React Router | `web/`; bkz. [[arayuz]], [[kararlar]] K-72 |
+| 3B | three.js + React Three Fiber (`@react-three/fiber`) | Sticky tuval, tembel yükleme; drei kullanılmıyor (K-73) |
+| Arayüz API tipleri | `openapi-typescript` | `docs/api/openapi.v1.json`'dan üretilir; CI farkı denetler |
+| Arayüz testi | Vitest + Testing Library + jsdom | `npm test` ([[test-stratejisi]]) |
