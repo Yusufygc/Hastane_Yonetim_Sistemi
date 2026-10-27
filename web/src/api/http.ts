@@ -158,6 +158,8 @@ export async function request<T>(method: string, path: string, options: RequestO
   if (!response.ok) throw await toApiError(response)
 
   const totalHeader = response.headers.get('X-Total-Count')
-  const data = response.status === 204 ? (undefined as T) : ((await response.json()) as T)
+  // Gövdesiz başarılı yanıtlar (204 ve 202) JSON ayrıştırmaya girmez.
+  const text = response.status === 204 ? '' : await response.text()
+  const data = (text === '' ? undefined : JSON.parse(text)) as T
   return { data, total: totalHeader === null ? null : Number(totalHeader), correlationId: response.headers.get('X-Correlation-Id') }
 }

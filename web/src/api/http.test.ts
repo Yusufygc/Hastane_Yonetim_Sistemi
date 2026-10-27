@@ -48,6 +48,12 @@ describe('http istemcisi', () => {
     expect(result.data).toBeUndefined()
   })
 
+  it('202 Accepted gibi gövdesiz başarılı yanıt hata vermez', async () => {
+    fetchMock.mockImplementation(async () => new Response(null, { status: 202 }))
+    const result = await request<void>('POST', '/api/doctors/me/services', { body: { serviceId: 's' } })
+    expect(result.data).toBeUndefined()
+  })
+
   it('ProblemDetails gövdesini ApiError olarak fırlatır (mesaj, kod, traceId, alan hataları)', async () => {
     fetchMock.mockResolvedValue(
       json({ title: 'Doğrulama hatası', detail: 'Alanlar geçersiz.', code: 'validation.failed', traceId: 'tr-1', errors: { email: ['Geçersiz e-posta'] } }, { status: 400 }),
