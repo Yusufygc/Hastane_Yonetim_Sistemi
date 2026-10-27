@@ -5,6 +5,7 @@ import { useMotion } from '../lib/motion'
 export default function Layout() {
   const { state, logout } = useAuth()
   const { simple, mode, setMode } = useMotion()
+  const isDoctor = state.status === 'authenticated' && state.user.role === 'DOCTOR'
 
   return (
     <>
@@ -19,8 +20,14 @@ export default function Layout() {
           Hastane Randevu
         </Link>
         <nav aria-label="Ana menü" className="nav">
-          <NavLink to="/randevu-al">Randevu al</NavLink>
-          {state.status === 'authenticated' && <NavLink to="/randevularim">Randevularım</NavLink>}
+          {isDoctor ? (
+            <NavLink to="/doktor">Doktor paneli</NavLink>
+          ) : (
+            <>
+              <NavLink to="/randevu-al">Randevu al</NavLink>
+              {state.status === 'authenticated' && <NavLink to="/randevularim">Randevularım</NavLink>}
+            </>
+          )}
         </nav>
         <div className="header-actions">
           <button

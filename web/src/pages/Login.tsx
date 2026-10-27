@@ -7,7 +7,7 @@ export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: string } | null)?.from ?? '/randevularim'
+  const from = (location.state as { from?: string } | null)?.from
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,8 +19,9 @@ export default function Login() {
     setBusy(true)
     setError(undefined)
     try {
-      await login(email.trim(), password)
-      navigate(from, { replace: true })
+      const user = await login(email.trim(), password)
+      // Gidilmek istenen sayfa varsa oraya; yoksa role göre ana ekran (doktor → panel, hasta → randevularım).
+      navigate(from ?? (user.role === 'DOCTOR' ? '/doktor' : '/randevularim'), { replace: true })
     } catch (e) {
       setError(e)
     } finally {

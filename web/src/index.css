@@ -527,3 +527,65 @@ input[aria-invalid='true'] {
     animation: none !important;
   }
 }
+
+/* Doktor paneli */
+.subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 12px 0 20px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.subnav a {
+  padding: 8px 14px;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+}
+.subnav a.active {
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  font-weight: 600;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.actions {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+.reason-form {
+  margin-top: 8px;
+}
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  margin: 12px 0;
+}
+.narrow-form {
+  max-width: 460px;
+}
+.week-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+}
+.day-group h3 {
+  margin: 20px 0 8px;
+  text-transform: capitalize;
+}
+.note {
+  margin: 4px 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border-radius: 4px;
+}
