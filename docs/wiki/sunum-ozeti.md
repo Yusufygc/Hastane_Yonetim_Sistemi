@@ -26,7 +26,7 @@
 | Dayanıklılık | Bekleyen talep zaman aşımı arka plan işi, SMTP kapalıyken randevu akışı bozulmaz | [[operasyon]], [[bildirimler]] |
 
 ## Arayüz (bkz. [[arayuz]])
-React 19 + TypeScript + Vite (`web/`); ana sayfada kaydırdıkça değişen 3B sahne (three.js), kayıt/giriş, randevu sihirbazı ve randevularım. Tipler dondurulmuş OpenAPI'den üretilir; erişim belirteci bellekte, yenileme belirteci `sessionStorage`'da (tek uçuşlu yenileme); sade mod ile erişilebilirlik/performans dengesi.
+React 19 + TypeScript + Vite (`web/`); ana sayfada kaydırdıkça değişen 3B sahne (three.js), kayıt/giriş, randevu sihirbazı, randevularım ve **doktor paneli** (onay/red, takvim, hizmet talebi, uygunluk/izin). Tipler dondurulmuş OpenAPI'den üretilir; erişim belirteci bellekte, yenileme belirteci `sessionStorage`'da (tek uçuşlu yenileme); sade mod ile erişilebilirlik/performans dengesi.
 
 ## Kalite güvencesi (bkz. [[test-stratejisi]])
 - Birim (domain/validator/koruyucu/SlotCalculator) + mimari + entegrasyon (gerçek PostgreSQL, gerçek SMTP/Mailpit).
@@ -38,9 +38,9 @@ React 19 + TypeScript + Vite (`web/`); ana sayfada kaydırdıkça değişen 3B s
 ## Demo akışı (5 dk)
 1. `docker compose up -d` → `dotnet run` (veya `docker-compose.app.yml` ile hepsi container'da) → Scalar `/scalar/v1`.
 2. Hasta kaydı → giriş → anonim slot sorgusu → randevu talebi → Mailpit'te doktora e-posta.
-3. Doktor girişi → onay → hastaya e-posta; aynı slota ikinci talep → `409 appointment.slot_taken`.
+3. Doktor girişi (arayüzde `/doktor`) → bekleyen talebi onayla → hastaya e-posta; aynı slota ikinci talep → `409 appointment.slot_taken`.
 4. Başka hastanın randevusuna erişim → `404`; hasta rolüyle yönetici ucu → `403`.
 5. Yanıt başlığında `X-Correlation-Id`; hata gövdesindeki `traceId` ile aynı.
 
 ## Bilinçli sınırlar
-Anahtar döndürme, denetim izi, kullanıcı bazlı hız sınırı yok; sayfalama sayfa numarası tabanlıdır ([[operasyon]] "Bilinçli sınırlar"). Arayüzde doktor ve yönetici panelleri sonraki dilimlerde ([[faz-plani]]).
+Anahtar döndürme, denetim izi, kullanıcı bazlı hız sınırı yok; sayfalama sayfa numarası tabanlıdır ([[operasyon]] "Bilinçli sınırlar"). Arayüzde yönetici paneli sonraki dilimde ([[faz-plani]]).

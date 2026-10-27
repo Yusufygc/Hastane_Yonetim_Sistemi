@@ -27,7 +27,7 @@
 | OOP ilkeleri | Kullanıcı hiyerarşisi (TPT), kapsülleme, polimorfizm (State), soyutlama (repository/arayüzler) | [[domain-modeli]] |
 | ≥10 commit, farklı günler | 60+ commit, 8 farklı gün (Conventional Commits) | [[git-is-akisi]] |
 
-Sayılarla proje (2026-10-26): **67 API ucu**, **~330 C# kaynak dosyası** (üretilen migration hariç), **76 test dosyası**; **301 birim + 9 mimari + 350 entegrasyon + 21 web testi**.
+Sayılarla proje (2026-10-26): **67 API ucu**, **~330 C# kaynak dosyası** (üretilen migration hariç), **76 test dosyası**; **301 birim + 9 mimari + 350 entegrasyon + 30 web testi**.
 
 ---
 
@@ -228,11 +228,12 @@ Tüm kimlikler `uuid` (Guid v7: tahmin edilemez, sıralı), zamanlar `timestampt
 | `/giris`, `/kayit` | JWT girişi, hasta kaydı (alan bazlı hata gösterimi) |
 | `/randevu-al` | **Sihirbaz:** şube → hizmet → doktor → tarih → saat → özet/talep. Katalog anonim gezilir, talep gönderirken giriş istenir; seçimler korunur |
 | `/randevularim` | Durum filtresi, sayfalama, iptal nedeniyle iptal (giriş gerekir) |
+| `/doktor/*` | **Doktor paneli:** bekleyen talepleri onayla/reddet (neden zorunlu), onaylıları tamamla/iptal, haftalık takvim, hizmet talebi (yönetici onaylar), uygunluk ve izin yönetimi, profil. Doktor girince doğrudan panele düşer |
 
 ### 7.2 Oturum ve API katmanı
 - **Erişim belirteci bellekte**, yenileme belirteci `sessionStorage`'da. Süre dolunca (401) istemci **tek** yenileme isteği atar (eşzamanlı istekler paylaşır — döndürülen refresh token iki kez kullanılırsa sunucu bunu saldırı sayar) ve asıl isteği tekrarlar. Yenileme de reddedilirse oturum temizlenir, kullanıcı giriş sayfasına düşer.
 - **Tipler üretilir:** `npm run gen:api` → `docs/api/openapi.v1.json` → `src/api/schema.d.ts`. Elle yazılmış tip kayması olmaz; CI üretimi tekrarlayıp fark varsa kırılır.
-- Sayfa kilitleri (`ProtectedRoute`) **yalnız görseldir**; asıl koruma backend'dedir (401/403/404).
+- Sayfa kilitleri (`ProtectedRoute`, `RoleRoute`) **yalnız görseldir**; asıl koruma backend'dedir (401/403/404).
 - Tarih `yyyy-MM-dd` yerel tarihten üretilir, saatler şubenin saat diliminde gösterilir.
 
 ### 7.3 3B ve erişilebilirlik dengesi
@@ -254,7 +255,7 @@ Tüm kimlikler `uuid` (Guid v7: tahmin edilemez, sıralı), zamanlar `timestampt
 | 4 | **Randevu çekirdeği** | Slot, State Pattern, onay akışı, yarış testleri |
 | 5 | Bildirimler | Outbox + MailKit + Mailpit |
 | 6 | Sağlamlaştırma | Matris testleri, OpenAPI dondurma, KVKK şifreleme, sayfalama, Docker |
-| 7 | Arayüz (ilk dilim) | 3B tanıtım, giriş, sihirbaz, randevularım |
+| 7 | Arayüz (ilk iki dilim) | 3B tanıtım, giriş, sihirbaz, randevularım; **doktor paneli** |
 
 Her faz: **kod + test + wiki + commit** birlikte biter; çıkış kriteri fazın sonunda doğrulanır ([[faz-plani]]). Backend tamamlanıp sözleşme dondurulduktan sonra arayüze geçilmiştir.
 
@@ -269,7 +270,7 @@ Her faz: **kod + test + wiki + commit** birlikte biter; çıkış kriteri fazın
 | Birim (301) | xUnit, AwesomeAssertions | Domain kuralları, State geçişleri, slot hesabı (DST dahil), validator'lar, AES-GCM |
 | Mimari (9) | NetArchTest | Katman bağımlılık kuralları |
 | Entegrasyon (350) | `WebApplicationFactory` + **gerçek PostgreSQL** + Mailpit | Uçtan uca akışlar, yarış durumu, yetki matrisi, IDOR, sözleşme, sorgu planı (EXPLAIN), şifreleme |
-| Web (21) | Vitest + Testing Library | http istemcisi (yenileme/yarış), yardımcılar, uygulama akışları |
+| Web (30) | Vitest + Testing Library | http istemcisi (yenileme/yarış, gövdesiz yanıt), yardımcılar, uygulama ve doktor paneli akışları |
 | Canlı smoke | `scripts/smoke-test.sh` | Çalışan (container) API'ye karşı 57 kontrol, e-postalar dahil |
 
 Testle yakalanan gerçek hatalar (öğrenilenler): kültüre bağlı tarih ayrıştırma (`02.11.2026` → 11 Şubat) → yalnız `yyyy-MM-dd`; hata `traceId`'sinin korelasyon kimliğinden farklı çıkması; EF modelinin ilk şifreleyiciyi önbelleğe alması; drei `<Scroll html>`'in ayrı React kökünde Router bağlamını kaybetmesi → sticky tuval mimarisi.
@@ -319,7 +320,7 @@ Geliştirmede örnek veri hazırdır: süper yönetici `admin@hastane.local`, ö
 ---
 
 ## 11. Sınırlar ve gelecek çalışma
-- Arayüzde doktor onay paneli ve yönetici paneli henüz yok (API hazır, Faz 7'nin sonraki dilimleri).
+- Arayüzde yönetici paneli henüz yok (API hazır, Faz 7'nin sonraki dilimi). Doktor panelinde uygunluk penceresi düzenleme yok (ekle/sil var).
 - Veri şifreleme anahtarı döndürme (rotation) yok; anahtar yedeklenmelidir. Denetim izi (audit log) ve kullanıcı bazlı hız sınırı yok.
 - Sayfalama sayfa numarası tabanlıdır (ödev ölçeğinde yeterli).
 - Web için üretim imajı (statik dosya + ters vekil) henüz eklenmedi; `npm run build` `web/dist` üretir.

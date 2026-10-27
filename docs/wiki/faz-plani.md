@@ -42,6 +42,6 @@ Kararlar: [[kararlar]] K-71…K-75, ayrıntı [[arayuz]].
 - [x] Kaydırmalı 3B tanıtım (çift sarmal), sade mod, tembel yükleme
 - [x] Kayıt/giriş, randevu sihirbazı (şube→hizmet→doktor→tarih/saat→talep), randevularım (filtre, sayfalama, iptal)
 - [x] 21 Vitest testi (http istemcisi, yardımcılar, uygulama akışları)
-- [ ] Doktor paneli: bekleyen talepleri onay/red, takvim, hizmet talepleri
+- [x] Doktor paneli (2026-10-27): bekleyen talepleri onay/red, takvim, hizmet talepleri, uygunluk/izin, profil — [[arayuz]], K-76…K-78; 30 Vitest testi
 - [ ] Yönetici paneli: şube/bölüm/hizmet, doktor/personel, hizmet talebi onayı
 - [ ] Web imajı (statik dosya + ters vekil) ve compose'a ekleme; erişilebilirlik denetimi
