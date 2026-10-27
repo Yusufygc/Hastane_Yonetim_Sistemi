@@ -1,45 +1,13 @@
 import { useCallback, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { appointments, type Appointment, type AppointmentStatus } from '../api/endpoints'
+import { appointments, type AppointmentStatus } from '../api/endpoints'
 import { ErrorMessage } from '../components/ErrorMessage'
+import { ReasonForm } from '../components/ReasonForm'
 import { StatusBadge } from '../components/StatusBadge'
 import { STATUS_LABELS, formatDateTime, formatMoney, isCancellable } from '../lib/format'
 import { useAsync } from '../lib/useAsync'
 
 const PAGE_SIZE = 10
-
-function CancelForm({ appointment, onDone }: { appointment: Appointment; onDone: () => void }) {
-  const [reason, setReason] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<unknown>()
-
-  async function submit(event: React.FormEvent) {
-    event.preventDefault()
-    setBusy(true)
-    setError(undefined)
-    try {
-      await appointments.cancel(appointment.id, reason.trim())
-      onDone()
-    } catch (e) {
-      setError(e)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <form className="cancel-form" onSubmit={submit}>
-      <ErrorMessage error={error} />
-      <label>
-        İptal nedeni
-        <input required maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
-      </label>
-      <button className="btn btn-danger" type="submit" disabled={busy || reason.trim() === ''}>
-        {busy ? 'İptal ediliyor…' : 'Randevuyu iptal et'}
-      </button>
-    </form>
-  )
-}
 
 export default function Appointments() {
   const location = useLocation()
@@ -108,9 +76,13 @@ export default function Appointments() {
             {a.decisionReason && <p className="page-note">Not: {a.decisionReason}</p>}
             {isCancellable(a.status) &&
               (cancelling === a.id ? (
-                <CancelForm
-                  appointment={a}
-                  onDone={() => {
+                <ReasonForm
+                  label="İptal nedeni"
+                  submitLabel="Randevuyu iptal et"
+                  busyLabel="İptal ediliyor…"
+                  onCancel={() => setCancelling(null)}
+                  onSubmit={async (reason) => {
+                    await appointments.cancel(a.id, reason)
                     setCancelling(null)
                     setVersion((v) => v + 1)
                   }}

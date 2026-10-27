@@ -54,3 +54,31 @@ export function statusLabel(status: string): string {
 export function isCancellable(status: string): boolean {
   return status === 'PENDING' || status === 'APPROVED'
 }
+
+/** API gün numarası: 0 = Pazar … 6 = Cumartesi. */
+export const DAY_NAMES = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi']
+
+/** "09:00:00" → "09:00". */
+export function formatTime(time: string): string {
+  return time.slice(0, 5)
+}
+
+/** Saat dilimsiz tarih-saat ("2026-10-28T09:00") girdisini (datetime-local) tarayıcı saat diliminden UTC ISO'ya çevirir. */
+export function localInputToIso(value: string): string {
+  return new Date(value).toISOString()
+}
+
+export function formatDateShort(date: string): string {
+  const [y, m, d] = date.split('-').map(Number)
+  return new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium' }).format(new Date(y, m - 1, d))
+}
+
+/** Yerel gün başlığı için anahtar (yyyy-MM-dd) — randevuları güne göre gruplamak için. */
+export function localDayKey(iso: string): string {
+  return toDateInput(new Date(iso))
+}
+
+/** Randevu başlamış mı? (Tamamlama yalnız başlamış onaylı randevuda mümkündür.) */
+export function hasStarted(startAtIso: string, now = new Date()): boolean {
+  return new Date(startAtIso).getTime() <= now.getTime()
+}
