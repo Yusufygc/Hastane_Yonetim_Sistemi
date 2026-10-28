@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using AwesomeAssertions;
 using Hospital.IntegrationTests.Infrastructure;
@@ -35,6 +36,30 @@ public class DepartmentAndServiceTests(ApiFixture fixture) : IClassFixture<ApiFi
         // "ortopedi" ile "Ortopedi" büyük/küçük harf farkı gözetilmeden aynı isimdir.
         duplicate.StatusCode.Should().Be(HttpStatusCode.Conflict);
         sameNameOtherHospital.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task Isim_tekilligi_sunucu_kulturunden_bagimsizdir_Turkce_kulturde_I_ve_i_ayni_harf_sayilir()
+    {
+        // Regresyon: C# ToLower() tr-TR kültüründe "I" → "ı" yapar, PostgreSQL lower() ise "i"; karşılaştırma tutmayıp
+        // yinelenen ad tekillik indeksine kadar gidiyor ve anlamsız bir çakışma mesajı veriyordu.
+        var previous = CultureInfo.DefaultThreadCurrentCulture;
+        CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("tr-TR");
+        try
+        {
+            var superAdmin = await AdminSessions.SuperAdminAsync(fixture);
+            var hospital = await AdminSessions.CreateHospitalAsync(superAdmin);
+            await AdminSessions.CreateDepartmentAsync(superAdmin, hospital, "INCELEME");
+
+            var duplicate = await superAdmin.PostAsync($"/api/hospitals/{hospital}/departments", new { Name = "Inceleme" });
+
+            duplicate.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            (await ApiClient.ReadJsonAsync(duplicate)).GetProperty("code").GetString().Should().Be("department.name_taken");
+        }
+        finally
+        {
+            CultureInfo.DefaultThreadCurrentCulture = previous;
+        }
     }
 
     [Fact]

@@ -12,7 +12,8 @@ internal sealed class DepartmentRepository(AppDbContext db) : IDepartmentReposit
 
     public Task<bool> NameExistsAsync(Guid hospitalId, string name, Guid? excludeId, CancellationToken cancellationToken)
     {
-        var lowered = name.ToLower();
+        // Kültürden bağımsız: tr-TR'de ToLower() "I" → "ı" yapar, veritabanı lower() ise "i"; karşılaştırma tutmaz.
+        var lowered = name.ToLowerInvariant();
 
         return db.Departments.AnyAsync(
             d => d.HospitalId == hospitalId && d.Name.ToLower() == lowered && d.Id != excludeId,
