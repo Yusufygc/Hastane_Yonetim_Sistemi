@@ -3,7 +3,7 @@
 `web/` klasörü: React 19 + TypeScript + Vite; 3B için three.js (React Three Fiber). Backend sözleşmesi [[operasyon]] ("API sözleşmesi") dosyasından türetilir. Karar gerekçeleri: [[kararlar]] K-71…K-75. Yetki modeli: [[kimlik-ve-yetki]]. Uç noktalar: [[api-uc-noktalari]].
 
 ## İlk dilim (tamamlandı)
-Tanıtım sayfası, kayıt/giriş, randevu sihirbazı, randevularım. **İkinci dilim: doktor paneli** (aşağıda). Yönetici paneli sonraki dilimde ([[faz-plani]]).
+Tanıtım sayfası, kayıt/giriş, randevu sihirbazı, randevularım. **İkinci dilim: doktor paneli** (aşağıda). **Üçüncü dilim: yönetim paneli** (aşağıda). Sıradaki: web imajı ([[faz-plani]]).
 
 | Rota | Ekran | Erişim |
 |---|---|---|
@@ -27,6 +27,23 @@ Ortak parçalar: `components/ReasonForm` (gerekçe isteyen küçük form; iptal/
 
 Davranış notları: işlem hataları (örn. `409 appointment.invalid_transition`, izin/uygunluk çakışması) ProblemDetails mesajı ve `traceId` ile **kartın içinde** gösterilir; izin saatleri tarayıcı saat dilimindedir (`datetime-local` → UTC ISO); takvim aralığı yerel Pazartesi 00:00'dan 7 gündür.
 
+## Yönetim paneli (üçüncü dilim)
+Rota ağacı `/yonetim/*`, `RoleRoute role="ADMIN"` ile görsel olarak kilitli; giriş sonrası yönetici doğrudan panele düşer, menüde yalnız "Yönetim paneli" görünür ([[kararlar]] K-79). `AdminProvider` erişilebilir şubeleri yükler (`GET /api/hospitals`: şube yöneticisi yalnız kendi şubesini görür), **seçili şubeyi** (üstteki seçici, `sessionStorage`) tüm listelere uygular ve süper yöneticiyi `GET /api/organization`'ın 200 dönmesinden anlar (şube yöneticisinde 403 → "Şube yöneticisi" rozeti, süper yönetici işlevleri gizlenir).
+
+| Rota | Ekran | Kullanılan uçlar |
+|---|---|---|
+| `/yonetim` | **Randevular** (seçili şube): durum filtresi, sayfalama, **nedenli iptal** | `GET /api/appointments`, `POST …/cancel` |
+| `/yonetim/hizmet-talepleri` | Doktor hizmet talepleri: Bekleyen/Onaylı/Reddedilen, **onayla / reddet** | `GET /api/doctor-service-requests`, `POST /api/doctors/{d}/services/{s}/approve｜reject` |
+| `/yonetim/doktorlar` | Doktor listesi, **oluştur** (hesap + başlangıç parolası), **düzenle**, **pasifleştir/aktifleştir** | `GET/POST /api/doctors`, `PUT /api/doctors/{id}`, `POST /api/users/{id}/deactivate｜activate` |
+| `/yonetim/personel` | Personel listesi, oluştur, pasifleştir/aktifleştir | `GET/POST /api/staff`, `POST /api/users/…` |
+| `/yonetim/subeler` | Şube bilgileri, **haftalık çalışma saatleri** (gün başına tek aralık, işaretsiz gün kapalı), pasifleştirme; **süper yönetici:** yeni şube + kurum adı | `GET/POST/PUT /api/hospitals`, `PUT …/working-hours`, `POST …/deactivate`, `GET/PUT /api/organization` |
+| `/yonetim/bolumler` | Bölüm ekle, yeniden adlandır, pasifleştir (aktif hizmeti olan pasifleştirilemez) | `GET/POST /api/hospitals/{id}/departments`, `PUT/POST /api/departments/{id}…` |
+| `/yonetim/hizmetler` | Hizmet ekle/düzenle (ad, bölüm, süre, ücret, para birimi), pasifleştir | `GET/POST/PUT /api/services`, `POST …/deactivate` |
+
+Ortak parçalar: `components/ConfirmAction` (iki adımlı "emin misiniz?" düğmesi; geri alınması zor pasifleştirmelerde), `components/Pager`, `components/TextField` (alan bazlı hata), `api/admin.ts` (tipli yönetici uç fonksiyonları), `test/helpers.tsx` (testlerde ortak sahte API).
+
+Davranış notları: Hata mesajları sunucunun Türkçe `detail`'idir (örn. "Bölümde aktif hizmet var"); doğrulama hataları ilgili alanın altında görünür. Kapsam dışı kaynak backend'de 404 döner, panel yalnız yöneticinin şubelerini listeler.
+
 ## Mimari
 - `src/api/http.ts`: `fetch` sarmalayıcı. **Erişim belirteci bellekte**, yenileme belirteci `sessionStorage`'da ([[kararlar]] K-71). 401 gelince **tek** yenileme isteği (eşzamanlı istekler paylaşır; belirteç döndürme kuralı) ve istek bir kez tekrarlanır; yenileme reddedilirse oturum temizlenir ve `hospital:session-expired` olayı yayılır. Hatalar `ApiError` (Türkçe mesaj, `code`, `traceId`, alan bazlı `errors`); ağ hatası `status 0`.
 - `src/api/schema.d.ts`: **üretilmiş** tipler (`npm run gen:api`, kaynak `docs/api/openapi.v1.json`); CI üretimi yeniden yapıp fark varsa kırılır. `src/api/endpoints.ts` tipli uç fonksiyonlarıdır.
@@ -43,8 +60,8 @@ Davranış notları: işlem hataları (örn. `409 appointment.invalid_transition
 
 ## Çalıştırma ve test
 - `docker compose up -d` → `dotnet run --project src/Presentation/Hospital.WebAPI` → `cd web && npm run dev`. Vite `/api`'yi `http://localhost:5284`'e yönlendirir (hedef `API_PROXY_TARGET`); üretimde `VITE_API_URL` verilir ve arayüz origin'i API'nin `Cors:AllowedOrigins` listesine eklenir ([[operasyon]]).
-- `npm test` (Vitest + Testing Library, **30 test**): doktor paneli akışları (rol kilidi, onay + liste yenileme, nedensiz red engeli, 409 mesajı, başlamamış randevuyu tamamlama kapalı, hizmet talebi, uygunluk ekleme); http istemcisi (başlıklar, sorgu kodlama, hata çevirisi, 401→yenile→tekrar, eşzamanlı 401 tek yenileme, yenileme reddi), tarih/taslak yardımcıları, uygulama akışları (sade ana sayfa, korumalı rota yönlendirmesi, hatalı giriş, başarılı giriş, sihirbaz). Bkz. [[test-stratejisi]].
+- `npm test` (Vitest + Testing Library, **40 test**): yönetim paneli akışları (rol kilidi, süper/şube yöneticisi ayrımı, şube oluşturma, çalışma saatleri gövdesi, bölüm ekleme, iki adımlı pasifleştirme + sunucu mesajı, doktor oluşturma + alan hataları, hizmet talebi onayı, nedenli iptal); doktor paneli akışları (rol kilidi, onay + liste yenileme, nedensiz red engeli, 409 mesajı, başlamamış randevuyu tamamlama kapalı, hizmet talebi, uygunluk ekleme); http istemcisi (başlıklar, sorgu kodlama, hata çevirisi, 401→yenile→tekrar, eşzamanlı 401 tek yenileme, yenileme reddi), tarih/taslak yardımcıları, uygulama akışları (sade ana sayfa, korumalı rota yönlendirmesi, hatalı giriş, başarılı giriş, sihirbaz). Bkz. [[test-stratejisi]].
 - Elle doğrulama (2026-10-26): kayıt → giriş → seçimler korunarak sihirbaz → randevu talebi → "Randevularım" listesi; gerçek API'ye karşı.
 
 ## Bilinçli sınırlar / sonraki dilim
-Yönetici paneli (şube/bölüm/hizmet, doktor/personel, hizmet talebi onayı) ve e-posta doğrulama ekranı yok; doktor panelinde uygunluk penceresi düzenleme (PUT) yok, yalnız ekle/sil. Üretim için web sunucusu imajı (statik dosya + ters vekil) henüz yok; `npm run build` `web/dist` üretir. Three.js paketi büyüktür (~240 KB gzip, tembel); ileride yalnız gereken modüllerle küçültülebilir.
+Yönetim panelinde yönetici hesabı oluşturma (`/api/admins`), doktora doğrudan hizmet atama (`PUT /api/doctors/{id}/services`) ve parola sıfırlama ekranı yok; yönetici/personel için e-posta doğrulama ekranı yok; personel (STAFF) rolünün paneli yok. Doktor panelinde uygunluk penceresi düzenleme (PUT) yok, yalnız ekle/sil. Üretim için web sunucusu imajı (statik dosya + ters vekil) henüz yok; `npm run build` `web/dist` üretir. Three.js paketi büyüktür (~240 KB gzip, tembel); ileride yalnız gereken modüllerle küçültülebilir.

@@ -11,7 +11,7 @@ Kaynak: `plan.md` §11. Faz bağlantısı: [[faz-plani]].
 | API / Yetki | `WebApplicationFactory` | Endpoint tarama, rol×uç matrisi, IDOR, JWT doğrulama (bozuk/sahte/süresi dolmuş token), refresh rotation ([[kimlik-ve-yetki]]) |
 
 ## Arayüz testleri (Faz 7)
-`web/` altında Vitest + Testing Library (`npm test`, 30 test): http istemcisi, yardımcılar, uygulama akışları ve doktor paneli akışları; CI `web` işi ayrıca lint, tip üretimi farkı ve derlemeyi denetler ([[arayuz]]).
+`web/` altında Vitest + Testing Library (`npm test`, 40 test): http istemcisi, yardımcılar, uygulama akışları, doktor ve yönetim paneli akışları; CI `web` işi ayrıca lint, tip üretimi farkı ve derlemeyi denetler ([[arayuz]]).
 
 ## Faz 6 testleri
 - **Yetki matrisi:** `EndpointMatrix` altın tablosu (67 uç → politika) + `EndpointPolicyMatrixTests` (6 kimlik × tüm uçlar). Yeni uç tabloya eklenmeden envanter testi kırılır ([[kararlar]] K-68).

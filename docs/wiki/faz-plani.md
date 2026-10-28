@@ -43,5 +43,5 @@ Kararlar: [[kararlar]] K-71…K-75, ayrıntı [[arayuz]].
 - [x] Kayıt/giriş, randevu sihirbazı (şube→hizmet→doktor→tarih/saat→talep), randevularım (filtre, sayfalama, iptal)
 - [x] 21 Vitest testi (http istemcisi, yardımcılar, uygulama akışları)
 - [x] Doktor paneli (2026-10-27): bekleyen talepleri onay/red, takvim, hizmet talepleri, uygunluk/izin, profil — [[arayuz]], K-76…K-78; 30 Vitest testi
-- [ ] Yönetici paneli: şube/bölüm/hizmet, doktor/personel, hizmet talebi onayı
+- [x] Yönetim paneli (2026-10-28): randevular + iptal, hizmet talebi onayı, doktor/personel yönetimi, şube + çalışma saatleri, bölüm, hizmet — [[arayuz]], K-79…K-81; 40 Vitest testi
 - [ ] Web imajı (statik dosya + ters vekil) ve compose'a ekleme; erişilebilirlik denetimi

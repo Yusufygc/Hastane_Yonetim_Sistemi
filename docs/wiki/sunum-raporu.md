@@ -27,7 +27,7 @@
 | OOP ilkeleri | Kullanıcı hiyerarşisi (TPT), kapsülleme, polimorfizm (State), soyutlama (repository/arayüzler) | [[domain-modeli]] |
 | ≥10 commit, farklı günler | 60+ commit, 8 farklı gün (Conventional Commits) | [[git-is-akisi]] |
 
-Sayılarla proje (2026-10-26): **67 API ucu**, **~330 C# kaynak dosyası** (üretilen migration hariç), **76 test dosyası**; **301 birim + 9 mimari + 350 entegrasyon + 30 web testi**.
+Sayılarla proje (2026-10-26): **67 API ucu**, **~330 C# kaynak dosyası** (üretilen migration hariç), **76 test dosyası**; **301 birim + 9 mimari + 351 entegrasyon + 40 web testi**.
 
 ---
 
@@ -228,6 +228,7 @@ Tüm kimlikler `uuid` (Guid v7: tahmin edilemez, sıralı), zamanlar `timestampt
 | `/giris`, `/kayit` | JWT girişi, hasta kaydı (alan bazlı hata gösterimi) |
 | `/randevu-al` | **Sihirbaz:** şube → hizmet → doktor → tarih → saat → özet/talep. Katalog anonim gezilir, talep gönderirken giriş istenir; seçimler korunur |
 | `/randevularim` | Durum filtresi, sayfalama, iptal nedeniyle iptal (giriş gerekir) |
+| `/yonetim/*` | **Yönetim paneli:** randevu listesi ve nedenli iptal, doktor hizmet talebi onayı, doktor/personel oluştur-düzenle-pasifleştir, şube bilgisi ve haftalık çalışma saatleri, bölüm ve hizmet yönetimi; süper yönetici ayrıca şube ve kurum adı yönetir |
 | `/doktor/*` | **Doktor paneli:** bekleyen talepleri onayla/reddet (neden zorunlu), onaylıları tamamla/iptal, haftalık takvim, hizmet talebi (yönetici onaylar), uygunluk ve izin yönetimi, profil. Doktor girince doğrudan panele düşer |
 
 ### 7.2 Oturum ve API katmanı
@@ -255,7 +256,7 @@ Tüm kimlikler `uuid` (Guid v7: tahmin edilemez, sıralı), zamanlar `timestampt
 | 4 | **Randevu çekirdeği** | Slot, State Pattern, onay akışı, yarış testleri |
 | 5 | Bildirimler | Outbox + MailKit + Mailpit |
 | 6 | Sağlamlaştırma | Matris testleri, OpenAPI dondurma, KVKK şifreleme, sayfalama, Docker |
-| 7 | Arayüz (ilk iki dilim) | 3B tanıtım, giriş, sihirbaz, randevularım; **doktor paneli** |
+| 7 | Arayüz (ilk üç dilim) | 3B tanıtım, giriş, sihirbaz, randevularım; **doktor paneli**; **yönetim paneli** |
 
 Her faz: **kod + test + wiki + commit** birlikte biter; çıkış kriteri fazın sonunda doğrulanır ([[faz-plani]]). Backend tamamlanıp sözleşme dondurulduktan sonra arayüze geçilmiştir.
 
@@ -269,11 +270,11 @@ Her faz: **kod + test + wiki + commit** birlikte biter; çıkış kriteri fazın
 |---|---|---|
 | Birim (301) | xUnit, AwesomeAssertions | Domain kuralları, State geçişleri, slot hesabı (DST dahil), validator'lar, AES-GCM |
 | Mimari (9) | NetArchTest | Katman bağımlılık kuralları |
-| Entegrasyon (350) | `WebApplicationFactory` + **gerçek PostgreSQL** + Mailpit | Uçtan uca akışlar, yarış durumu, yetki matrisi, IDOR, sözleşme, sorgu planı (EXPLAIN), şifreleme |
-| Web (30) | Vitest + Testing Library | http istemcisi (yenileme/yarış, gövdesiz yanıt), yardımcılar, uygulama ve doktor paneli akışları |
+| Entegrasyon (351) | `WebApplicationFactory` + **gerçek PostgreSQL** + Mailpit | Uçtan uca akışlar, yarış durumu, yetki matrisi, IDOR, sözleşme, sorgu planı (EXPLAIN), şifreleme |
+| Web (40) | Vitest + Testing Library | http istemcisi (yenileme/yarış, gövdesiz yanıt), yardımcılar, uygulama, doktor ve yönetim paneli akışları |
 | Canlı smoke | `scripts/smoke-test.sh` | Çalışan (container) API'ye karşı 57 kontrol, e-postalar dahil |
 
-Testle yakalanan gerçek hatalar (öğrenilenler): kültüre bağlı tarih ayrıştırma (`02.11.2026` → 11 Şubat) → yalnız `yyyy-MM-dd`; hata `traceId`'sinin korelasyon kimliğinden farklı çıkması; EF modelinin ilk şifreleyiciyi önbelleğe alması; drei `<Scroll html>`'in ayrı React kökünde Router bağlamını kaybetmesi → sticky tuval mimarisi.
+Testle yakalanan gerçek hatalar (öğrenilenler): sunucu tr-TR kültüründe `ToLower()` ile veritabanı `lower()` farklı sonuç verip büyük/küçük harf farklı yinelenen adların oluşmasına izin veriyordu (yönetim paneli doğrulamasında bulundu, `ToLowerInvariant()` + regresyon testi); kültüre bağlı tarih ayrıştırma (`02.11.2026` → 11 Şubat) → yalnız `yyyy-MM-dd`; hata `traceId`'sinin korelasyon kimliğinden farklı çıkması; EF modelinin ilk şifreleyiciyi önbelleğe alması; drei `<Scroll html>`'in ayrı React kökünde Router bağlamını kaybetmesi → sticky tuval mimarisi.
 
 ### 8.4 LLM Wiki ile sürdürülebilir bilgi
 Proje, bir yapay zekâ asistanıyla geliştirildi ve bağlam kaybı olmasın diye `docs/wiki/` **bilgi tabanı** tutuldu: `CLAUDE.md` (anayasa) → `index.md` (harita) → birbirine Obsidian tarzı çift köşeli bağlantılarla bağlı konu sayfaları, `log.md` (kronoloji) ve `kararlar.md` (**K-1…K-75**, her kararın tarihi ve gerekçesi). Kod yazmadan önce wiki okunur, karar çıkınca wiki güncellenir; kaynak spesifikasyonla (`plan.md`, `Fazlar.md`) çelişki sessizce çözülmez, onaya sunulur. Sonuç: karar gerekçeleri kayıpsız, sunumda "neden böyle yaptık" sorusunun her cevabı belgeli ([[kararlar]]).
@@ -320,7 +321,7 @@ Geliştirmede örnek veri hazırdır: süper yönetici `admin@hastane.local`, ö
 ---
 
 ## 11. Sınırlar ve gelecek çalışma
-- Arayüzde yönetici paneli henüz yok (API hazır, Faz 7'nin sonraki dilimi). Doktor panelinde uygunluk penceresi düzenleme yok (ekle/sil var).
+- Arayüzde personel (STAFF) paneli, yönetici hesabı oluşturma ve parola sıfırlama ekranı yok (API hazır). Doktor panelinde uygunluk penceresi düzenleme yok (ekle/sil var).
 - Veri şifreleme anahtarı döndürme (rotation) yok; anahtar yedeklenmelidir. Denetim izi (audit log) ve kullanıcı bazlı hız sınırı yok.
 - Sayfalama sayfa numarası tabanlıdır (ödev ölçeğinde yeterli).
 - Web için üretim imajı (statik dosya + ters vekil) henüz eklenmedi; `npm run build` `web/dist` üretir.
