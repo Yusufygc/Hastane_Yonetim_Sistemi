@@ -50,7 +50,7 @@ public static class OpenApiExt
                 toplam ve sayfa bilgisi `X-Total-Count`, `X-Page`, `X-Page-Size` yanıt başlıklarındadır.
 
                 **Biçimler:** tarih `yyyy-MM-dd`, saat `HH:mm`, zaman damgası ISO 8601 (randevu zamanları UTC). Gün: `0` = Pazar … `6` = Cumartesi.
-                """;
+                """.ReplaceLineEndings("\n"); // ham metin dosyanın satır sonlarını taşır (Windows checkout: CRLF); sözleşme her ortamda aynı olsun
 
             // Sunucu adresi isteğe göre değişir; belge dağıtımdan bağımsız ve kararlı kalsın diye yazılmaz.
             document.Servers = [];
