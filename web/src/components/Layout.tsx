@@ -6,6 +6,7 @@ export default function Layout() {
   const { state, logout } = useAuth()
   const { simple, mode, setMode } = useMotion()
   const isDoctor = state.status === 'authenticated' && state.user.role === 'DOCTOR'
+  const isAdmin = state.status === 'authenticated' && state.user.role === 'ADMIN'
 
   return (
     <>
@@ -22,6 +23,8 @@ export default function Layout() {
         <nav aria-label="Ana menü" className="nav">
           {isDoctor ? (
             <NavLink to="/doktor">Doktor paneli</NavLink>
+          ) : isAdmin ? (
+            <NavLink to="/yonetim">Yönetim paneli</NavLink>
           ) : (
             <>
               <NavLink to="/randevu-al">Randevu al</NavLink>

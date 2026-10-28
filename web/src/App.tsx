@@ -10,6 +10,14 @@ import Landing from './pages/Landing'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 import Register from './pages/Register'
+import AdminAppointments from './pages/admin/AdminAppointments'
+import AdminDepartments from './pages/admin/AdminDepartments'
+import AdminDoctors from './pages/admin/AdminDoctors'
+import AdminHospitals from './pages/admin/AdminHospitals'
+import AdminLayout from './pages/admin/AdminLayout'
+import AdminServiceRequests from './pages/admin/AdminServiceRequests'
+import AdminServices from './pages/admin/AdminServices'
+import AdminStaff from './pages/admin/AdminStaff'
 import DoctorAppointments from './pages/doctor/DoctorAppointments'
 import DoctorAvailability from './pages/doctor/DoctorAvailability'
 import DoctorLayout from './pages/doctor/DoctorLayout'
@@ -39,6 +47,17 @@ export default function App() {
                   <Route path="hizmetlerim" element={<DoctorServices />} />
                   <Route path="uygunluk" element={<DoctorAvailability />} />
                   <Route path="profil" element={<DoctorProfile />} />
+                </Route>
+              </Route>
+              <Route element={<RoleRoute role="ADMIN" label="Yönetim paneli" />}>
+                <Route path="yonetim" element={<AdminLayout />}>
+                  <Route index element={<AdminAppointments />} />
+                  <Route path="hizmet-talepleri" element={<AdminServiceRequests />} />
+                  <Route path="doktorlar" element={<AdminDoctors />} />
+                  <Route path="personel" element={<AdminStaff />} />
+                  <Route path="subeler" element={<AdminHospitals />} />
+                  <Route path="bolumler" element={<AdminDepartments />} />
+                  <Route path="hizmetler" element={<AdminServices />} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />

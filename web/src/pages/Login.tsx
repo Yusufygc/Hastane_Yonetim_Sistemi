@@ -3,6 +3,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { ErrorMessage } from '../components/ErrorMessage'
 
+// Girişten sonra rolün ana ekranı (gidilmek istenen sayfa yoksa).
+const HOME_BY_ROLE: Record<string, string> = { DOCTOR: '/doktor', ADMIN: '/yonetim' }
+
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -20,8 +23,8 @@ export default function Login() {
     setError(undefined)
     try {
       const user = await login(email.trim(), password)
-      // Gidilmek istenen sayfa varsa oraya; yoksa role göre ana ekran (doktor → panel, hasta → randevularım).
-      navigate(from ?? (user.role === 'DOCTOR' ? '/doktor' : '/randevularim'), { replace: true })
+      // Gidilmek istenen sayfa varsa oraya; yoksa role göre ana ekran (doktor/yönetici → panel, hasta → randevularım).
+      navigate(from ?? HOME_BY_ROLE[user.role] ?? '/randevularim', { replace: true })
     } catch (e) {
       setError(e)
     } finally {

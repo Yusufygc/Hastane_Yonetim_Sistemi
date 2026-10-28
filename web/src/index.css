@@ -589,3 +589,34 @@ input[aria-invalid='true'] {
   background: color-mix(in srgb, var(--primary) 8%, transparent);
   border-radius: 4px;
 }
+
+/* Yönetim paneli */
+.page.wide {
+  max-width: 1040px;
+}
+.admin-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0;
+}
+.panel-form {
+  max-width: 640px;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+table.hours {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 480px;
+}
+table.hours th,
+table.hours td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
