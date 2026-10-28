@@ -1,16 +1,8 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { session } from './api/http'
-import App from './App'
-
-const json = (body: unknown, init: ResponseInit = {}) =>
-  new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' }, ...init })
-
-type Handler = (url: string, init?: RequestInit) => Response | Promise<Response> | undefined
-
-const fetchMock = vi.fn<typeof fetch>()
-let handlers: Handler[] = []
+import { calls, fetchMock, json, loginHandler, paged, serve, signIn } from './test/helpers'
 
 const appointment = (over: Record<string, unknown> = {}) => ({
   id: 'a1',
@@ -34,37 +26,6 @@ const appointment = (over: Record<string, unknown> = {}) => ({
   ...over,
 })
 
-const tokensFor = (role: string) => ({
-  accessToken: 'a',
-  refreshToken: 'r',
-  accessTokenExpiresAt: '',
-  refreshTokenExpiresAt: '',
-  user: { id: 'u1', email: `${role.toLowerCase()}@x.com`, role },
-})
-
-/** URL'ye göre ilk cevap veren işleyici kazanır; bilinmeyen istek boş liste döner. */
-function serve(...extra: Handler[]) {
-  handlers = extra
-  fetchMock.mockImplementation(async (input, init) => {
-    const url = String(input)
-    for (const h of handlers) {
-      const r = h(url, init)
-      if (r) return r
-    }
-    return json([], { headers: { 'Content-Type': 'application/json', 'X-Total-Count': '0' } })
-  })
-}
-
-async function signIn(role: 'DOCTOR' | 'PATIENT') {
-  window.history.pushState({}, '', '/giris')
-  render(<App />)
-  await userEvent.type(await screen.findByLabelText('E-posta'), `${role.toLowerCase()}@x.com`)
-  await userEvent.type(screen.getByLabelText('Parola'), 'Parola123x')
-  await userEvent.click(screen.getByRole('button', { name: 'Giriş yap' }))
-}
-
-const loginHandler = (role: string): Handler => (url, init) => (url === '/api/auth/login' && init?.method === 'POST' ? json(tokensFor(role)) : undefined)
-
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock)
   session.clear()
@@ -77,7 +38,6 @@ afterEach(() => {
   window.history.pushState({}, '', '/')
 })
 
-const calls = (method: string, urlPart: string) => fetchMock.mock.calls.filter(([u, i]) => String(u).includes(urlPart) && (i?.method ?? 'GET') === method)
 
 describe('doktor paneli', () => {
   it('doktor girişi panele yönlendirir; üst menüde Doktor paneli var, hasta menüsü yok', async () => {
@@ -124,7 +84,7 @@ describe('doktor paneli', () => {
     serve(
       loginHandler('DOCTOR'),
       (url, init) => (url.endsWith('/api/appointments/a1/reject') && init?.method === 'POST' ? new Response(null, { status: 204 }) : undefined),
-      (url) => (url.startsWith('/api/doctors/me/appointments') ? json([appointment()], { headers: { 'Content-Type': 'application/json', 'X-Total-Count': '1' } }) : undefined),
+      (url) => (url.startsWith('/api/doctors/me/appointments') ? paged([appointment()]) : undefined),
     )
     await signIn('DOCTOR')
 
@@ -146,7 +106,7 @@ describe('doktor paneli', () => {
         url.endsWith('/api/appointments/a1/approve') && init?.method === 'POST'
           ? json({ title: 'Çakışma', detail: 'Bu randevu artık onaylanamaz.', code: 'appointment.invalid_transition', traceId: 'tr-9' }, { status: 409 })
           : undefined,
-      (url) => (url.startsWith('/api/doctors/me/appointments') ? json([appointment()], { headers: { 'Content-Type': 'application/json', 'X-Total-Count': '1' } }) : undefined),
+      (url) => (url.startsWith('/api/doctors/me/appointments') ? paged([appointment()]) : undefined),
     )
     await signIn('DOCTOR')
 
