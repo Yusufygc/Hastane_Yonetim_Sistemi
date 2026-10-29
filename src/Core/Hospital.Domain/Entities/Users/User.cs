@@ -87,6 +87,13 @@ public abstract class User : Entity
         LastLoginAt = now;
     }
 
+    /// <summary>Parola sıfırlama sonrası: başarısız giriş sayacı ve kilit kaldırılır (kullanıcı kilitli kalmasın).</summary>
+    public void ClearLockout()
+    {
+        FailedLoginCount = 0;
+        LockoutEnd = null;
+    }
+
     public void ChangePasswordHash(string passwordHash)
     {
         if (string.IsNullOrWhiteSpace(passwordHash))
