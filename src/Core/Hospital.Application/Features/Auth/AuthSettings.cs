@@ -78,6 +78,12 @@ public static class AuthErrors
             "Yeni parola mevcut parolayla aynı olamaz.",
             new Dictionary<string, string[]> { ["newPassword"] = ["Yeni parola mevcut parolayla aynı olamaz."] });
 
+    public static readonly Wrappers.Error InvalidResetToken =
+        Wrappers.Error.Validation(
+            "auth.invalid_reset_token",
+            "Parola sıfırlama bağlantısı geçersiz veya süresi dolmuş. Lütfen yeni bir bağlantı isteyin.",
+            new Dictionary<string, string[]> { ["token"] = ["Bağlantı geçersiz veya süresi dolmuş."] });
+
     public static readonly Wrappers.Error EmailTaken =
         Wrappers.Error.Conflict("auth.email_taken", "Bu e-posta adresi zaten kayıtlı.");
 
