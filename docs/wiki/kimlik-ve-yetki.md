@@ -10,7 +10,7 @@ Kaynak: `plan.md` §9. Endpoint'ler: [[api-uc-noktalari]]. Testler: [[test-strat
 - **Çıkış:** `POST /api/auth/logout` (Bearer + gövdede refreshToken) yenileme belirtecini iptal eder; idempotent, başkasının belirtecini iptal edemez (sessizce yok sayılır). Erişim JWT'si doğal süresi dolana kadar teknik olarak geçerli kalır (kısa ömürlü).
 - **Anında iptal (JWT'nin zayıf noktası kapatıldı):** `OnTokenValidated` her istekte `IAccountSessionReader` ile hesabın aktifliğini ve `security_stamp` eşleşmesini DB'den doğrular → pasife alınan veya parolası değişen kullanıcının henüz süresi dolmamış erişim belirteci de **anında** geçersiz olur. Bedel: her istekte tek basit PK sorgusu.
 - İmza anahtarı `Jwt:SigningKey` (≥ 32 bayt) **koda/depoya konmaz**; geliştirme değeri `appsettings.Development.json`'da, üretimde `Jwt__SigningKey` ortam değişkeni/gizli depo. Eksik/kısa ise uygulama başlarken hata verir (`JwtSettings.Validated`). Issuer/Audience doğrulanır, algoritma yalnız HS256, saat farkı 30 sn.
-- `register` yalnız **hasta** açar; doktor/personel/yönetici hesabını yalnız yönetici oluşturur (Faz 3: `POST /api/doctors|staff|admins`). Başlangıç parolasını yönetici verir (e-posta davetiyesi Faz 5'e kadar yok); kullanıcı `POST /api/auth/change-password` ile değiştirir. Parola değişince güvenlik damgası döner (eldeki erişim belirteçleri anında düşer) ve **tüm yenileme belirteçleri iptal edilir** → yeniden giriş gerekir. Hesap kuralları (e-posta, parola ≥ 8 + harf + rakam) `Application/Validation/AccountRules` içinde ortaktır.
+- `register` yalnız **hasta** açar; doktor/personel/yönetici hesabını yalnız yönetici oluşturur (Faz 3: `POST /api/doctors|staff|admins`). Başlangıç parolasını yönetici verir (e-posta davetiyesi yok); kullanıcı `POST /api/auth/change-password` ile değiştirir, parolasını unutursa [Parola sıfırlama](#parola-sıfırlama-şifremi-unuttum) akışını kullanır. Parola değişince güvenlik damgası döner (eldeki erişim belirteçleri anında düşer) ve **tüm yenileme belirteçleri iptal edilir** → yeniden giriş gerekir. Hesap kuralları (e-posta, parola ≥ 8 + harf + rakam) `Application/Validation/AccountRules` içinde ortaktır.
 - Giriş hataları tek tip: yanlış parola, bilinmeyen e-posta, pasif ve kilitli hesap aynı `401 auth.invalid_credentials` döner (hesap varlığı sızmaz; bilinmeyen e-postada da parola özeti hesaplanır). Kilit: 5 hatalı denemede 15 dk (`Auth:*`).
 - Hız sınırı: `register`/`login`/`refresh` IP başına dakikada 10 (`RateLimiting:Auth:*`) → 429.
 - Parola özeti: ASP.NET Identity PBKDF2. TC numarası şimdilik düz saklanır (şifreleme Faz 6 KVKK maddesi).
@@ -53,6 +53,21 @@ Politikalar: `Policies.Patient`, `Doctor`, `Admin`, `SuperAdmin`, `Authenticated
 | Çakışan slot | 409 |
 
 Arayüzdeki sayfa kilitleri yalnız görsel; koruma backend'de. Yetki testleri: endpoint tarama + rol×uç matrisi + IDOR + JWT doğrulama (bozuk/sahte/süresi dolmuş/yanlış issuer-audience/anahtar) ([[test-stratejisi]]). Mimari: [[mimari]].
+
+## Parola sıfırlama ("Şifremi unuttum")
+Akış: `POST /api/auth/forgot-password {email}` → **her zaman 202** (hesap var/yok/pasif ayrımı yapılmaz) → hesap aktifse e-postaya tek kullanımlık bağlantı (`{Frontend:BaseUrl}/sifre-sifirla?token=…`) → `POST /api/auth/reset-password {token, newPassword}` → 204. Kararlar: [[kararlar]] K-86…K-88; e-posta: [[bildirimler]]; ekranlar: [[arayuz]].
+
+| Konu | Davranış |
+|---|---|
+| Belirteç | 256 bit rastgele (base64url); **veritabanında yalnız SHA-256 özeti** (`password_reset_token`), düz değer yalnız e-postada |
+| Ömür / kullanım | 30 dk (`PasswordReset:LifetimeMinutes`), **tek kullanım**; yeni bağlantı istenince öncekiler geçersiz olur |
+| E-posta bombardımanı | Aynı hesap için `ResendIntervalSeconds` (120 sn) içinde ikinci istek sessizce yok sayılır (yine 202); uç ayrıca kimlik uçları hız sınırına tabidir (IP başına) |
+| Hesap sızdırmama | Bilinmeyen e-posta, pasif hesap ve tekrar istek **aynı yanıtı** verir (durum + gövde); geçersiz/kullanılmış/süresi dolmuş/pasif hesaba ait belirteç **aynı hatayı** verir (`auth.invalid_reset_token`, 400) |
+| Başarılı sıfırlama | Parola değişir, **güvenlik damgası döner** (eldeki erişim belirteçleri düşer), **tüm yenileme belirteçleri iptal**, **hesap kilidi kalkar**, belirteç ve diğer bekleyen bağlantılar kullanılmış sayılır, hesap sahibine "parolanız değiştirildi" e-postası gider |
+| Eşzamanlılık | Belirteçte `xmin` iyimser eşzamanlılık: aynı bağlantıyla eşzamanlı sıfırlamadan biri başarılı, diğerleri 400/409 (testte 6 paralel istek → 1 başarı) |
+| Doğrulama | Yeni parola kuralı kayıtla aynı (≥8, harf + rakam); doğrulama hatası belirteci **tüketmez** |
+
+Sınırlar: bilinmeyen/var olan e-posta arasında yanıt zamanı farkı kapatılmadı (var olan hesapta ek veritabanı yazımı vardır; e-posta gönderimi asenkron olduğu için fark küçüktür); outbox satırı (`email_outbox`) bağlantıyı **düz metin** taşır — bekleyen satırlar veritabanını okuyabilene açıktır (belirteç kısa ömürlü ve tek kullanımlıktır; gönderilen/süresi dolan satırdaki bağlantı artık işe yaramaz). İki aşamalı doğrulama yok.
 
 ## Arayüzde belirteç saklama (Faz 7)
 Erişim belirteci bellekte, yenileme belirteci `sessionStorage`'da; yenileme tek uçuşta yapılır (rotation yeniden-kullanım tespitini tetiklemesin). Ayrıntı: [[arayuz]], [[kararlar]] K-71.

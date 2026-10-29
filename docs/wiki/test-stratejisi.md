@@ -11,7 +11,14 @@ Kaynak: `plan.md` §11. Faz bağlantısı: [[faz-plani]].
 | API / Yetki | `WebApplicationFactory` | Endpoint tarama, rol×uç matrisi, IDOR, JWT doğrulama (bozuk/sahte/süresi dolmuş token), refresh rotation ([[kimlik-ve-yetki]]) |
 
 ## Arayüz testleri (Faz 7)
-`web/` altında Vitest + Testing Library (`npm test`, 50 test): http istemcisi, yardımcılar, uygulama akışları, doktor ve yönetim paneli akışları; CI `web` işi ayrıca lint, tip üretimi farkı ve derlemeyi denetler ([[arayuz]]).
+`web/` altında Vitest + Testing Library (`npm test`, 59 test): http istemcisi, yardımcılar, uygulama akışları, doktor ve yönetim paneli akışları; CI `web` işi ayrıca lint, tip üretimi farkı ve derlemeyi denetler ([[arayuz]]).
+
+## Parola sıfırlama testleri
+- **Entegrasyon (`PasswordResetTests`, 14 test):** bağlantılı e-posta outbox'a eklenir ve veritabanında yalnız SHA-256 özeti durur; bilinmeyen e-posta/pasif hesap/tekrar istek **aynı 202** (gövde dahil) ve e-posta üretmez; geçersiz e-posta biçimi 400; yeni bağlantı eskisini geçersiz kılar; sıfırlama parolayı değiştirir, eski parola 401, eski yenileme belirteci ve erişim belirteci düşer, "parolanız değiştirildi" e-postası gider (parola/belirteç içermez); **tek kullanım**; süresi dolmuş/uydurma belirteç aynı hata; zayıf parola 400 ve belirteç harcanmaz; kilitli hesap sıfırlama sonrası girebilir; **6 eşzamanlı sıfırlama → 1 başarı**.
+- **Birim (`PasswordResetUnitTests`, 24 test):** ayar doğrulama (`Frontend:BaseUrl`), bağlantı oluşturma/kodlama, belirteç ömrü/tek kullanım, `ClearLockout`, doğrulayıcılar, e-posta şablonları ve tekrar önleme anahtarı.
+- **Sözleşme/matris:** yeni iki ucun anonim politikası ve 202/204 başarı kodları `EndpointMatrix`, `EndpointInventoryTests`, `OpenApiContractTests`'te bilinçli olarak güncellendi (anonim küme sabitleyen testler yeni uç eklenince kırılır).
+- **Web (`PasswordReset.test.tsx`, 9 test):** giriş sayfasında bağlantı; e-posta gönderimi ve "kayıtlıysa" mesajı; alan hatası; 429; belirtecin URL'den silinmesi; eşleşmeyen parola; belirteçsiz/geçersiz bağlantı; zayıf parola.
+- **Canlı:** Chrome'da kayıt → "Şifremi unuttum" → gerçek SMTP ile Mailpit'e düşen e-posta → bağlantı → yeni parola → eski parola 401 / yeni 200 → aynı bağlantı 400 → bildirim e-postası.
 
 ## Arayüz yetkilendirme matrisi (Faz 7)
 `web/src/RouteAccess.test.tsx` (10 test): anonim → giriş sayfasına yönlendirme (`/doktor`, `/yonetim`, `/randevularim`); hasta → `/doktor`, `/yonetim`; doktor → `/yonetim`, `/randevularim`; yönetici → `/doktor`, `/randevularim` engellenir ve ilgili korumalı uçlara **hiç istek atılmaz**; her rol kendi sayfasına girebilir. Canlı deneme sonuçları ve rol × uç tablosu: [[arayuz]] "Yetkilendirme denemesi".

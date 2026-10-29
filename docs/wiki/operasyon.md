@@ -44,6 +44,8 @@ Ortam değişkeninde `:` yerine `__` kullanılır (ör. `Jwt__SigningKey`).
 | `Database:MigrateOnStartup` / `SeedOnStartup` | `false` | Migration + T.C. şifreleme yükseltmesi / ilk kurum ve süper yönetici |
 | `Seed:SuperAdmin:Email` / `Password` | — | İlk süper yönetici (üretimde ortam değişkeni) |
 | `Seed:SampleData`, `Seed:SampleDoctor:*` | `false` | Demo verisi; üretimde kapalı |
+| `Frontend:BaseUrl` | — | **Zorunlu**, mutlak http(s) adresi: parola sıfırlama e-postasındaki bağlantının kökü (arayüzün adresi). Geliştirmede `http://localhost:5173`; compose'ta `FRONTEND_URL` (varsayılan `http://localhost:8081`). Eksik/geçersizse uygulama başlamaz |
+| `PasswordReset:LifetimeMinutes` / `ResendIntervalSeconds` | 30 / 120 | Sıfırlama bağlantısı ömrü ve aynı hesap için tekrar isteme aralığı ([[kimlik-ve-yetki]]) |
 | `Email:Smtp:*`, `Email:Outbox:*` | bkz. [[bildirimler]] | SMTP ve outbox işleyici |
 | `Appointment:SlotGridMinutes` / `MinLeadMinutes` / `MaxBookingHorizonDays` / `CancellationDeadlineHours` | 15 / 60 / 60 / 2 | [[randevu-kurallari]] |
 | `Appointment:PendingExpiry:Enabled` / `Hours` / `PollSeconds` / `BatchSize` | `true` / 48 / 300 / 50 | Doktor yanıt vermeyen bekleyen talebi otomatik reddeder |
@@ -101,7 +103,7 @@ Diğer: liste uçları sayfalıdır (en çok 200); okuma sorguları `AsNoTrackin
 ## Dağıtım kontrol listesi
 1. `Jwt__SigningKey`, `Security__DataProtection__Key` (yedekli), `ConnectionStrings__Default`, `Seed__SuperAdmin__*` ortam değişkenleri verildi.
 2. `Email__Smtp__Host/Port/UserName/Password`, `Email__Smtp__Security=StartTls|Ssl`, `FromAddress`.
-3. `Cors__AllowedOrigins__0…` arayüz origin'i; `OpenApi__Enabled` yalnız gerekiyorsa.
+3. `Frontend__BaseUrl` (arayüzün gerçek adresi; sıfırlama e-postası bağlantıları bununla oluşur) ve `Cors__AllowedOrigins__0…` arayüz origin'i; `OpenApi__Enabled` yalnız gerekiyorsa.
 4. `Seed__SampleData=false`; örnek doktor/hesap yok.
 5. `Database__MigrateOnStartup=true` (veya migration + `IdentityNumberUpgrader` ayrı adım).
 6. TLS sonlandırma ters vekilde (API 8080 düz HTTP dinler); hız sınırı IP'ye göre olduğundan vekil `X-Forwarded-For` iletmeli ve API'de `ForwardedHeaders:Enabled=true` + `TrustedNetworks/TrustedProxies` (vekilin gerçek adresi) verilmelidir. Arayüz için `web/` imajı (nginx) kullanılabilir; TLS yine bunun önündeki vekilde sonlanır.

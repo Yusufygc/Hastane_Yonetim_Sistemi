@@ -10,6 +10,8 @@ Kaynak: `plan.md` §10. Rol URL'de taşınmaz; kaynak odaklı rotalar + `me` kal
 | POST | `/api/auth/login` | anonim |
 | POST | `/api/auth/logout` (gövde: refreshToken) | giriş |
 | POST | `/api/auth/refresh` (gövde: refreshToken) | anonim (belirteçle) |
+| POST | `/api/auth/forgot-password` (gövde: email) → **202** (hesap var/yok aynı yanıt) | anonim (hız sınırlı) |
+| POST | `/api/auth/reset-password` (gövde: token, newPassword) → 204; geçersiz/kullanılmış/süresi dolmuş belirteç 400 `auth.invalid_reset_token` | anonim (hız sınırlı) |
 | POST | `/api/auth/change-password` (gövde: currentPassword, newPassword) | giriş |
 | GET | `/api/auth/me` | giriş |
 | GET | `/api/catalog/hospitals`, `/hospitals/{id}/departments`, `/hospitals/{id}/services` | anonim |

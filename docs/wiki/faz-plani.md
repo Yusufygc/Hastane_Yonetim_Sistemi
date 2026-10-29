@@ -46,3 +46,6 @@ Kararlar: [[kararlar]] K-71…K-75, ayrıntı [[arayuz]].
 - [x] Yönetim paneli (2026-10-28): randevular + iptal, hizmet talebi onayı, doktor/personel yönetimi, şube + çalışma saatleri, bölüm, hizmet — [[arayuz]], K-79…K-81; 40 Vitest testi
 - [x] Web imajı (2026-10-29): nginx (statik + `/api/` vekil, CSP/önbellek), compose'a `web` servisi, vekil arkasında istemci IP'si (`ForwardedHeaders`), CI'da imaj derlemesi — [[operasyon]], K-82/K-83
 - [ ] Erişilebilirlik denetimi (klavye/ekran okuyucu geçişi, kontrast) — **kapsam dışı bırakıldı (kullanıcı kararı, 2026-10-29)**; temel önlemler (atla bağlantısı, odak halkası, `role=alert`, sade mod) mevcut
+
+## Faz sonrası eklenenler
+- [x] **Şifremi unuttum** (2026-10-29): `forgot-password`/`reset-password` uçları (anonim, hız sınırlı), `password_reset_token` tablosu (migration `PasswordReset`), e-posta outbox ile, arayüzde `/sifremi-unuttum` ve `/sifre-sifirla`; API sözleşmesi bilinçli olarak güncellendi (67 → 69 uç, `docs/api/openapi.v1.json`); 325 birim + 9 mimari + 370 entegrasyon + 59 web testi — [[kimlik-ve-yetki]], [[bildirimler]], [[kararlar]] K-86…K-88

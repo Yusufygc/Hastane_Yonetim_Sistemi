@@ -27,7 +27,7 @@
 | OOP ilkeleri | Kullanıcı hiyerarşisi (TPT), kapsülleme, polimorfizm (State), soyutlama (repository/arayüzler) | [[domain-modeli]] |
 | ≥10 commit, farklı günler | 60+ commit, 8 farklı gün (Conventional Commits) | [[git-is-akisi]] |
 
-Sayılarla proje (2026-10-26): **67 API ucu**, **~330 C# kaynak dosyası** (üretilen migration hariç), **76 test dosyası**; **301 birim + 9 mimari + 356 entegrasyon + 50 web testi**.
+Sayılarla proje (2026-10-26): **69 API ucu**, **~330 C# kaynak dosyası** (üretilen migration hariç), **76 test dosyası**; **325 birim + 9 mimari + 370 entegrasyon + 59 web testi**.
 
 ---
 
@@ -176,6 +176,7 @@ Ağ çağrısı (SMTP) istek yolunda **yoktur**. Randevu kaydıyla e-posta kayd�
 ### 5.5 Güvenlik
 - **JWT Bearer:** HS256, 15 dk erişim belirteci + 7 gün **döndürülen** (rotation) refresh token; DB'de yalnız SHA-256 özeti; yeniden kullanım tespiti. Her istekte `security_stamp` doğrulanır → parola değişince/pasifleştirilince eski token'lar ölür.
 - **4 savunma katmanı:** (1) uç noktada açık politika (`Patient/Doctor/Admin/SuperAdmin` — politikasız uç testte kırılır), (2) şube kapsamı (`AdminScope`; kapsam dışı kaynak **404**, varlığı sızmaz), (3) kaynak sahipliği handler'da (başkasının randevusu 404 — IDOR koruması), (4) DB kısıtları.
+- **Parola sıfırlama:** e-postaya tek kullanımlık, 30 dk, SHA-256 özetli bağlantı; `forgot-password` hesap var/yok ayrımı yapmaz (hep 202); başarıda tüm oturumlar kapanır, kilit kalkar, hesap sahibine bildirim gider ([[kimlik-ve-yetki]]).
 - **KVKK:** T.C. kimlik no veritabanında **AES-256-GCM** ile şifreli, arama için HMAC **kör indeks**, yanıtta maskeli (`102******12`), loglanmaz. Şifreleme anahtarı ortam değişkeni; yoksa uygulama **başlamaz**.
 - Parola PBKDF2, hız sınırı (kimlik uçlarında IP başına), CORS yalnız listelenen origin'ler, ProblemDetails'te iç ayrıntı sızmaz.
 - **Matris testleri:** 67 uç × 6 kimlik (anonim, hasta, doktor, personel, şube yöneticisi, süper yönetici) otomatik denenir.
@@ -268,10 +269,10 @@ Her faz: **kod + test + wiki + commit** birlikte biter; çıkış kriteri fazın
 ### 8.3 Test stratejisi (piramit)
 | Katman | Araç | Neyi kanıtlar |
 |---|---|---|
-| Birim (301) | xUnit, AwesomeAssertions | Domain kuralları, State geçişleri, slot hesabı (DST dahil), validator'lar, AES-GCM |
+| Birim (325) | xUnit, AwesomeAssertions | Domain kuralları, State geçişleri, slot hesabı (DST dahil), validator'lar, AES-GCM |
 | Mimari (9) | NetArchTest | Katman bağımlılık kuralları |
-| Entegrasyon (356) | `WebApplicationFactory` + **gerçek PostgreSQL** + Mailpit | Uçtan uca akışlar, yarış durumu, yetki matrisi, IDOR, sözleşme, sorgu planı (EXPLAIN), şifreleme |
-| Web (50) | Vitest + Testing Library | http istemcisi (yenileme/yarış, gövdesiz yanıt), yardımcılar, uygulama, doktor ve yönetim paneli akışları |
+| Entegrasyon (370) | `WebApplicationFactory` + **gerçek PostgreSQL** + Mailpit | Uçtan uca akışlar, yarış durumu, yetki matrisi, IDOR, sözleşme, sorgu planı (EXPLAIN), şifreleme |
+| Web (59) | Vitest + Testing Library | http istemcisi (yenileme/yarış, gövdesiz yanıt), yardımcılar, uygulama, doktor ve yönetim paneli akışları |
 | Canlı smoke | `scripts/smoke-test.sh` | Çalışan (container) API'ye karşı 57 kontrol, e-postalar dahil |
 
 Testle yakalanan gerçek hatalar (öğrenilenler): sunucu tr-TR kültüründe `ToLower()` ile veritabanı `lower()` farklı sonuç verip büyük/küçük harf farklı yinelenen adların oluşmasına izin veriyordu (yönetim paneli doğrulamasında bulundu, `ToLowerInvariant()` + regresyon testi); kültüre bağlı tarih ayrıştırma (`02.11.2026` → 11 Şubat) → yalnız `yyyy-MM-dd`; hata `traceId`'sinin korelasyon kimliğinden farklı çıkması; EF modelinin ilk şifreleyiciyi önbelleğe alması; drei `<Scroll html>`'in ayrı React kökünde Router bağlamını kaybetmesi → sticky tuval mimarisi.
@@ -321,7 +322,7 @@ Hesaplar, roller ve giriş adımları: [[arayuz]] "Giriş ve roller". Geliştirm
 ---
 
 ## 11. Sınırlar ve gelecek çalışma
-- Arayüzde personel (STAFF) paneli, yönetici hesabı oluşturma ve parola sıfırlama ekranı yok (API hazır). Doktor panelinde uygunluk penceresi düzenleme yok (ekle/sil var).
+- Arayüzde personel (STAFF) paneli, yönetici hesabı oluşturma ve yöneticinin başkasının parolasını sıfırlaması ekranı yok (kullanıcı kendi "Şifremi unuttum" akışını kullanır). Doktor panelinde uygunluk penceresi düzenleme yok (ekle/sil var).
 - Veri şifreleme anahtarı döndürme (rotation) yok; anahtar yedeklenmelidir. Denetim izi (audit log) ve kullanıcı bazlı hız sınırı yok.
 - Sayfalama sayfa numarası tabanlıdır (ödev ölçeğinde yeterli).
 - Web imajı yerel/demo için hazır (nginx, tek origin); TLS sonlandırma ve gerçek alan adı üretimde önündeki vekile bırakıldı.

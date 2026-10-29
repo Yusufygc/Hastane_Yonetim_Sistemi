@@ -24,6 +24,16 @@ EmailOutboxProcessor (BackgroundService)      → bekleyen satırı kilitler (SK
 - Şablonlar `Application/Features/Notifications/AppointmentEmails` içinde (Türkçe, **düz metin**). İçerik: hizmet, doktor, şube, tarih/saat (**şubenin saat diliminde**, ör. `02.11.2026 09:30 (Europe/Istanbul)`), varsa red/iptal nedeni. Hasta notu gibi serbest metin ve e-posta adresleri gövdeye konmaz.
 - Olaylar yalnız kimlik/hizmet adı/zaman taşır; alıcı adı ve adresi dağıtım sırasında `INotificationReader` ile okunur. (Talep olayı anında randevu henüz DB'de değildir; bu yüzden randevudan değil kişi/şube tablolarından okunur.)
 
+## Parola sıfırlama e-postaları
+Randevu e-postalarından farkı: olay (domain event) değil, **komut işleyicisi** doğrudan `IEmailOutbox.EnqueueAsync` çağırır; satır, belirteçle **aynı transaction'da** kaydolur (ya ikisi birden ya hiçbiri). `dedup_key = {belirteçId}:{tür}`.
+
+| Tür (`template_key`) | Ne zaman | İçerik |
+|---|---|---|
+| `password-reset-requested` | `POST /api/auth/forgot-password`, hesap aktifse | Sıfırlama bağlantısı (`{Frontend:BaseUrl}/sifre-sifirla?token=…`), geçerlilik süresi, "kimseyle paylaşmayın", "siz istemediyseniz yok sayın" |
+| `password-changed` | Başarılı `reset-password` | "Parolanız değiştirildi, açık oturumlar kapatıldı, siz yapmadıysanız yöneticiye başvurun" (bağlantı ve parola yok) |
+
+Yerelde Mailpit'te (`http://localhost:8025`) görülür. **`Frontend:BaseUrl` zorunludur** (geliştirmede `http://localhost:5173`, compose'ta `FRONTEND_URL`, varsayılan `http://localhost:8081`); eksik/geçersizse uygulama açılışta hata verir ([[operasyon]]).
+
 ## Outbox (`email_outbox`)
 - `dedup_key = {olayId}:{alıcı}` (benzersiz indeks + `EnqueueAsync` ön kontrolü): aynı olay iki kez dağıtılsa da aynı alıcıya **tek** e-posta.
 - Durum: `PENDING` → `SENT` veya (deneme sınırı aşılırsa) `FAILED`. `attempt_count`, `last_error` (≤ 1000 karakter), `next_attempt_at`, `sent_at`.
@@ -50,7 +60,7 @@ EmailOutboxProcessor (BackgroundService)      → bekleyen satırı kilitler (SK
 - Loglar yalnız outbox kimliği ve sonucu içerir; alıcı adresi veya gövde loglanmaz.
 
 ## Bilinçli sınırlar
-- Yalnız randevu olayları için bildirim vardır (hesap davetiyesi, parola sıfırlama e-postası yok; yönetici hesap açarken parolayı verir — [[kimlik-ve-yetki]]).
+- Bildirimler randevu olayları ve **parola sıfırlama** (aşağıda) içindir; hesap davetiyesi yok (yönetici hesap açarken parolayı verir — [[kimlik-ve-yetki]]).
 - Düz metin şablon; HTML, ek dosya, abonelikten çıkma yok.
 - Outbox'ı izlemek için yönetici ucu yok (SQL ile bakılır); gerekirse Faz 6'da eklenebilir.
 - Hatırlatma e-postası (randevudan önce) kapsam dışı.

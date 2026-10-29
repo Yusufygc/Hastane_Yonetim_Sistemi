@@ -17,7 +17,7 @@ Adres: arayüz `http://localhost:5173` (geliştirme) veya `http://localhost:8081
 
 | Rol | Hesap | Nasıl girilir | Girişten sonra | Erişebildiği sayfalar |
 |---|---|---|---|---|
-| **Hasta** | Kendin açarsın | `/kayit` → ad, soyad, e-posta, parola, **geçerli T.C. kimlik no**, doğum tarihi → kayıt olunca otomatik giriş yapılır | `/randevu-al` (kayıttan) veya `/randevularim` (girişten) | Randevu al, Randevularım |
+| **Hasta** | Kendin açarsın (parola unutulursa **Şifremi unuttum**) | `/kayit` → ad, soyad, e-posta, parola, **geçerli T.C. kimlik no**, doğum tarihi → kayıt olunca otomatik giriş yapılır | `/randevu-al` (kayıttan) veya `/randevularim` (girişten) | Randevu al, Randevularım |
 | **Doktor** | Seed örnek doktor: `doktor@hastane.local` / `Doktor12345x` (Ayşe Yılmaz, Dahiliye) | `/giris` | `/doktor` | Doktor paneli (randevular, takvim, hizmetlerim, uygunluk ve izin, profil) |
 | **Yönetici (süper)** | Seed süper yönetici: `admin@hastane.local` / `Admin12345x` | `/giris` | `/yonetim` | Yönetim paneli (randevular, hizmet talepleri, doktorlar, personel, şubeler, bölümler, hizmetler) |
 
@@ -25,6 +25,7 @@ Adres: arayüz `http://localhost:5173` (geliştirme) veya `http://localhost:8081
 - **Hasta için geçerli T.C. kimlik no:** 11 hane, ilk hane 0 değil; 10. hane = ((1,3,5,7,9. hanelerin toplamı × 7) − (2,4,6,8. hanelerin toplamı)) mod 10; 11. hane = ilk 10 hanenin toplamı mod 10. Örnek geçerli numara: `10000000146` (aynı numara ikinci kez kaydedilemez; yeni hasta için `scripts/smoke-test.sh` rastgele geçerli numara üretir). Parola kuralı: [[hata-yonetimi]] doğrulama mesajları (en az 8 karakter, harf + rakam).
 - **Doktor ve yönetici hesaplarını yönetici açar** (`/yonetim/doktorlar`, `/yonetim/personel`): başlangıç parolasını yönetici verir, kullanıcı girişten sonra `change-password` ile değiştirir ([[kararlar]] K-40). Hasta kendini doktor/yönetici yapamaz; kayıt ucu yalnız hasta oluşturur.
 - **Şube yöneticisi:** süper yönetici `/yonetim/subeler` ve API ile şube yöneticisi hesabı açabilir (`POST /api/admins`); şube yöneticisi yalnız kendi şubesini görür, şube/kurum ekleyemez. Arayüzde yönetici hesabı oluşturma ekranı yok ([[arayuz]] sınırlar).
+- **Parolamı unuttum:** giriş sayfasındaki **Şifremi unuttum** → `/sifremi-unuttum` (e-posta; yanıt her zaman "adres kayıtlıysa bağlantı gönderdik") → e-postadaki bağlantı `/sifre-sifirla?token=…` → yeni parola (tekrarıyla) → "Parolanız değiştirildi" → giriş. Belirteç ilk açılışta okunup **adres çubuğundan ve geçmişten silinir** (`replace`); geçersiz/süresi dolmuş/kullanılmış bağlantıda "Bağlantı geçersiz → Yeni bağlantı iste" çıkar. Yerelde e-postayı Mailpit'ten (`http://localhost:8025`) açın. Akışın güvenlik ayrıntısı: [[kimlik-ve-yetki]] "Parola sıfırlama", karar [[kararlar]] K-86…K-88.
 - **Çıkış:** sağ üstteki **Çıkış**; refresh token iptal edilir. Sekme kapanınca oturum biter (yenileme belirteci `sessionStorage`'da, [[kararlar]] K-71).
 
 ### Yetkilendirme denemesi (2026-10-29)
@@ -94,7 +95,7 @@ Davranış notları: Hata mesajları sunucunun Türkçe `detail`'idir (örn. "B�
 - Elle doğrulama (2026-10-26): kayıt → giriş → seçimler korunarak sihirbaz → randevu talebi → "Randevularım" listesi; gerçek API'ye karşı.
 
 ## Bilinçli sınırlar / sonraki dilim
-Yönetim panelinde yönetici hesabı oluşturma (`/api/admins`), doktora doğrudan hizmet atama (`PUT /api/doctors/{id}/services`) ve parola sıfırlama ekranı yok; yönetici/personel için e-posta doğrulama ekranı yok; personel (STAFF) rolünün paneli yok. Doktor panelinde uygunluk penceresi düzenleme (PUT) yok, yalnız ekle/sil.  Three.js paketi büyüktür (~240 KB gzip, tembel); ileride yalnız gereken modüllerle küçültülebilir.
+Yönetim panelinde yönetici hesabı oluşturma (`/api/admins`), doktora doğrudan hizmet atama (`PUT /api/doctors/{id}/services`) ve parola yöneticisi tarafından sıfırlama ekranı yok (kullanıcı kendi "Şifremi unuttum" akışını kullanır); yönetici/personel için e-posta doğrulama ekranı yok; personel (STAFF) rolünün paneli yok. Doktor panelinde uygunluk penceresi düzenleme (PUT) yok, yalnız ekle/sil.  Three.js paketi büyüktür (~240 KB gzip, tembel); ileride yalnız gereken modüllerle küçültülebilir.
 
 ## Üretim imajı
 `web/Dockerfile` (Node ile derle → nginx ile sun), `docker-compose.app.yml`'de `web` servisi (`http://localhost:8081`): statik dosyalar + `/api/` ters vekili (tek origin, CORS gerekmez), SPA yönlendirmesi, önbellek ve güvenlik başlıkları. Ayrıntı ve vekil arkasında istemci IP'si: [[operasyon]] "Web imajı", [[kararlar]] K-82.
