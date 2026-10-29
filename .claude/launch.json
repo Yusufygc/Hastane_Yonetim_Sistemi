@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "C:\\Program Files\\dotnet\\dotnet.exe",
+      "runtimeArgs": ["run", "--project", "src/Presentation/Hospital.WebAPI", "--launch-profile", "http"],
+      "port": 5284
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "web", "run", "dev"],
+      "port": 5173
+    }
+  ]
+}
