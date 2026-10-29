@@ -37,7 +37,9 @@ npm run dev        # http://localhost:5173  (/api isteklerini http://localhost:5
 npm test           # birim + bileşen testleri
 npm run gen:api    # docs/api/openapi.v1.json'dan src/api/schema.d.ts üretir
 ```
-İlk dilim: tanıtım, kayıt/giriş, randevu sihirbazı (şube → hizmet → doktor → tarih/saat → talep), randevularım (filtre, sayfalama, iptal). Ayrıntı: [docs/wiki/arayuz.md](docs/wiki/arayuz.md).
+Ekranlar: tanıtım, kayıt/giriş, randevu sihirbazı (şube → hizmet → doktor → tarih/saat → talep), randevularım (hasta); doktor paneli (`/doktor`); yönetim paneli (`/yonetim`).
+
+**Giriş:** hasta `/kayit` ile kendini kaydeder; geliştirmede seed hesaplar — doktor `doktor@hastane.local` / `Doktor12345x`, yönetici `admin@hastane.local` / `Admin12345x` (`appsettings.Development.json`). Giriş sonrası her rol kendi paneline düşer; başka rolün sayfasına girilirse "erişiminiz yok" görünür ve API 403 verir. Ayrıntı: [docs/wiki/arayuz.md](docs/wiki/arayuz.md). Ayrıntı: [docs/wiki/arayuz.md](docs/wiki/arayuz.md).
 
 ## API sözleşmesi
 - Dondurulmuş OpenAPI belgesi: [docs/api/openapi.v1.json](docs/api/openapi.v1.json) (bilinçli değişiklikten sonra `./scripts/update-openapi-snapshot.ps1`).

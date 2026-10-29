@@ -11,7 +11,10 @@ Kaynak: `plan.md` §11. Faz bağlantısı: [[faz-plani]].
 | API / Yetki | `WebApplicationFactory` | Endpoint tarama, rol×uç matrisi, IDOR, JWT doğrulama (bozuk/sahte/süresi dolmuş token), refresh rotation ([[kimlik-ve-yetki]]) |
 
 ## Arayüz testleri (Faz 7)
-`web/` altında Vitest + Testing Library (`npm test`, 40 test): http istemcisi, yardımcılar, uygulama akışları, doktor ve yönetim paneli akışları; CI `web` işi ayrıca lint, tip üretimi farkı ve derlemeyi denetler ([[arayuz]]).
+`web/` altında Vitest + Testing Library (`npm test`, 50 test): http istemcisi, yardımcılar, uygulama akışları, doktor ve yönetim paneli akışları; CI `web` işi ayrıca lint, tip üretimi farkı ve derlemeyi denetler ([[arayuz]]).
+
+## Arayüz yetkilendirme matrisi (Faz 7)
+`web/src/RouteAccess.test.tsx` (10 test): anonim → giriş sayfasına yönlendirme (`/doktor`, `/yonetim`, `/randevularim`); hasta → `/doktor`, `/yonetim`; doktor → `/yonetim`, `/randevularim`; yönetici → `/doktor`, `/randevularim` engellenir ve ilgili korumalı uçlara **hiç istek atılmaz**; her rol kendi sayfasına girebilir. Canlı deneme sonuçları ve rol × uç tablosu: [[arayuz]] "Yetkilendirme denemesi".
 
 ## Vekil arkası (Faz 7)
 `ForwardedHeadersTests`: güvenilen vekilden gelen istekte hız sınırı gerçek istemciye göre ayrılır; güvenilmeyen kaynaktan gelen `X-Forwarded-For` yok sayılır (taklitle sınır aşılamaz); varsayılan kapalı; hatalı yapılandırma (güvenilen ağ yok / bozuk CIDR) açılışta açık hata verir ([[operasyon]]).

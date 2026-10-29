@@ -12,6 +12,36 @@ Tanıtım sayfası, kayıt/giriş, randevu sihirbazı, randevularım. **İkinci 
 | `/randevu-al` | Sihirbaz: şube → hizmet → doktor → tarih → saat → özet/talep | katalog anonim; talep göndermek giriş ister |
 | `/randevularim` | Hasta randevuları: durum filtresi, sayfalama (`X-Total-Count`), iptal nedeniyle iptal | giriş gerekir (yalnız görsel kilit) |
 
+## Giriş ve roller (demo rehberi)
+Adres: arayüz `http://localhost:5173` (geliştirme) veya `http://localhost:8081` (compose'ta nginx). Sağ üstteki **Giriş** / **Kayıt ol** düğmeleri. Roller giriş yanıtından okunur; giriş sonrası kullanıcı **rolün ana ekranına** düşer.
+
+| Rol | Hesap | Nasıl girilir | Girişten sonra | Erişebildiği sayfalar |
+|---|---|---|---|---|
+| **Hasta** | Kendin açarsın | `/kayit` → ad, soyad, e-posta, parola, **geçerli T.C. kimlik no**, doğum tarihi → kayıt olunca otomatik giriş yapılır | `/randevu-al` (kayıttan) veya `/randevularim` (girişten) | Randevu al, Randevularım |
+| **Doktor** | Seed örnek doktor: `doktor@hastane.local` / `Doktor12345x` (Ayşe Yılmaz, Dahiliye) | `/giris` | `/doktor` | Doktor paneli (randevular, takvim, hizmetlerim, uygunluk ve izin, profil) |
+| **Yönetici (süper)** | Seed süper yönetici: `admin@hastane.local` / `Admin12345x` | `/giris` | `/yonetim` | Yönetim paneli (randevular, hizmet talepleri, doktorlar, personel, şubeler, bölümler, hizmetler) |
+
+- **Seed hesapları** yalnız geliştirmede açılır (`appsettings.Development.json` → `Seed:SuperAdmin`, `Seed:SampleDoctor`, `Seed:SampleData=true`); üretimde ortam değişkeniyle verilir ve örnek doktor açılmaz ([[operasyon]]). Compose'ta örnek doktor için `.env`'e `SEED_SAMPLE_DATA=true`, `SEED_SAMPLE_DOCTOR_EMAIL`, `SEED_SAMPLE_DOCTOR_PASSWORD` yazılır ve **boş veritabanıyla** başlatılır.
+- **Hasta için geçerli T.C. kimlik no:** 11 hane, ilk hane 0 değil; 10. hane = ((1,3,5,7,9. hanelerin toplamı × 7) − (2,4,6,8. hanelerin toplamı)) mod 10; 11. hane = ilk 10 hanenin toplamı mod 10. Örnek geçerli numara: `10000000146` (aynı numara ikinci kez kaydedilemez; yeni hasta için `scripts/smoke-test.sh` rastgele geçerli numara üretir). Parola kuralı: [[hata-yonetimi]] doğrulama mesajları (en az 8 karakter, harf + rakam).
+- **Doktor ve yönetici hesaplarını yönetici açar** (`/yonetim/doktorlar`, `/yonetim/personel`): başlangıç parolasını yönetici verir, kullanıcı girişten sonra `change-password` ile değiştirir ([[kararlar]] K-40). Hasta kendini doktor/yönetici yapamaz; kayıt ucu yalnız hasta oluşturur.
+- **Şube yöneticisi:** süper yönetici `/yonetim/subeler` ve API ile şube yöneticisi hesabı açabilir (`POST /api/admins`); şube yöneticisi yalnız kendi şubesini görür, şube/kurum ekleyemez. Arayüzde yönetici hesabı oluşturma ekranı yok ([[arayuz]] sınırlar).
+- **Çıkış:** sağ üstteki **Çıkış**; refresh token iptal edilir. Sekme kapanınca oturum biter (yenileme belirteci `sessionStorage`'da, [[kararlar]] K-71).
+
+### Yetkilendirme denemesi (2026-10-29)
+Her rolün başka rolün sayfasına/uçlarına girme denemesi hem otomatik (Vitest `RouteAccess.test.tsx`, API tarafı `EndpointPolicyMatrixTests`/`IdorMatrixTests`) hem Chrome'da canlı yapıldı:
+
+| Deneme | Arayüz sonucu | API sonucu |
+|---|---|---|
+| Hasta → `/doktor` | "Bu sayfaya erişiminiz yok" | `GET /api/doctors/me`, `/doctors/me/appointments`, randevu onaylama → **403** |
+| Hasta → `/yonetim` | "Bu sayfaya erişiminiz yok" | `GET /api/hospitals`, `/doctors`, `/appointments`, `/organization`, `/doctor-service-requests`, kullanıcı pasifleştirme → **403** |
+| Doktor → `/yonetim` | "Bu sayfaya erişiminiz yok" | yönetici uçlarının hepsi → **403** |
+| Doktor → `/randevularim` | "Bu sayfaya erişiminiz yok" | `GET /api/patients/me`, `/patients/me/appointments`, `POST /api/appointments` → **403** |
+| Yönetici → `/doktor`, `/randevularim` | "Bu sayfaya erişiminiz yok" | `GET /api/doctors/me*`, `/patients/me*`, `POST /api/appointments` → **403** |
+| Anonim → `/doktor`, `/yonetim`, `/randevularim` | Giriş sayfasına yönlendirilir | korumalı uçlar **401** |
+| Her rol kendi uçlarına | sayfa açılır | **200** |
+
+Kilit arayüzde yalnız görseldir; yanlış rolle girilen sayfa hiçbir korumalı uca istek atmaz, atılsa bile backend 403/404 verir ([[kimlik-ve-yetki]]).
+
 ## Doktor paneli (ikinci dilim)
 Rota ağacı `/doktor/*`, `RoleRoute role="DOCTOR"` ile görsel olarak kilitli (hasta girerse açıklayıcı mesaj; asıl yetki backend `Doctor` politikasıdır). Giriş sonrası doktor doğrudan panele düşer, üst menüde doktor için yalnız "Doktor paneli" görünür (hasta menüsü gizlenir) — [[kararlar]] K-76.
 
@@ -60,7 +90,7 @@ Davranış notları: Hata mesajları sunucunun Türkçe `detail`'idir (örn. "B�
 
 ## Çalıştırma ve test
 - `docker compose up -d` → `dotnet run --project src/Presentation/Hospital.WebAPI` → `cd web && npm run dev`. Vite `/api`'yi `http://localhost:5284`'e yönlendirir (hedef `API_PROXY_TARGET`); üretimde `VITE_API_URL` verilir ve arayüz origin'i API'nin `Cors:AllowedOrigins` listesine eklenir ([[operasyon]]).
-- `npm test` (Vitest + Testing Library, **40 test**): yönetim paneli akışları (rol kilidi, süper/şube yöneticisi ayrımı, şube oluşturma, çalışma saatleri gövdesi, bölüm ekleme, iki adımlı pasifleştirme + sunucu mesajı, doktor oluşturma + alan hataları, hizmet talebi onayı, nedenli iptal); doktor paneli akışları (rol kilidi, onay + liste yenileme, nedensiz red engeli, 409 mesajı, başlamamış randevuyu tamamlama kapalı, hizmet talebi, uygunluk ekleme); http istemcisi (başlıklar, sorgu kodlama, hata çevirisi, 401→yenile→tekrar, eşzamanlı 401 tek yenileme, yenileme reddi), tarih/taslak yardımcıları, uygulama akışları (sade ana sayfa, korumalı rota yönlendirmesi, hatalı giriş, başarılı giriş, sihirbaz). Bkz. [[test-stratejisi]].
+- `npm test` (Vitest + Testing Library, **50 test**): rol × rota yetkilendirme matrisi (`RouteAccess.test.tsx`), yönetim paneli akışları (rol kilidi, süper/şube yöneticisi ayrımı, şube oluşturma, çalışma saatleri gövdesi, bölüm ekleme, iki adımlı pasifleştirme + sunucu mesajı, doktor oluşturma + alan hataları, hizmet talebi onayı, nedenli iptal); doktor paneli akışları (rol kilidi, onay + liste yenileme, nedensiz red engeli, 409 mesajı, başlamamış randevuyu tamamlama kapalı, hizmet talebi, uygunluk ekleme); http istemcisi (başlıklar, sorgu kodlama, hata çevirisi, 401→yenile→tekrar, eşzamanlı 401 tek yenileme, yenileme reddi), tarih/taslak yardımcıları, uygulama akışları (sade ana sayfa, korumalı rota yönlendirmesi, hatalı giriş, başarılı giriş, sihirbaz). Bkz. [[test-stratejisi]].
 - Elle doğrulama (2026-10-26): kayıt → giriş → seçimler korunarak sihirbaz → randevu talebi → "Randevularım" listesi; gerçek API'ye karşı.
 
 ## Bilinçli sınırlar / sonraki dilim

@@ -27,7 +27,7 @@
 | OOP ilkeleri | Kullanıcı hiyerarşisi (TPT), kapsülleme, polimorfizm (State), soyutlama (repository/arayüzler) | [[domain-modeli]] |
 | ≥10 commit, farklı günler | 60+ commit, 8 farklı gün (Conventional Commits) | [[git-is-akisi]] |
 
-Sayılarla proje (2026-10-26): **67 API ucu**, **~330 C# kaynak dosyası** (üretilen migration hariç), **76 test dosyası**; **301 birim + 9 mimari + 356 entegrasyon + 40 web testi**.
+Sayılarla proje (2026-10-26): **67 API ucu**, **~330 C# kaynak dosyası** (üretilen migration hariç), **76 test dosyası**; **301 birim + 9 mimari + 356 entegrasyon + 50 web testi**.
 
 ---
 
@@ -271,7 +271,7 @@ Her faz: **kod + test + wiki + commit** birlikte biter; çıkış kriteri fazın
 | Birim (301) | xUnit, AwesomeAssertions | Domain kuralları, State geçişleri, slot hesabı (DST dahil), validator'lar, AES-GCM |
 | Mimari (9) | NetArchTest | Katman bağımlılık kuralları |
 | Entegrasyon (356) | `WebApplicationFactory` + **gerçek PostgreSQL** + Mailpit | Uçtan uca akışlar, yarış durumu, yetki matrisi, IDOR, sözleşme, sorgu planı (EXPLAIN), şifreleme |
-| Web (40) | Vitest + Testing Library | http istemcisi (yenileme/yarış, gövdesiz yanıt), yardımcılar, uygulama, doktor ve yönetim paneli akışları |
+| Web (50) | Vitest + Testing Library | http istemcisi (yenileme/yarış, gövdesiz yanıt), yardımcılar, uygulama, doktor ve yönetim paneli akışları |
 | Canlı smoke | `scripts/smoke-test.sh` | Çalışan (container) API'ye karşı 57 kontrol, e-postalar dahil |
 
 Testle yakalanan gerçek hatalar (öğrenilenler): sunucu tr-TR kültüründe `ToLower()` ile veritabanı `lower()` farklı sonuç verip büyük/küçük harf farklı yinelenen adların oluşmasına izin veriyordu (yönetim paneli doğrulamasında bulundu, `ToLowerInvariant()` + regresyon testi); kültüre bağlı tarih ayrıştırma (`02.11.2026` → 11 Şubat) → yalnız `yyyy-MM-dd`; hata `traceId`'sinin korelasyon kimliğinden farklı çıkması; EF modelinin ilk şifreleyiciyi önbelleğe alması; drei `<Scroll html>`'in ayrı React kökünde Router bağlamını kaybetmesi → sticky tuval mimarisi.
@@ -289,7 +289,7 @@ dotnet run --project src/Presentation/Hospital.WebAPI  # API  http://localhost:5
 cd web && npm install && npm run dev                   # Arayüz http://localhost:5173
 # Hepsi container'da: docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build   (arayüz :8081 nginx, API :8080)
 ```
-Geliştirmede örnek veri hazırdır: süper yönetici `admin@hastane.local`, örnek doktor `doktor@hastane.local` (parolalar `appsettings.Development.json`'da). E-postalar `http://localhost:8025` (Mailpit).
+Hesaplar, roller ve giriş adımları: [[arayuz]] "Giriş ve roller". Geliştirmede örnek veri hazırdır: süper yönetici `admin@hastane.local`, örnek doktor `doktor@hastane.local` (parolalar `appsettings.Development.json`'da). E-postalar `http://localhost:8025` (Mailpit).
 
 **5 dakikalık demo akışı**
 1. Ana sayfayı kaydır (3B sahne, 4 bölüm); "Sade mod" düğmesini göster.
