@@ -17,6 +17,7 @@ public sealed class DbLessApiFixture : IDisposable
                 ["Database:MigrateOnStartup"] = "false",
                 ["Database:SeedOnStartup"] = "false",
                 ["OpenApi:Enabled"] = "true",
+                ["Frontend:BaseUrl"] = "http://localhost:5173",
             });
     }
 

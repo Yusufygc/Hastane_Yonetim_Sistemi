@@ -24,6 +24,8 @@ public static class EndpointMatrix
         new("POST", "/api/auth/register", Anonymous),
         new("POST", "/api/auth/login", Anonymous),
         new("POST", "/api/auth/refresh", Anonymous),
+        new("POST", "/api/auth/forgot-password", Anonymous),
+        new("POST", "/api/auth/reset-password", Anonymous),
         new("POST", "/api/auth/logout", "Authenticated"),
         new("GET", "/api/auth/me", "Authenticated"),
         new("POST", "/api/auth/change-password", "Authenticated"),

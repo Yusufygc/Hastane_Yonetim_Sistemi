@@ -158,7 +158,7 @@ public class OpenApiContractTests(DbLessApiFixture fixture) : IClassFixture<DbLe
             var success = responses.Where(r => r.Key.StartsWith('2')).Select(r => r.Key).ToList();
 
             var expected = Created.Contains(key) ? "201"
-                : key == "POST /api/doctors/me/services" ? "202"
+                : key is "POST /api/doctors/me/services" or "POST /api/auth/forgot-password" ? "202"
                 : method == "GET" || OkWithBodyDespiteWrite.Contains(key) ? "200"
                 : "204";
 

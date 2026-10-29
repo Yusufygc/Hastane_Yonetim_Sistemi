@@ -46,7 +46,8 @@ public class EndpointInventoryTests(DbLessApiFixture fixture) : IClassFixture<Db
 
         anonymous.Should().OnlyContain(route => route.StartsWith("/api/auth/") || route.StartsWith("/api/catalog/"),
             "kişisel veya yönetim verisi sunan uç anonim olmamalı");
-        anonymous.Where(r => r.StartsWith("/api/auth/")).Should().BeEquivalentTo("/api/auth/register", "/api/auth/login", "/api/auth/refresh");
+        anonymous.Where(r => r.StartsWith("/api/auth/")).Should().BeEquivalentTo(
+            "/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/forgot-password", "/api/auth/reset-password");
     }
 
     [Fact]
@@ -54,7 +55,7 @@ public class EndpointInventoryTests(DbLessApiFixture fixture) : IClassFixture<Db
     {
         Actual.Where(r => r.Method != "GET" && r.Policy == EndpointMatrix.Anonymous)
             .Select(r => r.Route)
-            .Should().BeEquivalentTo("/api/auth/register", "/api/auth/login", "/api/auth/refresh");
+            .Should().BeEquivalentTo("/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/forgot-password", "/api/auth/reset-password");
     }
 
     [Fact]

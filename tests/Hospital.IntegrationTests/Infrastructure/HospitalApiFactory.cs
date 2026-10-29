@@ -28,6 +28,9 @@ public sealed class HospitalApiFactory(
             // JWT imzalama anahtarı (yalnız test değeri); Issuer/Audience appsettings.json varsayılanlarıdır.
             ["Jwt:SigningKey"] = TestJwt.SigningKey,
 
+            // Parola sıfırlama e-postasındaki bağlantının kökü (arayüz adresi; zorunlu ayar).
+            ["Frontend:BaseUrl"] = "http://localhost:5173",
+
             // Hassas veri (T.C. kimlik no) şifreleme anahtarı (yalnız test değeri; Base64, 32 bayt).
             ["Security:DataProtection:Key"] = TestDataProtection.Key,
 
