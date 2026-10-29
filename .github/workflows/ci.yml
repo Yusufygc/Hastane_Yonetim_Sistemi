@@ -73,3 +73,8 @@ jobs:
           git diff --exit-code src/api/schema.d.ts
 
       - run: npm run build
+
+      # Üretim imajı (nginx) derlenebiliyor mu? (yalnız derleme; yayımlanmaz)
+      - name: Web imajı derlenir
+        working-directory: .
+        run: docker build -t hospital-web web
