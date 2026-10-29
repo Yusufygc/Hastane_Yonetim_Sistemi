@@ -1,7 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import Layout from './components/Layout'
-import ProtectedRoute from './components/ProtectedRoute'
 import RoleRoute from './components/RoleRoute'
 import { MotionProvider } from './lib/MotionProvider'
 import Appointments from './pages/Appointments'
@@ -37,7 +36,7 @@ export default function App() {
               <Route path="kayit" element={<Register />} />
               {/* Katalog anonim gezilir; talep gönderirken giriş istenir (seçimler korunur). */}
               <Route path="randevu-al" element={<Book />} />
-              <Route element={<ProtectedRoute />}>
+              <Route element={<RoleRoute role="PATIENT" label="Randevularım sayfası" />}>
                 <Route path="randevularim" element={<Appointments />} />
               </Route>
               <Route element={<RoleRoute role="DOCTOR" label="Doktor paneli" />}>
