@@ -67,6 +67,19 @@ public static class WebApiExt
                 section.GetValue("BatchSize", defaults.BatchSize));
         });
 
+        // Parola sıfırlama: bağlantı ömrü, tekrar isteme aralığı ve e-postadaki bağlantının kökü (arayüz adresi, Frontend:BaseUrl zorunlu).
+        services.AddSingleton(serviceProvider =>
+        {
+            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+            var reset = configuration.GetSection("PasswordReset");
+            var defaults = PasswordResetSettings.Default;
+
+            return new PasswordResetSettings(
+                TimeSpan.FromMinutes(reset.GetValue("LifetimeMinutes", defaults.TokenLifetime.TotalMinutes)),
+                TimeSpan.FromSeconds(reset.GetValue("ResendIntervalSeconds", defaults.ResendInterval.TotalSeconds)),
+                configuration.GetSection("Frontend")["BaseUrl"] ?? string.Empty);
+        });
+
         // E-posta (SMTP) ve outbox işleyici ayarları. Parola yalnız ortam değişkeni/gizli depo ile verilir.
         services.AddSingleton(serviceProvider =>
         {
@@ -138,6 +151,7 @@ public static class WebApiExt
     {
         _ = app.Services.GetRequiredService<JwtSettings>();
         _ = app.Services.GetRequiredService<ISensitiveDataProtector>();
+        app.Services.GetRequiredService<PasswordResetSettings>().Validated();
         return app;
     }
 

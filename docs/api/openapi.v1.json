@@ -978,6 +978,17 @@
         ],
         "type": "object"
       },
+      "ForgotPasswordRequest": {
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
       "HospitalDetailDto": {
         "properties": {
           "address": {
@@ -1267,6 +1278,21 @@
         },
         "required": [
           "serviceId"
+        ],
+        "type": "object"
+      },
+      "ResetPasswordRequest": {
+        "properties": {
+          "newPassword": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "newPassword"
         ],
         "type": "object"
       },
@@ -2333,6 +2359,50 @@
         ]
       }
     },
+    "/api/auth/forgot-password": {
+      "post": {
+        "description": "**Yetki:** anonim (giriş gerekmez).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Geçersiz istek / doğrulama hatası (alan bazlı `errors`)."
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Hız sınırı aşıldı; bir süre bekleyip tekrar deneyin."
+          }
+        },
+        "summary": "Şifremi unuttum: e-postaya tek kullanımlık sıfırlama bağlantısı gönderir (hesap olsun olmasın aynı 202 yanıtı).",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/api/auth/login": {
       "post": {
         "description": "**Yetki:** anonim (giriş gerekmez).",
@@ -2566,6 +2636,50 @@
           }
         },
         "summary": "Hasta hesabı oluşturur (herkese açık kayıt yalnız hasta açar).",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "description": "**Yetki:** anonim (giriş gerekmez).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Geçersiz istek / doğrulama hatası (alan bazlı `errors`)."
+          },
+          "429": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Hız sınırı aşıldı; bir süre bekleyip tekrar deneyin."
+          }
+        },
+        "summary": "E-postadaki belirteçle yeni parola belirler; tüm oturumlar kapanır, belirteç bir daha kullanılamaz.",
         "tags": [
           "Auth"
         ]

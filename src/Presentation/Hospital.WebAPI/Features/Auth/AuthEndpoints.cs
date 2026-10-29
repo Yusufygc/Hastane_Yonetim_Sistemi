@@ -4,6 +4,8 @@ using Hospital.Application.Features.Auth.Commands.Login;
 using Hospital.Application.Features.Auth.Commands.Logout;
 using Hospital.Application.Features.Auth.Commands.RefreshToken;
 using Hospital.Application.Features.Auth.Commands.RegisterPatient;
+using Hospital.Application.Features.Auth.Commands.RequestPasswordReset;
+using Hospital.Application.Features.Auth.Commands.ResetPassword;
 using Hospital.Application.Interfaces;
 using Hospital.Application.Security;
 using Hospital.WebAPI.Common;
@@ -26,6 +28,10 @@ public sealed record LoginRequest(string Email, string Password);
 public sealed record RefreshRequest(string RefreshToken);
 
 public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
+
+public sealed record ForgotPasswordRequest(string Email);
+
+public sealed record ResetPasswordRequest(string Token, string NewPassword);
 
 internal sealed class AuthEndpoints : IEndpoint
 {
@@ -77,6 +83,23 @@ internal sealed class AuthEndpoints : IEndpoint
         group.MapPost("/change-password", async (ChangePasswordRequest request, ISender sender, CancellationToken ct) =>
                 (await sender.Send(new ChangePasswordCommand(request.CurrentPassword, request.NewPassword), ct)).ToNoContent())
             .RequireAuthorization(Policies.Authenticated)
+            .RequireRateLimiting(AuthenticationExt.AuthRateLimitPolicy)
+            .Produces(StatusCodes.Status204NoContent);
+
+        // "Şifremi unuttum": yanıt hesap var olsun olmasın aynıdır (202); e-posta arka planda outbox ile gider.
+        group.MapPost("/forgot-password", async (ForgotPasswordRequest request, ISender sender, CancellationToken ct) =>
+            {
+                var result = await sender.Send(new RequestPasswordResetCommand(request.Email), ct);
+                return result.IsSuccess ? Results.Accepted() : result.ToNoContent();
+            })
+            .AllowAnonymous()
+            .RequireRateLimiting(AuthenticationExt.AuthRateLimitPolicy)
+            .Produces(StatusCodes.Status202Accepted);
+
+        // E-postadaki tek kullanımlık belirteçle yeni parola; tüm oturumlar kapanır ve belirteç bir daha çalışmaz.
+        group.MapPost("/reset-password", async (ResetPasswordRequest request, ISender sender, CancellationToken ct) =>
+                (await sender.Send(new ResetPasswordCommand(request.Token, request.NewPassword), ct)).ToNoContent())
+            .AllowAnonymous()
             .RequireRateLimiting(AuthenticationExt.AuthRateLimitPolicy)
             .Produces(StatusCodes.Status204NoContent);
 

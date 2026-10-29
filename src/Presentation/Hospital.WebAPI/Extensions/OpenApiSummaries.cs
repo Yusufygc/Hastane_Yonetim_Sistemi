@@ -14,6 +14,8 @@ internal static class OpenApiSummaries
         ["POST /api/auth/refresh"] = "Yenileme belirteciyle yeni belirteç çifti alır (eski belirteç iptal edilir).",
         ["POST /api/auth/logout"] = "Oturumu kapatır: yenileme belirtecini iptal eder.",
         ["GET /api/auth/me"] = "Oturum açmış kullanıcının kimliğini, e-postasını ve rolünü döner.",
+        ["POST /api/auth/forgot-password"] = "Şifremi unuttum: e-postaya tek kullanımlık sıfırlama bağlantısı gönderir (hesap olsun olmasın aynı 202 yanıtı).",
+        ["POST /api/auth/reset-password"] = "E-postadaki belirteçle yeni parola belirler; tüm oturumlar kapanır, belirteç bir daha kullanılamaz.",
         ["POST /api/auth/change-password"] = "Kendi parolasını değiştirir; tüm oturumlar kapanır, yeniden giriş gerekir.",
 
         // ---- Anonim katalog

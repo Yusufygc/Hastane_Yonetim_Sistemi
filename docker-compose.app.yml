@@ -37,6 +37,8 @@ services:
       RateLimiting__Auth__PermitLimit: "${AUTH_RATE_LIMIT:-10}"
       OpenApi__Enabled: "${OPENAPI_ENABLED:-true}"
       Cors__AllowedOrigins__0: "${CORS_ORIGIN:-http://localhost:5173}"
+      # Parola sıfırlama e-postasındaki bağlantının kökü = arayüzün (nginx) adresi. Zorunlu ayar; üretimde gerçek alan adı verilir.
+      Frontend__BaseUrl: "${FRONTEND_URL:-http://localhost:8081}"
       # Arayüz nginx'in arkasında: hız sınırı gerçek istemci IP'sine göre uygulansın diye X-Forwarded-For yalnız compose ağından
       # (Docker bridge aralığı) gelen vekilden okunur. API portu hosta da açık olduğundan bu bir yerel/demo ayarıdır; üretimde API
       # yalnız iç ağda olmalı ve burada vekilin gerçek adresi/ağı yazılmalıdır (wiki: operasyon).
