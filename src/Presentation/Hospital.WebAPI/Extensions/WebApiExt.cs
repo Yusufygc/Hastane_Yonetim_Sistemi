@@ -23,6 +23,7 @@ public static class WebApiExt
         services.AddEndpoints(typeof(Program).Assembly);
 
         services.AddHttpContextAccessor();
+        services.AddForwardedHeadersSupport(); // vekil arkasında gerçek istemci IP'si (varsayılan kapalı, bkz. ForwardedHeadersExt)
         services.AddScoped<ICurrentUser, CurrentUser>();
 
         // Ayarlar çalışma anında okunur (testler yapılandırmayı geçersiz kılabilsin diye).
@@ -143,6 +144,7 @@ public static class WebApiExt
     /// <summary>İstek hattı (middleware) sırası ve endpoint eşlemeleri.</summary>
     public static WebApplication UseWebApi(this WebApplication app)
     {
+        app.UseForwardedHeadersIfEnabled(); // en dışta: korelasyon, hız sınırı ve loglar gerçek istemci IP'sini görsün
         app.UseMiddleware<CorrelationIdMiddleware>(); // en dışta: hata yanıtları ve istek özeti de aynı kimliği taşır
         app.UseExceptionHandler();
         app.UseStatusCodePages(); // gövdesiz hata durumlarını ProblemDetails gövdesine çevirir
