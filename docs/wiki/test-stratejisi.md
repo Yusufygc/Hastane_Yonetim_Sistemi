@@ -13,6 +13,9 @@ Kaynak: `plan.md` §11. Faz bağlantısı: [[faz-plani]].
 ## Arayüz testleri (Faz 7)
 `web/` altında Vitest + Testing Library (`npm test`, 40 test): http istemcisi, yardımcılar, uygulama akışları, doktor ve yönetim paneli akışları; CI `web` işi ayrıca lint, tip üretimi farkı ve derlemeyi denetler ([[arayuz]]).
 
+## Vekil arkası (Faz 7)
+`ForwardedHeadersTests`: güvenilen vekilden gelen istekte hız sınırı gerçek istemciye göre ayrılır; güvenilmeyen kaynaktan gelen `X-Forwarded-For` yok sayılır (taklitle sınır aşılamaz); varsayılan kapalı; hatalı yapılandırma (güvenilen ağ yok / bozuk CIDR) açılışta açık hata verir ([[operasyon]]).
+
 ## Faz 6 testleri
 - **Yetki matrisi:** `EndpointMatrix` altın tablosu (67 uç → politika) + `EndpointPolicyMatrixTests` (6 kimlik × tüm uçlar). Yeni uç tabloya eklenmeden envanter testi kırılır ([[kararlar]] K-68).
 - **IDOR:** `IdorMatrixTests` — başkasının randevu/profil/hizmet kaynağı 404.

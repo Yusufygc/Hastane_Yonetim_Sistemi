@@ -6,11 +6,32 @@ Faz 6 (2026-10-25). Ortam: [[docker-ortam]]. Güvenlik: [[kimlik-ve-yetki]]. Bil
 | Amaç | Komut |
 |---|---|
 | Geliştirme (yalnız altyapı container'da) | `docker compose up -d` → `dotnet run --project src/Presentation/Hospital.WebAPI` |
-| Her şey container'da (PostgreSQL + Mailpit + API) | `cp .env.example .env` → `docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build` → API `http://localhost:8080` |
+| Her şey container'da (PostgreSQL + Mailpit + API + **arayüz**) | `cp .env.example .env` → `docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build` → arayüz `http://localhost:8081`, API `http://localhost:8080` |
 | Testler | `./scripts/test-docker.ps1` (Linux container; PostgreSQL ve Mailpit gerekir) |
 | Canlı smoke test | `BASE=http://localhost:8080 ./scripts/smoke-test.sh` |
 
 API imajı çok aşamalıdır (`Dockerfile`): SDK 9 ile derlenir, `aspnet:9.0` üzerinde **root olmayan** kullanıcıyla 8080'de çalışır; gizli ayar imaja gömülmez. `docker-compose.app.yml` zorunlu gizli değişkenler eksikse açık hata verir; sağlık denetimi `/health` (veritabanı dahil).
+
+## Web imajı (arayüz) ve ters vekil
+`web/Dockerfile` çok aşamalıdır: `node:22-alpine` ile `npm ci && npm run build`, ardından `nginxinc/nginx-unprivileged` (root olmayan kullanıcı, 8080) ile sunulur. `docker-compose.app.yml`'deki `web` servisi API sağlıklı olunca açılır (`depends_on: service_healthy`), host portu `WEB_PORT` (varsayılan 8081). Gizli bilgi imaja girmez (arayüz herkese açık statik dosyadır) — [[kararlar]] K-82.
+
+nginx (`web/nginx/default.conf.template`, açılışta `API_UPSTREAM` ile doldurulur):
+- **Tek origin:** `/api/` → API'ye vekil; tarayıcı için arayüz ve API aynı origin olduğundan CORS gerekmez (`VITE_API_URL` verilmez).
+- **SPA yönlendirmesi:** bilinmeyen yol `index.html`'e düşer (React Router).
+- **Önbellek:** `/assets/` (içerik karmalı dosya adı) bir yıl, `immutable`; `index.html` **no-cache** (yeni sürüm hemen görünür). gzip açık.
+- **Güvenlik başlıkları** (`security-headers.conf`, her location'a include edilir; nginx'te location içinde `add_header` üst düzeyi devralmaz): `Content-Security-Policy` (betikler yalnız aynı origin; `style-src 'unsafe-inline'` three.js tuvali için), `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`. `server_tokens off`; nokta dosyaları (`.env`, `.git`) sunulmaz.
+- Sağlık: `GET /healthz` (imaj `HEALTHCHECK`'i kullanır).
+
+### Vekil arkasında gerçek istemci IP'si (X-Forwarded-For)
+Hız sınırı IP'ye göre bölümlenir; vekil arkasında herkes vekilin IP'siyle görünür ve **tüm kullanıcılar tek kovayı paylaşır** (kimlik uçlarında dakikada 10 istek → bir kullanıcı herkesi kilitler). Bu yüzden API `X-Forwarded-For/Proto` başlığını okuyabilir — **varsayılan kapalı**:
+
+| Anahtar | Anlam |
+|---|---|
+| `ForwardedHeaders:Enabled` | `true` ise başlık dikkate alınır (varsayılan `false`) |
+| `ForwardedHeaders:TrustedNetworks` | Güvenilen vekil ağları (CIDR listesi, örn. `172.16.0.0/12`) |
+| `ForwardedHeaders:TrustedProxies` | Güvenilen vekil IP'leri |
+
+Kurallar: başlık **yalnız güvenilen kaynaktan** gelirse okunur (aksi halde istemci başlığı taklit edip sınırı atlatırdı); `Enabled=true` iken güvenilen ağ/IP verilmezse veya CIDR bozuksa uygulama **açılışta** açık hata verir ("herkese güven" yok); tek vekil atlaması (`ForwardLimit=1`). nginx istemci IP'sini `$remote_addr` ile **sıfırdan yazar** (gelen başlığı eklemez). Compose'ta `172.16.0.0/12` (Docker bridge) güvenilir; API portu hosta da açık olduğundan bu **yerel/demo** ayarıdır — üretimde API yalnız iç ağda olmalı ve vekilin gerçek adresi yazılmalıdır. Testler: `ForwardedHeadersTests`.
 
 ## Yapılandırma anahtarları
 Ortam değişkeninde `:` yerine `__` kullanılır (ör. `Jwt__SigningKey`).
@@ -83,7 +104,7 @@ Diğer: liste uçları sayfalıdır (en çok 200); okuma sorguları `AsNoTrackin
 3. `Cors__AllowedOrigins__0…` arayüz origin'i; `OpenApi__Enabled` yalnız gerekiyorsa.
 4. `Seed__SampleData=false`; örnek doktor/hesap yok.
 5. `Database__MigrateOnStartup=true` (veya migration + `IdentityNumberUpgrader` ayrı adım).
-6. TLS sonlandırma ters vekilde (API 8080 düz HTTP dinler); hız sınırı IP'ye göre olduğundan vekilin istemci IP'sini ilettiğinden emin olun.
+6. TLS sonlandırma ters vekilde (API 8080 düz HTTP dinler); hız sınırı IP'ye göre olduğundan vekil `X-Forwarded-For` iletmeli ve API'de `ForwardedHeaders:Enabled=true` + `TrustedNetworks/TrustedProxies` (vekilin gerçek adresi) verilmelidir. Arayüz için `web/` imajı (nginx) kullanılabilir; TLS yine bunun önündeki vekilde sonlanır.
 7. `/health` izleme; log toplama `CorrelationId` alanını indeksler.
 
 ## Bilinçli sınırlar

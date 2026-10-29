@@ -27,7 +27,7 @@
 | OOP ilkeleri | Kullanıcı hiyerarşisi (TPT), kapsülleme, polimorfizm (State), soyutlama (repository/arayüzler) | [[domain-modeli]] |
 | ≥10 commit, farklı günler | 60+ commit, 8 farklı gün (Conventional Commits) | [[git-is-akisi]] |
 
-Sayılarla proje (2026-10-26): **67 API ucu**, **~330 C# kaynak dosyası** (üretilen migration hariç), **76 test dosyası**; **301 birim + 9 mimari + 351 entegrasyon + 40 web testi**.
+Sayılarla proje (2026-10-26): **67 API ucu**, **~330 C# kaynak dosyası** (üretilen migration hariç), **76 test dosyası**; **301 birim + 9 mimari + 356 entegrasyon + 40 web testi**.
 
 ---
 
@@ -270,7 +270,7 @@ Her faz: **kod + test + wiki + commit** birlikte biter; çıkış kriteri fazın
 |---|---|---|
 | Birim (301) | xUnit, AwesomeAssertions | Domain kuralları, State geçişleri, slot hesabı (DST dahil), validator'lar, AES-GCM |
 | Mimari (9) | NetArchTest | Katman bağımlılık kuralları |
-| Entegrasyon (351) | `WebApplicationFactory` + **gerçek PostgreSQL** + Mailpit | Uçtan uca akışlar, yarış durumu, yetki matrisi, IDOR, sözleşme, sorgu planı (EXPLAIN), şifreleme |
+| Entegrasyon (356) | `WebApplicationFactory` + **gerçek PostgreSQL** + Mailpit | Uçtan uca akışlar, yarış durumu, yetki matrisi, IDOR, sözleşme, sorgu planı (EXPLAIN), şifreleme |
 | Web (40) | Vitest + Testing Library | http istemcisi (yenileme/yarış, gövdesiz yanıt), yardımcılar, uygulama, doktor ve yönetim paneli akışları |
 | Canlı smoke | `scripts/smoke-test.sh` | Çalışan (container) API'ye karşı 57 kontrol, e-postalar dahil |
 
@@ -287,7 +287,7 @@ Proje, bir yapay zekâ asistanıyla geliştirildi ve bağlam kaybı olmasın diy
 docker compose up -d                                   # PostgreSQL + Mailpit
 dotnet run --project src/Presentation/Hospital.WebAPI  # API  http://localhost:5284  (Scalar: /scalar/v1)
 cd web && npm install && npm run dev                   # Arayüz http://localhost:5173
-# Hepsi container'da: docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build   (API :8080)
+# Hepsi container'da: docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build   (arayüz :8081 nginx, API :8080)
 ```
 Geliştirmede örnek veri hazırdır: süper yönetici `admin@hastane.local`, örnek doktor `doktor@hastane.local` (parolalar `appsettings.Development.json`'da). E-postalar `http://localhost:8025` (Mailpit).
 
@@ -324,7 +324,7 @@ Geliştirmede örnek veri hazırdır: süper yönetici `admin@hastane.local`, ö
 - Arayüzde personel (STAFF) paneli, yönetici hesabı oluşturma ve parola sıfırlama ekranı yok (API hazır). Doktor panelinde uygunluk penceresi düzenleme yok (ekle/sil var).
 - Veri şifreleme anahtarı döndürme (rotation) yok; anahtar yedeklenmelidir. Denetim izi (audit log) ve kullanıcı bazlı hız sınırı yok.
 - Sayfalama sayfa numarası tabanlıdır (ödev ölçeğinde yeterli).
-- Web için üretim imajı (statik dosya + ters vekil) henüz eklenmedi; `npm run build` `web/dist` üretir.
+- Web imajı yerel/demo için hazır (nginx, tek origin); TLS sonlandırma ve gerçek alan adı üretimde önündeki vekile bırakıldı.
 - 3B sahne bilinçli olarak sade tutuldu (çift sarmal); steteskop/doktor modelleri denendi, kalite yeterli bulunmayıp kaldırıldı ([[kararlar]] K-74).
 
 İlgili sayfalar: [[mimari]], [[tasarim-kaliplari]], [[teknoloji-yigini]], [[randevu-kurallari]], [[bildirimler]], [[operasyon]], [[test-stratejisi]], [[arayuz]], [[faz-plani]].

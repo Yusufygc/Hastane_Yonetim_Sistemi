@@ -26,7 +26,7 @@
 | Dayanıklılık | Bekleyen talep zaman aşımı arka plan işi, SMTP kapalıyken randevu akışı bozulmaz | [[operasyon]], [[bildirimler]] |
 
 ## Arayüz (bkz. [[arayuz]])
-React 19 + TypeScript + Vite (`web/`); ana sayfada kaydırdıkça değişen 3B sahne (three.js), kayıt/giriş, randevu sihirbazı, randevularım **doktor paneli** (onay/red, takvim, hizmet talebi, uygunluk/izin) ve **yönetim paneli** (randevu, hizmet talebi onayı, doktor/personel, şube/saat, bölüm, hizmet). Tipler dondurulmuş OpenAPI'den üretilir; erişim belirteci bellekte, yenileme belirteci `sessionStorage`'da (tek uçuşlu yenileme); sade mod ile erişilebilirlik/performans dengesi.
+React 19 + TypeScript + Vite (`web/`); ana sayfada kaydırdıkça değişen 3B sahne (three.js), kayıt/giriş, randevu sihirbazı, randevularım **doktor paneli** (onay/red, takvim, hizmet talebi, uygunluk/izin) ve **yönetim paneli** (randevu, hizmet talebi onayı, doktor/personel, şube/saat, bölüm, hizmet). Tipler dondurulmuş OpenAPI'den üretilir; erişim belirteci bellekte, yenileme belirteci `sessionStorage`'da (tek uçuşlu yenileme); sade mod ile erişilebilirlik/performans dengesi. Üretim imajı: nginx statik dosya + `/api/` vekili (tek origin), CSP başlıkları ([[operasyon]]).
 
 ## Kalite güvencesi (bkz. [[test-stratejisi]])
 - Birim (domain/validator/koruyucu/SlotCalculator) + mimari + entegrasyon (gerçek PostgreSQL, gerçek SMTP/Mailpit).

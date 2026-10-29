@@ -64,4 +64,7 @@ Davranış notları: Hata mesajları sunucunun Türkçe `detail`'idir (örn. "B�
 - Elle doğrulama (2026-10-26): kayıt → giriş → seçimler korunarak sihirbaz → randevu talebi → "Randevularım" listesi; gerçek API'ye karşı.
 
 ## Bilinçli sınırlar / sonraki dilim
-Yönetim panelinde yönetici hesabı oluşturma (`/api/admins`), doktora doğrudan hizmet atama (`PUT /api/doctors/{id}/services`) ve parola sıfırlama ekranı yok; yönetici/personel için e-posta doğrulama ekranı yok; personel (STAFF) rolünün paneli yok. Doktor panelinde uygunluk penceresi düzenleme (PUT) yok, yalnız ekle/sil. Üretim için web sunucusu imajı (statik dosya + ters vekil) henüz yok; `npm run build` `web/dist` üretir. Three.js paketi büyüktür (~240 KB gzip, tembel); ileride yalnız gereken modüllerle küçültülebilir.
+Yönetim panelinde yönetici hesabı oluşturma (`/api/admins`), doktora doğrudan hizmet atama (`PUT /api/doctors/{id}/services`) ve parola sıfırlama ekranı yok; yönetici/personel için e-posta doğrulama ekranı yok; personel (STAFF) rolünün paneli yok. Doktor panelinde uygunluk penceresi düzenleme (PUT) yok, yalnız ekle/sil.  Three.js paketi büyüktür (~240 KB gzip, tembel); ileride yalnız gereken modüllerle küçültülebilir.
+
+## Üretim imajı
+`web/Dockerfile` (Node ile derle → nginx ile sun), `docker-compose.app.yml`'de `web` servisi (`http://localhost:8081`): statik dosyalar + `/api/` ters vekili (tek origin, CORS gerekmez), SPA yönlendirmesi, önbellek ve güvenlik başlıkları. Ayrıntı ve vekil arkasında istemci IP'si: [[operasyon]] "Web imajı", [[kararlar]] K-82.
