@@ -1,0 +1,61 @@
+# Arayüz sunucusu: statik dosyalar + /api/ ters vekili. API_UPSTREAM açılışta ortam değişkeninden doldurulur (envsubst);
+# $uri, $host gibi nginx değişkenleri dokunulmadan kalır (yalnız tanımlı ortam değişkenleri değiştirilir).
+
+server {
+    listen 8080;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    server_tokens off;
+
+    gzip on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+
+    # Sağlık denetimi (konteyner HEALTHCHECK'i ve izleme için); günlüğe yazılmaz.
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok";
+    }
+
+    # API'ye vekil. İstemci IP'si nginx'te $remote_addr ile SIFIRDAN yazılır (gelen X-Forwarded-For taklidi sızmasın);
+    # API yalnız güvenilen vekilden gelen başlığı okur (ForwardedHeaders:*, bkz. wiki operasyon).
+    location /api/ {
+        proxy_pass http://${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+        proxy_read_timeout 60s;
+        client_max_body_size 1m;
+        include /etc/nginx/security-headers.conf;
+    }
+
+    # Parmak izli (içerik karması adda) derleme çıktıları: bir yıl, değişmez.
+    location /assets/ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        include /etc/nginx/security-headers.conf;
+    }
+
+    # index.html asla önbelleğe alınmaz: yeni sürüm hemen yeni dosya adlarını görsün.
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+        include /etc/nginx/security-headers.conf;
+    }
+
+    # İstemci tarafı yönlendirme (React Router): bilinmeyen yol index.html'e düşer.
+    location / {
+        try_files $uri $uri/ /index.html;
+        include /etc/nginx/security-headers.conf;
+    }
+
+    # Nokta ile başlayan dosyalar (.env, .git ...) asla sunulmaz.
+    location ~ /\. {
+        deny all;
+    }
+}
