@@ -559,6 +559,54 @@ namespace Hospital.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Hospital.Domain.Entities.Users.PasswordResetToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_password_reset_token");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_password_reset_token_token_hash");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_password_reset_token_user_id")
+                        .HasFilter("used_at IS NULL");
+
+                    b.ToTable("password_reset_token", (string)null);
+                });
+
             modelBuilder.Entity("Hospital.Domain.Entities.Users.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -988,6 +1036,16 @@ namespace Hospital.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_doctor_time_off_doctors_doctor_id");
+                });
+
+            modelBuilder.Entity("Hospital.Domain.Entities.Users.PasswordResetToken", b =>
+                {
+                    b.HasOne("Hospital.Domain.Entities.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_password_reset_token_users_user_id");
                 });
 
             modelBuilder.Entity("Hospital.Domain.Entities.Users.RefreshToken", b =>

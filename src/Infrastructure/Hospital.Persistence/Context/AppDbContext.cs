@@ -37,6 +37,8 @@ public sealed class AppDbContext(
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+
     public DbSet<Appointment> Appointments => Set<Appointment>();
 
     public DbSet<Organization> Organizations => Set<Organization>();
