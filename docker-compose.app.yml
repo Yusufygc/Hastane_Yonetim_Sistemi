@@ -1,7 +1,8 @@
-# API'yi de container'da çalıştırır (PostgreSQL + Mailpit ile birlikte). docker-compose.yml'in ÜSTÜNE biner:
+# API'yi ve arayüzü de container'da çalıştırır (PostgreSQL + Mailpit ile birlikte). docker-compose.yml'in ÜSTÜNE biner:
 #
 #   cp .env.example .env        # değerleri düzenleyin (gizli anahtarları üretin)
 #   docker compose -f docker-compose.yml -f docker-compose.app.yml up -d --build
+#   # Arayüz: http://localhost:8081   (nginx: statik dosyalar + /api/ -> API; tarayıcı için tek origin)
 #   # API:    http://localhost:8080   (sağlık: /health, dokümantasyon: /scalar/v1)
 #   # Mailpit http://localhost:8025
 #
@@ -36,10 +37,29 @@ services:
       RateLimiting__Auth__PermitLimit: "${AUTH_RATE_LIMIT:-10}"
       OpenApi__Enabled: "${OPENAPI_ENABLED:-true}"
       Cors__AllowedOrigins__0: "${CORS_ORIGIN:-http://localhost:5173}"
+      # Arayüz nginx'in arkasında: hız sınırı gerçek istemci IP'sine göre uygulansın diye X-Forwarded-For yalnız compose ağından
+      # (Docker bridge aralığı) gelen vekilden okunur. API portu hosta da açık olduğundan bu bir yerel/demo ayarıdır; üretimde API
+      # yalnız iç ağda olmalı ve burada vekilin gerçek adresi/ağı yazılmalıdır (wiki: operasyon).
+      ForwardedHeaders__Enabled: "true"
+      ForwardedHeaders__TrustedNetworks__0: "172.16.0.0/12"
     healthcheck:
       # aspnet imajında curl yok; bash'in /dev/tcp'si ile /health'e (veritabanı denetimi dahil) HTTP isteği atılır.
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      # CMD-SHELL /bin/sh (dash) kullanır ve /dev/tcp'si yoktur; bu yüzden bash açıkça çağrılır.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
       interval: 10s
       timeout: 5s
       retries: 6
       start_period: 15s
+
+  web:
+    build: ./web
+    image: hospital-web:local
+    container_name: hospital-web
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8081}:8080"
+    environment:
+      API_UPSTREAM: "api:8080"
+    # İmajdaki HEALTHCHECK (/healthz) kullanılır.
