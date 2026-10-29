@@ -50,6 +50,9 @@ export default function Login() {
         </button>
       </form>
       <p>
+        <Link to="/sifremi-unuttum">Şifremi unuttum</Link>
+      </p>
+      <p>
         Hesabınız yok mu? <Link to="/kayit">Kayıt olun</Link>
       </p>
     </section>

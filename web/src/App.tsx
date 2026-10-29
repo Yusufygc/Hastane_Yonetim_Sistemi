@@ -5,10 +5,12 @@ import RoleRoute from './components/RoleRoute'
 import { MotionProvider } from './lib/MotionProvider'
 import Appointments from './pages/Appointments'
 import Book from './pages/Book'
+import ForgotPassword from './pages/ForgotPassword'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 import Register from './pages/Register'
+import ResetPassword from './pages/ResetPassword'
 import AdminAppointments from './pages/admin/AdminAppointments'
 import AdminDepartments from './pages/admin/AdminDepartments'
 import AdminDoctors from './pages/admin/AdminDoctors'
@@ -34,6 +36,8 @@ export default function App() {
               <Route index element={<Landing />} />
               <Route path="giris" element={<Login />} />
               <Route path="kayit" element={<Register />} />
+              <Route path="sifremi-unuttum" element={<ForgotPassword />} />
+              <Route path="sifre-sifirla" element={<ResetPassword />} />
               {/* Katalog anonim gezilir; talep gönderirken giriş istenir (seçimler korunur). */}
               <Route path="randevu-al" element={<Book />} />
               <Route element={<RoleRoute role="PATIENT" label="Randevularım sayfası" />}>

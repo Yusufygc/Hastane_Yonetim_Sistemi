@@ -683,6 +683,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Şifremi unuttum: e-postaya tek kullanımlık sıfırlama bağlantısı gönderir (hesap olsun olmasın aynı 202 yanıtı).
+         * @description **Yetki:** anonim (giriş gerekmez).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ForgotPasswordRequest"];
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Geçersiz istek / doğrulama hatası (alan bazlı `errors`). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Hız sınırı aşıldı; bir süre bekleyip tekrar deneyin. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -946,6 +1005,65 @@ export interface paths {
                     content: {
                         "application/json": components["schemas"]["UserCreatedResponse"];
                     };
+                };
+                /** @description Geçersiz istek / doğrulama hatası (alan bazlı `errors`). */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Hız sınırı aşıldı; bir süre bekleyip tekrar deneyin. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * E-postadaki belirteçle yeni parola belirler; tüm oturumlar kapanır, belirteç bir daha kullanılamaz.
+         * @description **Yetki:** anonim (giriş gerekmez).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ResetPasswordRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
                 };
                 /** @description Geçersiz istek / doğrulama hatası (alan bazlı `errors`). */
                 400: {
@@ -4687,6 +4805,9 @@ export interface components {
             /** Format: date-time */
             startAt: string;
         };
+        ForgotPasswordRequest: {
+            email: string;
+        };
         HospitalDetailDto: {
             address: string | null;
             /** Format: uuid */
@@ -4773,6 +4894,10 @@ export interface components {
         RequestServiceRequest: {
             /** Format: uuid */
             serviceId: string;
+        };
+        ResetPasswordRequest: {
+            newPassword: string;
+            token: string;
         };
         ServiceDto: {
             currency: string;

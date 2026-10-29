@@ -21,6 +21,9 @@ export const auth = {
   login: (email: string, password: string) => request<AuthTokens>('POST', '/api/auth/login', { body: { email, password }, auth: false }),
   register: (body: RegisterBody) => request<Schemas['UserCreatedResponse']>('POST', '/api/auth/register', { body, auth: false }),
   logout: (refreshToken: string) => request<void>('POST', '/api/auth/logout', { body: { refreshToken } }),
+  /** Yanıt hesap var olsun olmasın aynıdır (202); e-posta arka planda gider. */
+  forgotPassword: (email: string) => request<void>('POST', '/api/auth/forgot-password', { body: { email }, auth: false }),
+  resetPassword: (token: string, newPassword: string) => request<void>('POST', '/api/auth/reset-password', { body: { token, newPassword }, auth: false }),
 }
 
 export const catalog = {
