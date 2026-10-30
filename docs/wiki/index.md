@@ -29,6 +29,7 @@ Hastane/Klinik Randevu Sistemi bilgi tabanı. Kurallar için kök dizindeki `CLA
 ## Kalite ve Ortam
 - [[test-stratejisi]] — Test katmanları ve zorunlu senaryolar.
 - [[arayuz]] — Faz 7 web arayüzü: rotalar, oturum/belirteç yönetimi, 3B sahne ve sade mod, test ve çalıştırma.
+- [[arayuz-3b-gerceklik-arastirmasi]] — 3B ana sayfa sahnesini gerçekçileştirme araştırması: sorun nedenleri, model kaynakları/lisanslar, HDRI/gölge, sıkıştırma, uygulama sırası.
 - [[docker-ortam]] — Yerel ortam (PostgreSQL, Mailpit) ve geliştirme ortamı notları.
 - [[operasyon]] — Çalıştırma/dağıtım (Dockerfile, compose), yapılandırma anahtarları, anahtar yönetimi, loglar, arka plan işleri, indeksler, dondurulmuş API sözleşmesi, yetki matrisi.
 - [[sunum-raporu]] — Hocaya sunum için kapsamlı rapor: mimari, klasörleme, backend/API/frontend, iş akışı, çalışma sistemi, demo ve olası sorular.

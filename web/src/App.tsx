@@ -3,6 +3,7 @@ import { AuthProvider } from './auth/AuthContext'
 import Layout from './components/Layout'
 import RoleRoute from './components/RoleRoute'
 import { MotionProvider } from './lib/MotionProvider'
+import { ThemeProvider } from './lib/ThemeProvider'
 import Appointments from './pages/Appointments'
 import Book from './pages/Book'
 import ForgotPassword from './pages/ForgotPassword'
@@ -29,45 +30,47 @@ import DoctorServices from './pages/doctor/DoctorServices'
 export default function App() {
   return (
     <BrowserRouter>
-      <MotionProvider>
-        <AuthProvider>
-          <Routes>
-            <Route element={<Layout />}>
-              <Route index element={<Landing />} />
-              <Route path="giris" element={<Login />} />
-              <Route path="kayit" element={<Register />} />
-              <Route path="sifremi-unuttum" element={<ForgotPassword />} />
-              <Route path="sifre-sifirla" element={<ResetPassword />} />
-              {/* Katalog anonim gezilir; talep gönderirken giriş istenir (seçimler korunur). */}
-              <Route path="randevu-al" element={<Book />} />
-              <Route element={<RoleRoute role="PATIENT" label="Randevularım sayfası" />}>
-                <Route path="randevularim" element={<Appointments />} />
-              </Route>
-              <Route element={<RoleRoute role="DOCTOR" label="Doktor paneli" />}>
-                <Route path="doktor" element={<DoctorLayout />}>
-                  <Route index element={<DoctorAppointments />} />
-                  <Route path="takvim" element={<DoctorSchedule />} />
-                  <Route path="hizmetlerim" element={<DoctorServices />} />
-                  <Route path="uygunluk" element={<DoctorAvailability />} />
-                  <Route path="profil" element={<DoctorProfile />} />
+      <ThemeProvider>
+        <MotionProvider>
+          <AuthProvider>
+            <Routes>
+              <Route element={<Layout />}>
+                <Route index element={<Landing />} />
+                <Route path="giris" element={<Login />} />
+                <Route path="kayit" element={<Register />} />
+                <Route path="sifremi-unuttum" element={<ForgotPassword />} />
+                <Route path="sifre-sifirla" element={<ResetPassword />} />
+                {/* Katalog anonim gezilir; talep gönderirken giriş istenir (seçimler korunur). */}
+                <Route path="randevu-al" element={<Book />} />
+                <Route element={<RoleRoute role="PATIENT" label="Randevularım sayfası" />}>
+                  <Route path="randevularim" element={<Appointments />} />
                 </Route>
-              </Route>
-              <Route element={<RoleRoute role="ADMIN" label="Yönetim paneli" />}>
-                <Route path="yonetim" element={<AdminLayout />}>
-                  <Route index element={<AdminAppointments />} />
-                  <Route path="hizmet-talepleri" element={<AdminServiceRequests />} />
-                  <Route path="doktorlar" element={<AdminDoctors />} />
-                  <Route path="personel" element={<AdminStaff />} />
-                  <Route path="subeler" element={<AdminHospitals />} />
-                  <Route path="bolumler" element={<AdminDepartments />} />
-                  <Route path="hizmetler" element={<AdminServices />} />
+                <Route element={<RoleRoute role="DOCTOR" label="Doktor paneli" />}>
+                  <Route path="doktor" element={<DoctorLayout />}>
+                    <Route index element={<DoctorAppointments />} />
+                    <Route path="takvim" element={<DoctorSchedule />} />
+                    <Route path="hizmetlerim" element={<DoctorServices />} />
+                    <Route path="uygunluk" element={<DoctorAvailability />} />
+                    <Route path="profil" element={<DoctorProfile />} />
+                  </Route>
                 </Route>
+                <Route element={<RoleRoute role="ADMIN" label="Yönetim paneli" />}>
+                  <Route path="yonetim" element={<AdminLayout />}>
+                    <Route index element={<AdminAppointments />} />
+                    <Route path="hizmet-talepleri" element={<AdminServiceRequests />} />
+                    <Route path="doktorlar" element={<AdminDoctors />} />
+                    <Route path="personel" element={<AdminStaff />} />
+                    <Route path="subeler" element={<AdminHospitals />} />
+                    <Route path="bolumler" element={<AdminDepartments />} />
+                    <Route path="hizmetler" element={<AdminServices />} />
+                  </Route>
+                </Route>
+                <Route path="*" element={<NotFound />} />
               </Route>
-              <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-        </AuthProvider>
-      </MotionProvider>
+            </Routes>
+          </AuthProvider>
+        </MotionProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }

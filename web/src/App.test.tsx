@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { session } from './api/http'
@@ -13,6 +13,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock)
   session.clear()
   localStorage.setItem('hospital.motionMode', 'simple') // jsdom'da WebGL yok; düz sayfa
+  localStorage.removeItem('hospital.theme')
 })
 
 afterEach(() => {
@@ -27,6 +28,23 @@ describe('uygulama', () => {
     expect(await screen.findByRole('heading', { level: 1, name: /saniyeler içinde/i })).toBeInTheDocument()
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
     expect(screen.getByRole('link', { name: 'İçeriğe geç' })).toBeInTheDocument()
+  })
+
+  it('3 durumlu tema seçici (Açık / Koyu / Sistem) kök data-theme özniteliğini ve localStorage tercihini günceller', async () => {
+    render(<App />)
+    const group = await screen.findByRole('group', { name: 'Tema seçimi' })
+    const darkBtn = within(group).getByRole('button', { name: 'Koyu' })
+    const lightBtn = within(group).getByRole('button', { name: 'Açık' })
+
+    await userEvent.click(darkBtn)
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    expect(localStorage.getItem('hospital.theme')).toBe('dark')
+    expect(darkBtn).toHaveAttribute('aria-pressed', 'true')
+
+    await userEvent.click(lightBtn)
+    expect(document.documentElement.dataset.theme).toBe('light')
+    expect(localStorage.getItem('hospital.theme')).toBe('light')
+    expect(lightBtn).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('girişsiz Randevularım giriş sayfasına yönlendirir', async () => {
