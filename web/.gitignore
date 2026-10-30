@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Ham model kaynakları (zip); yalnız işlenmiş GLB `public/models/v2` altında tutulur
+models-src
