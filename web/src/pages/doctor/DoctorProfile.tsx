@@ -36,12 +36,12 @@ function ProfileForm({ data }: { data: Profile }) {
       <label>
         Uzmanlık
         <input value={specialty} onChange={(e) => setSpecialty(e.target.value)} required aria-invalid={specialtyError ? true : undefined} />
-        {specialtyError && <span className="field-error">{specialtyError}</span>}
+        {specialtyError && <span className="field-error" role="alert">{specialtyError}</span>}
       </label>
       <label>
         Telefon
         <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} aria-invalid={phoneError ? true : undefined} />
-        {phoneError && <span className="field-error">{phoneError}</span>}
+        {phoneError && <span className="field-error" role="alert">{phoneError}</span>}
       </label>
       <button type="submit" className="btn btn-primary" disabled={busy}>
         {busy ? 'Kaydediliyor…' : 'Kaydet'}

@@ -37,7 +37,7 @@ export default function Register() {
         {label}
         <input value={form[key]} onChange={set(key)} aria-invalid={message ? true : undefined} aria-describedby={message ? `${key}-hata` : undefined} {...props} />
         {message && (
-          <span id={`${key}-hata`} className="field-error">
+          <span id={`${key}-hata`} className="field-error" role="alert">
             {message}
           </span>
         )}
