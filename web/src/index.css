@@ -423,6 +423,7 @@ a {
 /* Form Elemanları */
 form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
@@ -437,6 +438,7 @@ input,
 select,
 textarea {
   font: inherit;
+  min-width: 0;
   padding: 11px 14px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
@@ -471,7 +473,7 @@ input[aria-invalid='true'] {
 
 .grid-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -1039,6 +1041,13 @@ input[aria-invalid='true'] {
   border: 1px solid var(--border);
 }
 
+.admin-bar .inline-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
 .panel-form {
   max-width: 660px;
   margin: 16px 0;
@@ -1081,7 +1090,7 @@ table.hours td {
     display: none;
   }
   .grid-2 {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .user-chip {
     display: none;
