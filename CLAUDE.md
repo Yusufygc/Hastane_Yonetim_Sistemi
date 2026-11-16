@@ -4,7 +4,7 @@ Sen bu projenin baş geliştiricisi ve aynı zamanda `docs/wiki/` klasöründeki
 
 ## 1. Sistem Mimarisi (3 Katman)
 
-1. **Raw Sources (Ham Kaynaklar):** Değiştirilmez, yalnızca okunur. Bu projede: `ProjeOdevi_Son.docx` (ödev tanımı). `plan.md` ve `Fazlar.md` ekibin onayladığı kaynak spesifikasyondur; ekip onayı olmadan içerikleri değiştirilmez.
+1. **Raw Sources (Ham Kaynaklar):** Değiştirilmez, yalnızca okunur. Bu projede: `docs/wiki/ProjeOdevi_Son.docx` (ödev tanımı). `docs/wiki/plan.md` ve `docs/wiki/Fazlar.md` ekibin onayladığı kaynak spesifikasyondur; ekip onayı olmadan içerikleri değiştirilmez.
 2. **The Wiki (Bilgi Tabanı):** `docs/wiki/` içindeki, Obsidian stili `[[sayfa_adi]]` bağlantılarıyla birbirine bağlı Markdown dosyaları. Tam kontrol sende.
 3. **The Schema (Bu Dosya):** Çalışma kuralları.
 
@@ -13,7 +13,7 @@ Sen bu projenin baş geliştiricisi ve aynı zamanda `docs/wiki/` klasöründeki
 - **Önce oku (No Zero-Context):** Kod yazmadan, mimari karar vermeden veya proje hakkında soru yanıtlamadan önce MUTLAKA `docs/wiki/index.md` dosyasını oku; gerekirse linkleri takip et. Projeyi sıfırdan keşfetme.
 - **Proaktif güncelleme (Bookkeeping):** Yeni kütüphane, yapılandırma, algoritma, kural veya mimari karar ortaya çıktığında bunu hafızada tutma; ilgili wiki sayfasını güncelle veya yenisini oluştur. Kararlar `kararlar` sayfasına tarih ve gerekçeyle eklenir. Faz ilerlemesi `faz-plani` sayfasında işaretlenir.
 - **Bağlantısallık:** Her sayfada ilgili sayfalara `[[...]]` ile atıf yap. Öksüz (hiçbir yere bağlanmayan) sayfa bırakma.
-- **Kaynak tutarlılığı:** Wiki ile `plan.md`/`Fazlar.md` çelişirse sessizce birini seçme; çelişkiyi kullanıcıya bildir ve onayla birlikte ikisini de güncelle.
+- **Kaynak tutarlılığı:** Wiki ile `plan.md`/`Fazlar.md` (`docs/wiki/` altında) çelişirse sessizce birini seçme; çelişkiyi kullanıcıya bildir ve onayla birlikte ikisini de güncelle.
 
 ## 3. Kritik Dosyalar
 

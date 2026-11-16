@@ -2,8 +2,8 @@
 
 Çok şubeli (veya tek şubeli) hastane/klinik randevu yönetim sistemi. .NET 9, Onion Architecture + feature klasörleri, PostgreSQL.
 
-- Mimari ve kurallar: [plan.md](plan.md)
-- Faz planı: [Fazlar.md](Fazlar.md)
+- Mimari ve kurallar: [plan.md](docs/wiki/plan.md)
+- Faz planı: [Fazlar.md](docs/wiki/Fazlar.md)
 - Bilgi tabanı (wiki): [docs/wiki/index.md](docs/wiki/index.md)
 
 ## Gereksinimler
